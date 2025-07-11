@@ -12,15 +12,20 @@ const io = socketIo(server, {
   }
 });
 
-// ✅ Serve static frontend files from public/
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files
+app.use(express.static(path.join(__dirname)));
 
-// ✅ Serve Socket.IO client script if needed
+// Serve index.html on root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Serve Socket.IO client script
 app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules', 'socket.io', 'client-dist', 'socket.io.js'));
 });
 
-// 🧠 Store rooms and auction data
+// Store rooms and auction data
 const rooms = new Map();
 
 io.on('connection', (socket) => {
@@ -39,7 +44,8 @@ io.on('connection', (socket) => {
         currentAuction: null,
         bidHistory: [],
         roomName: '',
-        bidIncrement: 10
+        bidIncrement: 10,
+        participantBids: {}
       });
     }
 
@@ -76,7 +82,8 @@ io.on('connection', (socket) => {
       bidHistory: [],
       roomName,
       bidIncrement,
-      maxParticipants
+      maxParticipants,
+      participantBids: {}
     });
     console.log(`Room ${roomId} created: ${roomName}`);
   });
@@ -93,7 +100,8 @@ io.on('connection', (socket) => {
       startingPrice: data.startingPrice,
       currentBid: data.startingPrice,
       leadingBidder: null,
-      isActive: true
+      isActive: true,
+      playerId: Date.now().toString()
     };
 
     room.currentAuction = auction;
@@ -115,8 +123,16 @@ io.on('connection', (socket) => {
     const bidData = {
       bidder: socket.userName,
       amount: newBid,
-      timestamp: new Date()
+      timestamp: new Date(),
+      playerName: room.currentAuction.playerName,
+      playerId: room.currentAuction.playerId
     };
+
+    // Track bids per participant
+    if (!room.participantBids[socket.userName]) {
+      room.participantBids[socket.userName] = [];
+    }
+    room.participantBids[socket.userName].push(bidData);
 
     room.bidHistory.unshift(bidData);
 
@@ -146,6 +162,25 @@ io.on('connection', (socket) => {
     console.log(`Auction ended in room ${socket.roomId}`);
   });
 
+  socket.on('get-participant-bids', (participantName) => {
+    const room = rooms.get(socket.roomId);
+    if (!room || !room.participantBids) {
+      socket.emit('participant-bids', {
+        participantName,
+        bids: []
+      });
+      return;
+    }
+
+    const bids = room.participantBids[participantName] || [];
+    
+    // Emit to the requesting client
+    socket.emit('participant-bids', {
+      participantName,
+      bids
+    });
+  });
+
   socket.on('disconnect', () => {
     if (socket.roomId) {
       const room = rooms.get(socket.roomId);
@@ -161,7 +196,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// ✅ Start server
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
