@@ -13,7 +13,7 @@ const io = socketIo(server, {
 });
 
 // Serve static files
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve index.html on root route
 app.get('/', (req, res) => {
