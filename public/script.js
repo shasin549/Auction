@@ -26,6 +26,8 @@ const bidHistory = document.getElementById('bidHistory');
 const inviteLink = document.getElementById('inviteLink');
 const copyLinkBtn = document.getElementById('copyLinkBtn');
 const inviteLinkContainer = document.getElementById('inviteLinkContainer');
+const finalCallBtn = document.getElementById('finalCallBtn');
+const nextPlayerBtn = document.getElementById('nextPlayerBtn');
 
 // Initialize socket connection
 function setupSocket() {
@@ -38,6 +40,7 @@ function setupSocket() {
     socket.on('connect', () => {
         console.log('Connected to server');
         reconnectAttempts = 0;
+        showBidNotification('Connected to auction server');
     });
 
     socket.on('connect_error', (error) => {
@@ -85,6 +88,7 @@ function setupSocketHandlers() {
         roomCodeDisplay.textContent = data.roomCode;
         updateRoomDisplay(true);
         showInviteLink(data.inviteLink);
+        showBidNotification('Room created successfully!');
     });
 
     socket.on('room-joined', (data) => {
@@ -93,6 +97,7 @@ function setupSocketHandlers() {
         roomTitle.textContent = data.roomName;
         roomCodeDisplay.textContent = data.roomCode;
         updateRoomDisplay(true);
+        showBidNotification(`Joined room: ${data.roomName}`);
     });
 
     socket.on('room-state', (data) => {
@@ -102,9 +107,11 @@ function setupSocketHandlers() {
         if (data.currentAuction) {
             updateAuctionDisplay(data.currentAuction);
             updateBidHistory(data.bidHistory);
+            placeBidBtn.disabled = false;
+            finalCallBtn.classList.remove('hidden');
         }
 
-        bidIncrement = data.bidIncrement;
+        bidIncrement = data.bidIncrement || 10;
         currentBidIncrement.textContent = bidIncrement;
         bidIncrementValue.textContent = `₹${bidIncrement}`;
     });
@@ -113,15 +120,21 @@ function setupSocketHandlers() {
         currentBidAmount.textContent = `₹${data.amount}`;
         leadingBidder.textContent = data.bidderName;
         updateBidHistory(data.bidHistory);
+        showBidNotification(`New bid: ₹${data.amount} by ${data.bidderName}`);
     });
 
     socket.on('auction-started', (data) => {
         updateAuctionDisplay(data);
         placeBidBtn.disabled = false;
+        finalCallBtn.classList.remove('hidden');
+        showBidNotification(`Auction started for ${data.playerName}`);
     });
 
     socket.on('auction-ended', (data) => {
         showWinnerDisplay(data);
+        placeBidBtn.disabled = true;
+        finalCallBtn.classList.add('hidden');
+        showBidNotification(`Auction ended! ${data.playerName} sold for ₹${data.winningBid}`);
     });
 
     socket.on('participant-joined', (data) => {
@@ -145,11 +158,15 @@ function setupSocketHandlers() {
 function updateRoomDisplay(isActive) {
     roomInactiveSection.classList.toggle('hidden', isActive);
     roomActiveSection.classList.toggle('hidden', !isActive);
-    
+
     if (currentRole === 'auctioneer') {
+        auctioneerSection.classList.remove('hidden');
+        bidderSection.classList.add('hidden');
         document.getElementById('auctioneerControls').classList.remove('hidden');
         document.getElementById('bidderControls').classList.add('hidden');
     } else {
+        auctioneerSection.classList.add('hidden');
+        bidderSection.classList.remove('hidden');
         document.getElementById('auctioneerControls').classList.add('hidden');
         document.getElementById('bidderControls').classList.remove('hidden');
     }
@@ -161,6 +178,9 @@ function updateParticipantList() {
         const participantEl = document.createElement('div');
         participantEl.className = 'participant';
         participantEl.textContent = participant.name;
+        if (participant.role === 'auctioneer') {
+            participantEl.classList.add('auctioneer');
+        }
         participantList.appendChild(participantEl);
     });
     participantCount.textContent = participants.length;
@@ -177,7 +197,14 @@ function updateAuctionDisplay(auction) {
 
 function updateBidHistory(history) {
     bidHistory.innerHTML = '';
-    history.forEach(bid => {
+    if (!history || history.length === 0) {
+        bidHistory.innerHTML = '<div class="no-bids">No bids yet</div>';
+        return;
+    }
+
+    // Show latest 10 bids
+    const recentBids = history.slice(-10).reverse();
+    recentBids.forEach(bid => {
         const bidEl = document.createElement('div');
         bidEl.className = 'bid-item';
         bidEl.innerHTML = `
@@ -195,7 +222,7 @@ function showWinnerDisplay(data) {
     document.getElementById('winnerName').textContent = data.winnerName;
     document.getElementById('winningBid').textContent = data.winningBid;
     winnerDisplay.classList.remove('hidden');
-    
+
     setTimeout(() => {
         winnerDisplay.classList.add('hidden');
     }, 5000);
@@ -245,10 +272,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Create room
     document.getElementById('createRoomBtn').addEventListener('click', () => {
-        const roomName = document.getElementById('roomName').value;
+        const roomName = document.getElementById('roomName').value.trim();
         const maxParticipants = document.getElementById('maxParticipants').value;
         const bidIncrement = document.getElementById('bidIncrement').value;
-        
+
         if (!roomName) {
             showBidNotification('Please enter a room name');
             return;
@@ -256,21 +283,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         socket.emit('create-room', {
             roomName,
-            maxParticipants,
-            bidIncrement
+            maxParticipants: parseInt(maxParticipants) || 10,
+            bidIncrement: parseInt(bidIncrement) || 10
         });
     });
 
     // Join room
     document.getElementById('joinFromLinkBtn').addEventListener('click', () => {
-        const bidderName = document.getElementById('bidderName').value;
-        const inviteLink = document.getElementById('inviteLinkInput').value;
-        
+        const bidderName = document.getElementById('bidderName').value.trim();
+        const inviteLink = document.getElementById('inviteLinkInput').value.trim();
+
         if (!bidderName) {
             showBidNotification('Please enter your name');
             return;
         }
-        
+
         if (!inviteLink) {
             showBidNotification('Please enter an invite link');
             return;
@@ -291,11 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start bidding
     document.getElementById('startBiddingBtn').addEventListener('click', () => {
-        const playerName = document.getElementById('playerName').value;
-        const playerClub = document.getElementById('playerClub').value;
+        const playerName = document.getElementById('playerName').value.trim();
+        const playerClub = document.getElementById('playerClub').value.trim();
         const playerPosition = document.getElementById('playerPositionInput').value;
         const startingPrice = document.getElementById('startingPrice').value;
-        
+
         if (!playerName || !playerClub || !startingPrice) {
             showBidNotification('Please fill all player details');
             return;
@@ -305,19 +332,66 @@ document.addEventListener('DOMContentLoaded', () => {
             playerName,
             playerClub,
             playerPosition,
-            startingPrice
+            startingPrice: parseInt(startingPrice) || 100
         });
+    });
+
+    // End auction
+    finalCallBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to end the auction?')) {
+            socket.emit('end-auction');
+        }
+    });
+
+    // Next player
+    nextPlayerBtn.addEventListener('click', () => {
+        // Clear current player fields
+        document.getElementById('playerName').value = '';
+        document.getElementById('playerClub').value = '';
+        document.getElementById('startingPrice').value = '100';
+        showBidNotification('Ready for next player');
     });
 
     // Copy invite link
     copyLinkBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(inviteLink.textContent);
-        showBidNotification('Link copied to clipboard!');
+        navigator.clipboard.writeText(inviteLink.textContent)
+            .then(() => showBidNotification('Link copied to clipboard!'))
+            .catch(err => showBidNotification('Failed to copy link'));
     });
+
+    // Share buttons
+    document.getElementById('shareWhatsApp').addEventListener('click', () => {
+        shareLink('whatsapp');
+    });
+
+    document.getElementById('shareTelegram').addEventListener('click', () => {
+        shareLink('telegram');
+    });
+
+    document.getElementById('shareEmail').addEventListener('click', () => {
+        shareLink('email');
+    });
+
+    function shareLink(platform) {
+        const link = inviteLink.textContent;
+        const message = `Join my player card auction: ${link}`;
+        
+        switch(platform) {
+            case 'whatsapp':
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
+                break;
+            case 'telegram':
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Join my auction!')}`);
+                break;
+            case 'email':
+                window.open(`mailto:?subject=Join my player card auction&body=${encodeURIComponent(message)}`);
+                break;
+        }
+    }
 
     // Touch gestures
     const bidHistoryEl = document.getElementById('bidHistory');
-    if (bidHistoryEl) {
+    if (bidHistoryEl && typeof Hammer !== 'undefined') {
         const mc = new Hammer(bidHistoryEl);
         mc.on("swipeleft", () => {
             bidHistoryEl.scrollBy({ left: 100, behavior: 'smooth' });
@@ -327,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (placeBidBtn) {
+    if (placeBidBtn && typeof Hammer !== 'undefined') {
         const tap = new Hammer(placeBidBtn, { 
             recognizers: [[Hammer.Tap, { time: 250 }]]
         });
