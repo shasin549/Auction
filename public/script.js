@@ -66,6 +66,11 @@ socket.on('auction-started', (data) => {
     // Enable controls
     if (currentRole === 'bidder') {
         placeBidBtn.disabled = false;
+        // Disable if this user is the leading bidder
+        if (document.getElementById('bidderName') && 
+            data.leadingBidder === document.getElementById('bidderName').value) {
+            placeBidBtn.disabled = true;
+        }
     }
     if (currentRole === 'auctioneer') {
         finalCallBtn.disabled = false;
@@ -85,6 +90,11 @@ socket.on('bid-placed', (data) => {
 
     // Update bid history
     updateBidHistory(data.bidHistory);
+
+    // Disable bid button if current user is the leading bidder
+    if (currentRole === 'bidder') {
+        placeBidBtn.disabled = (data.leadingBidder === document.getElementById('bidderName').value);
+    }
 });
 
 socket.on('auction-ended', (data) => {
@@ -138,6 +148,10 @@ socket.on('auction-reset', () => {
         nextPlayerBtn.style.display = 'none';
         startBiddingBtn.disabled = false;
     }
+});
+
+socket.on('bid-error', (message) => {
+    alert(message);
 });
 
 // New event to get participant bids
@@ -394,6 +408,7 @@ function generateInviteLink(roomId) {
     // Set up copy button - remove existing listeners first
     const newCopyBtn = copyLinkBtn.cloneNode(true);
     copyLinkBtn.parentNode.replaceChild(newCopyBtn, copyLinkBtn);
+    copyLinkBtn = newCopyBtn;
     
     newCopyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(inviteLink).then(() => {
@@ -412,18 +427,21 @@ function generateInviteLink(roomId) {
 
     const newWhatsAppBtn = shareWhatsApp.cloneNode(true);
     shareWhatsApp.parentNode.replaceChild(newWhatsAppBtn, shareWhatsApp);
+    shareWhatsApp = newWhatsAppBtn;
     newWhatsAppBtn.addEventListener('click', () => {
         window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
     });
 
     const newTelegramBtn = shareTelegram.cloneNode(true);
     shareTelegram.parentNode.replaceChild(newTelegramBtn, shareTelegram);
+    shareTelegram = newTelegramBtn;
     newTelegramBtn.addEventListener('click', () => {
         window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(roomName)}`);
     });
 
     const newEmailBtn = shareEmail.cloneNode(true);
     shareEmail.parentNode.replaceChild(newEmailBtn, shareEmail);
+    shareEmail = newEmailBtn;
     newEmailBtn.addEventListener('click', () => {
         window.open(`mailto:?subject=Join my auction room&body=${encodeURIComponent(message)}`);
     });
@@ -545,16 +563,6 @@ function startAuction() {
     playerClubInput.value = '';
     playerPositionInput.value = '';
     startingPriceInput.value = '';
-}
-
-function addParticipant(name) {
-    participants.push(name);
-    document.getElementById('participantCount').textContent = participants.length;
-
-    const participantEl = document.createElement('div');
-    participantEl.className = 'participant';
-    participantEl.textContent = name;
-    document.getElementById('participantList').appendChild(participantEl);
 }
 
 function resetAuction() {
