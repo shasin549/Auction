@@ -154,8 +154,8 @@ io.on('connection', (socket) => {
 
     const winnerData = {
       playerName: room.currentAuction.playerName,
-      winnerName: room.currentAuction.leadingBidder || 'No bids',
-      winningBid: room.currentAuction.currentBid
+      winnerName: room.currentAuction.leadingBidder || null,
+      winningBid: room.currentAuction.leadingBidder ? room.currentAuction.currentBid : 0
     };
 
     io.to(socket.roomId).emit('auction-ended', winnerData);
