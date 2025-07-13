@@ -18,7 +18,13 @@ const io = socketIo(server, {
 // MongoDB Connection
 let db;
 async function connectDB() {
-    const client = await MongoClient.connect(process.env.MONGODB_URI);
+    const client = await MongoClient.connect(process.env.MONGODB_URI, {
+  ssl: true,
+  tlsAllowInvalidCertificates: false,
+  tlsInsecure: false,
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
     db = client.db('auctionDB');
     console.log('Connected to MongoDB');
 }
