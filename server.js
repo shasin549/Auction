@@ -116,6 +116,12 @@ io.on('connection', (socket) => {
     const room = rooms.get(socket.roomId);
     if (!room || !room.currentAuction || !room.currentAuction.isActive) return;
 
+    // Prevent bidder from bidding if they're already leading
+    if (room.currentAuction.leadingBidder === socket.userName) {
+      socket.emit('bid-error', 'You are already the leading bidder!');
+      return;
+    }
+
     const newBid = room.currentAuction.currentBid + room.bidIncrement;
     room.currentAuction.currentBid = newBid;
     room.currentAuction.leadingBidder = socket.userName;
@@ -154,12 +160,26 @@ io.on('connection', (socket) => {
 
     const winnerData = {
       playerName: room.currentAuction.playerName,
-      winnerName: room.currentAuction.leadingBidder || null,
-      winningBid: room.currentAuction.leadingBidder ? room.currentAuction.currentBid : 0
+      winnerName: room.currentAuction.leadingBidder || 'No bids',
+      winningBid: room.currentAuction.currentBid
     };
 
     io.to(socket.roomId).emit('auction-ended', winnerData);
     console.log(`Auction ended in room ${socket.roomId}`);
+  });
+
+  socket.on('reset-auction', () => {
+    if (socket.role !== 'auctioneer') return;
+    const room = rooms.get(socket.roomId);
+    if (!room) return;
+
+    // Reset auction state
+    room.currentAuction = null;
+    room.bidHistory = [];
+
+    // Broadcast reset to all clients
+    io.to(socket.roomId).emit('auction-reset');
+    console.log(`Auction reset in room ${socket.roomId}`);
   });
 
   socket.on('get-participant-bids', (participantName) => {
