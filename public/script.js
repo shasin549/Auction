@@ -94,20 +94,48 @@ socket.on('auction-ended', (data) => {
     const winnerDisplay = document.getElementById('winnerDisplay');
     winnerDisplay.classList.remove('hidden');
     document.getElementById('winnerPlayerName').textContent = data.playerName;
-    document.getElementById('winnerName').textContent = data.winnerName;
+    document.getElementById('winnerName').textContent = data.winnerName || 'No bids';
     document.getElementById('winningBid').textContent = `₹${data.winningBid}`;
 
     // Show winning bid at top
     winningBidDisplay.classList.remove('hidden');
-    winningBidderName.textContent = data.winnerName;
+    winningBidderName.textContent = data.winnerName || 'No bids';
     winningBidAmount.textContent = data.winningBid;
 
-    // Disable controls
-    placeBidBtn.disabled = true;
+    // Update controls
+    if (currentRole === 'bidder') {
+        placeBidBtn.disabled = true;
+    }
     if (currentRole === 'auctioneer') {
         finalCallBtn.disabled = true;
         finalCallBtn.style.display = 'none';
         nextPlayerBtn.style.display = 'block';
+        startBiddingBtn.disabled = true;
+    }
+});
+
+socket.on('auction-reset', () => {
+    // Reset UI elements
+    document.getElementById('currentBidAmount').textContent = '₹0';
+    document.getElementById('leadingBidder').textContent = 'None';
+    document.getElementById('bidHistory').innerHTML = '';
+    document.getElementById('winnerDisplay').classList.add('hidden');
+    winningBidDisplay.classList.add('hidden');
+
+    // Reset player display
+    currentPlayerName.textContent = 'Player Name';
+    currentPlayerClub.textContent = 'Club Name';
+    playerPositionDisplay.textContent = 'MID';
+    startingPriceDisplay.textContent = '₹100';
+
+    // Enable controls for new auction
+    if (currentRole === 'bidder') {
+        placeBidBtn.disabled = false;
+    }
+    if (currentRole === 'auctioneer') {
+        finalCallBtn.disabled = true;
+        finalCallBtn.style.display = 'none';
+        nextPlayerBtn.style.display = 'none';
         startBiddingBtn.disabled = false;
     }
 });
@@ -468,7 +496,11 @@ placeBidBtn.addEventListener('click', () => {
     socket.emit('place-bid', {});
 });
 
-nextPlayerBtn.addEventListener('click', resetAuction);
+nextPlayerBtn.addEventListener('click', () => {
+    if (confirm('Are you ready to start bidding on the next player?')) {
+        resetAuction();
+    }
+});
 
 closeModal.addEventListener('click', () => {
     bidHistoryModal.classList.add('hidden');
@@ -526,29 +558,8 @@ function addParticipant(name) {
 }
 
 function resetAuction() {
-    // Reset auction state
-    auctionActive = false;
-    currentBid = 0;
-    leadingBidder = null;
-    winningBidElement = null;
-
-    // Reset UI elements
-    document.getElementById('currentBidAmount').textContent = '₹0';
-    document.getElementById('leadingBidder').textContent = 'None';
-    document.getElementById('bidHistory').innerHTML = '';
-    document.getElementById('winnerDisplay').classList.add('hidden');
-    winningBidDisplay.classList.add('hidden');
-
-    // Enable bidding for new auction
-    if (currentRole === 'bidder') {
-        placeBidBtn.disabled = false;
-    }
-    if (currentRole === 'auctioneer') {
-        finalCallBtn.disabled = true;
-        finalCallBtn.style.display = 'none';
-        nextPlayerBtn.style.display = 'none';
-        startBiddingBtn.disabled = false;
-    }
+    // Send reset command to server
+    socket.emit('reset-auction');
 }
 
 // Initialize
