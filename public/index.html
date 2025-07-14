@@ -5,33 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Card Auction</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1><i class="fas fa-gavel"></i> Player Card Auction</h1>
-            <p>Bid on your favorite player cards and track bidder history</p>
+            <p>Bid on your favorite player cards in real-time auctions</p>
         </header>
 
         <div class="app-container">
-            <!-- Role Selection -->
             <div class="role-section">
-                <h2 class="section-title">Choose Your Role</h2>
-                <button id="auctioneerBtn" class="btn btn-primary">Auctioneer</button>
-                <button id="bidderBtn" class="btn btn-success">Bidder</button>
+                <h2 class="section-title">Role Selection</h2>
 
-                <!-- Auctioneer Section -->
+                <div class="form-group">
+                    <button id="auctioneerBtn" class="btn btn-primary">
+                        <i class="fas fa-user-tie"></i> I'm an Auctioneer
+                    </button>
+                </div>
+
+                <div class="form-group">
+                    <button id="bidderBtn" class="btn btn-success">
+                        <i class="fas fa-user"></i> I'm a Bidder
+                    </button>
+                </div>
+
                 <div id="auctioneerSection" class="hidden">
-                    <h3>Create Auction Room</h3>
+                    <h2 class="section-title">Create Auction Room</h2>
+
                     <div class="form-group">
                         <label for="roomName">Room Name</label>
                         <input type="text" id="roomName" placeholder="Enter room name">
                     </div>
+
                     <div class="form-group">
-                        <label for="maxParticipants">Max Participants</label>
-                        <input type="number" id="maxParticipants" value="10" min="2" max="50">
+                        <label for="maxParticipants">Maximum Participants</label>
+                        <select id="maxParticipants">
+                            <option value="10">10 Participants</option>
+                            <option value="20">20 Participants</option>
+                            <option value="50">50 Participants</option>
+                            <option value="100">100 Participants</option>
+                            <option value="0">Unlimited</option>
+                        </select>
                     </div>
+
                     <div class="form-group">
                         <label for="bidIncrement">Bid Increment</label>
                         <select id="bidIncrement">
@@ -42,130 +59,180 @@
                             <option value="100">₹100</option>
                         </select>
                     </div>
-                    <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
+
+                    <button id="createRoomBtn" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> Create Room
+                    </button>
                 </div>
 
-                <!-- Bidder Section -->
                 <div id="bidderSection" class="hidden">
-                    <h3>Join Auction</h3>
+                    <h2 class="section-title">Join Auction Room</h2>
+
                     <div class="form-group">
                         <label for="bidderName">Your Name</label>
                         <input type="text" id="bidderName" placeholder="Enter your name">
                     </div>
+
                     <div class="form-group">
                         <label for="inviteLinkInput">Paste Invite Link</label>
                         <div class="link-input-container">
-                            <input type="text" id="inviteLinkInput" placeholder="Paste the auction room link here">
-                            <button id="joinFromLinkBtn" class="btn btn-success">Join</button>
+                            <input type="text" id="inviteLinkInput" class="link-input" placeholder="Paste the invite link here">
+                            <button id="joinFromLinkBtn" class="btn btn-primary">
+                                <i class="fas fa-link"></i> Join
+                            </button>
                         </div>
                     </div>
+
+                    <button id="joinRoomBtn" class="btn btn-success hidden">
+                        <i class="fas fa-sign-in-alt"></i> Join Room
+                    </button>
                 </div>
             </div>
 
-            <!-- Main Auction Room -->
             <div class="auction-room">
-                <!-- Room Inactive State -->
-                <div id="roomInactiveSection">
-                    <div class="section-title">Waiting for auction to begin...</div>
-                    <div style="text-align: center; margin-top: 30px;">
-                        <i class="fas fa-users" style="font-size: 5rem; opacity: 0.2;"></i>
-                        <p style="margin-top: 20px; font-size: 1.2rem;">Join or create a room to start bidding!</p>
-                    </div>
-                </div>
-
-                <!-- Room Active State -->
                 <div id="roomActiveSection" class="hidden">
-                    <div id="roomTitle" class="section-title"></div>
-                    <div id="roomCodeDisplay" class="room-code-display">ROOM123</div>
+                    <h2 class="section-title">Auction Room: <span id="roomTitle">Premium Players</span></h2>
 
-                    <!-- Winning Bid Display -->
-                    <div id="winningBidDisplay" class="winning-bid-display hidden">
-                        <div class="winning-bid-info">
-                            <div class="winning-bid-label">Last Winner</div>
-                            <div>Winner: <span id="winningBidderName">-</span></div>
-                            <div>Amount: ₹<span id="winningBidAmount">0</span></div>
+                    <div class="room-code-display">
+                        Room ID: <span id="roomCodeDisplay">Loading...</span>
+                    </div>
+
+                    <div id="inviteLinkContainer" class="hidden">
+                        <div class="invite-link-container">
+                            <div class="invite-link" id="inviteLink">Generating link...</div>
+                            <button class="copy-btn" id="copyLinkBtn">
+                                <i class="fas fa-copy"></i> Copy Link
+                            </button>
+                            <div class="share-buttons">
+                                <button class="share-btn share-whatsapp" id="shareWhatsApp">
+                                    <i class="fab fa-whatsapp"></i> WhatsApp
+                                </button>
+                                <button class="share-btn share-telegram" id="shareTelegram">
+                                    <i class="fab fa-telegram"></i> Telegram
+                                </button>
+                                <button class="share-btn share-email" id="shareEmail">
+                                    <i class="fas fa-envelope"></i> Email
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Player Card -->
                     <div class="player-card">
                         <div class="player-image">
                             <i class="fas fa-user"></i>
-                            <div class="player-position" id="playerPosition">MID</div>
+                            <div class="player-position" id="playerPosition">ST</div>
                         </div>
                         <div class="player-details">
                             <div class="player-name" id="currentPlayerName">Player Name</div>
                             <div class="player-info">
-                                <div class="player-club" id="currentPlayerClub">Club Name</div>
-                                <div class="price-display">Starting: <span id="startingPriceDisplay">₹100</span></div>
+                                <div class="player-club" id="currentPlayerClub">Club / Nationality</div>
+                                <div class="price-display">Starting: <span id="startingPriceDisplay">₹0</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Current Bid Section -->
+                    <div class="winning-bid-display hidden" id="winningBidDisplay">
+                        <div class="winning-bid-info">
+                            <div class="winning-bid-label">WINNING BID</div>
+                            <div><span id="winningBidderName">-</span> won with ₹<span id="winningBidAmount">0</span></div>
+                        </div>
+                        <div>
+                            <button id="nextPlayerBtn" class="btn btn-primary">
+                                <i class="fas fa-forward"></i> Next Player
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="bid-section">
                         <div class="current-bid">
                             <div>
-                                <div style="font-size: 1.2rem; margin-bottom: 5px;">Current Bid</div>
+                                <div>Current Bid</div>
                                 <div class="bid-amount" id="currentBidAmount">₹0</div>
                             </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 1.2rem; margin-bottom: 5px;">Leading Bidder</div>
+                            <div>
+                                <div>Leading</div>
                                 <div class="leading-bidder" id="leadingBidder">None</div>
                             </div>
                         </div>
 
-                        <!-- Auctioneer Controls -->
                         <div id="auctioneerControls" class="hidden">
                             <div class="form-group">
                                 <label for="playerName">Player Name</label>
                                 <input type="text" id="playerName" placeholder="Enter player name">
                             </div>
+
                             <div class="form-group">
-                                <label for="playerClub">Club</label>
-                                <input type="text" id="playerClub" placeholder="Enter club name">
+                                <label for="playerClub">Club/Nationality</label>
+                                <input type="text" id="playerClub" placeholder="Enter club and nationality">
                             </div>
+
                             <div class="form-group">
-                                <label for="playerPositionInput">Position</label>
-                                <select id="playerPositionInput">
-                                    <option value="GK">Goalkeeper (GK)</option>
-                                    <option value="DEF">Defender (DEF)</option>
-                                    <option value="MID" selected>Midfielder (MID)</option>
-                                    <option value="FWD">Forward (FWD)</option>
-                                </select>
+                                <label for="playerPosition">Position</label>
+                                <input type="text" id="playerPositionInput" placeholder="Enter player position (e.g., ST, GK)">
                             </div>
+
                             <div class="form-group">
                                 <label for="startingPrice">Starting Price (₹)</label>
-                                <input type="number" id="startingPrice" placeholder="100" min="1">
+                                <input type="number" id="startingPrice" placeholder="Enter starting price" min="1">
                             </div>
-                            <button id="startBiddingBtn" class="btn btn-primary">Start Bidding</button>
-                            <button id="finalCallBtn" class="btn btn-danger" style="display: none;">End Auction</button>
-                            <button id="nextPlayerBtn" class="btn btn-success" style="display: none;">Next Player</button>
+
+                            <button id="startBiddingBtn" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Start Bidding
+                            </button>
+
+                            <div class="final-call-container">
+                                <button id="finalCallBtn" class="final-call-btn" disabled>
+                                    FINAL CALL
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Bidder Controls -->
                         <div id="bidderControls" class="hidden">
                             <div class="bid-increment-selector">
-                                <span class="bid-increment-label">Bid Increment:</span>
-                                <span id="bidIncrementValue">₹10</span>
+                                <span class="bid-increment-label">Current Bid Increment: ₹<span id="currentBidIncrement">10</span></span>
                             </div>
-                            <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid (+₹<span id="currentBidIncrement">10</span>)</button>
+                            <button id="placeBidBtn" class="btn btn-success" disabled>
+                                <i class="fas fa-hand-point-up"></i> Place Bid (+₹<span id="bidIncrementValue">10</span>)
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Winner Display -->
-                    <div id="winnerDisplay" class="winner-display hidden">
-                        <div class="winner-title">Auction Complete!</div>
-                        <div><strong id="winnerPlayerName">Player Name</strong> sold to</div>
-                        <div><strong id="winnerName">Winner Name</strong></div>
-                        <div>for <strong>₹<span id="winningBid">0</span></strong></div>
+                    <div class="winner-display hidden" id="winnerDisplay">
+                        <div class="winner-title">
+                            <i class="fas fa-trophy"></i> AUCTION WINNER
+                        </div>
+                        <div>Player: <span id="winnerPlayerName">Player Name</span></div>
+                        <div>Winner: <span id="winnerName">None</span></div>
+                        <div>Winning Bid: <span id="winningBid">₹0</span></div>
                     </div>
 
-                    <!-- Invite Link Container -->
-                    <div id="inviteLinkContainer" class="invite-link-container hidden">
-                        <h3>Invite Participants</h3>
-                        <div class="invite-link" id="inviteLink">Room link will appear here</div>
-                        <button id="copyLinkBtn" class="copy-btn">
-                            <i class="fas fa-copy"></i> Copy Link
-                        </button>
-                        <div class="share-buttons">
+                    <div class="participants">
+                        <h3>Participants (<span id="participantCount">0</span>)</h3>
+                        <div class="participant-list" id="participantList">
+                            <!-- Participants will be added here -->
+                        </div>
+                    </div>
+
+                    <div class="bid-history">
+                        <h3>Bid History</h3>
+                        <div id="bidHistory">
+                            <!-- Bid history will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="roomInactiveSection">
+                    <div style="text-align: center; padding: 50px;">
+                        <i class="fas fa-door-open" style="font-size: 4rem; margin-bottom: 20px; color: #3498db;"></i>
+                        <h2>No Active Auction Room</h2>
+                        <p>Create or join a room to start bidding on player cards</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
