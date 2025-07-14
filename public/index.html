@@ -35,7 +35,7 @@
 
                     <div class="form-group">
                         <label for="roomName">Room Name</label>
-                        <input type="text" id="roomName" placeholder="Enter room name">
+                        <input type="text" id="roomName" placeholder="Enter room name" required>
                     </div>
 
                     <div class="form-group">
@@ -70,22 +70,18 @@
 
                     <div class="form-group">
                         <label for="bidderName">Your Name</label>
-                        <input type="text" id="bidderName" placeholder="Enter your name">
+                        <input type="text" id="bidderName" placeholder="Enter your name" required>
                     </div>
 
                     <div class="form-group">
                         <label for="inviteLinkInput">Paste Invite Link</label>
                         <div class="link-input-container">
-                            <input type="text" id="inviteLinkInput" class="link-input" placeholder="Paste the invite link here">
+                            <input type="text" id="inviteLinkInput" class="link-input" placeholder="Paste the invite link here" required>
                             <button id="joinFromLinkBtn" class="btn btn-primary">
                                 <i class="fas fa-link"></i> Join
                             </button>
                         </div>
                     </div>
-
-                    <button id="joinRoomBtn" class="btn btn-success hidden">
-                        <i class="fas fa-sign-in-alt"></i> Join Room
-                    </button>
                 </div>
             </div>
 
@@ -158,22 +154,22 @@
                         <div id="auctioneerControls" class="hidden">
                             <div class="form-group">
                                 <label for="playerName">Player Name</label>
-                                <input type="text" id="playerName" placeholder="Enter player name">
+                                <input type="text" id="playerName" placeholder="Enter player name" required>
                             </div>
 
                             <div class="form-group">
                                 <label for="playerClub">Club/Nationality</label>
-                                <input type="text" id="playerClub" placeholder="Enter club and nationality">
+                                <input type="text" id="playerClub" placeholder="Enter club and nationality" required>
                             </div>
 
                             <div class="form-group">
                                 <label for="playerPosition">Position</label>
-                                <input type="text" id="playerPositionInput" placeholder="Enter player position (e.g., ST, GK)">
+                                <input type="text" id="playerPositionInput" placeholder="Enter player position (e.g., ST, GK)" required>
                             </div>
 
                             <div class="form-group">
                                 <label for="startingPrice">Starting Price (₹)</label>
-                                <input type="number" id="startingPrice" placeholder="Enter starting price" min="1">
+                                <input type="number" id="startingPrice" placeholder="Enter starting price" min="1" required>
                             </div>
 
                             <button id="startBiddingBtn" class="btn btn-primary">
