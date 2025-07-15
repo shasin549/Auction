@@ -1,26 +1,26 @@
 {
-  "name": "player-card-auction",
+  "name": "auction-app",
   "version": "1.0.0",
-  "description": "Real-time player card auction app using Express and Socket.IO",
+  "description": "Real-time player card auction web app using Express and Socket.IO",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
+  "keywords": [
+    "auction",
+    "socket.io",
+    "express",
+    "real-time",
+    "bidding",
+    "node"
+  ],
+  "author": "Shasin",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.8.1"
   },
   "engines": {
-    "node": ">=14.0.0"
-  },
-  "keywords": [
-    "auction",
-    "real-time",
-    "socket.io",
-    "express",
-    "bidding"
-  ],
-  "author": "Your Name",
-  "license": "MIT"
+    "node": "18.x"
+  }
 }
