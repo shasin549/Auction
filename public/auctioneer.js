@@ -1,6 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const socket = io();
-  
+  const socket = io('https://autciton-zfku.onrender.com', {
+    transports: ['websocket'],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+  });
+
   // DOM Elements
   const createRoomBtn = document.getElementById("createRoomBtn");
   const roomNameInput = document.getElementById("roomName");
@@ -23,8 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
     createRoomBtn.disabled = true;
   });
 
+  socket.on('connect_error', (err) => {
+    console.error('Connection error:', err);
+    alert('Connection error: ' + err.message);
+  });
+
   // Create Room Button Handler
-  createRoomBtn.addEventListener("click", async () => {
+  createRoomBtn.addEventListener("click", () => {
     const roomName = roomNameInput.value.trim();
     const bidIncrement = parseInt(bidIncrementInput.value);
 
@@ -33,68 +42,53 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Generate room ID
     roomId = generateRoomId();
     createRoomBtn.disabled = true;
     createRoomBtn.textContent = "Creating...";
 
-    try {
-      // Create room
-      await emitWithTimeout(socket, "create-room", {
-        roomId,
-        roomName,
-        bidIncrement,
-        maxParticipants: 100
-      });
-
-      // Join room as auctioneer
-      await emitWithTimeout(socket, "join-room", {
-        roomId,
-        userName: "Auctioneer",
-        role: "auctioneer"
-      });
-
-      // Update UI
-      roomIdDisplay.textContent = roomId;
-      inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
-      roomInfo.classList.remove("hidden");
-      playerForm.classList.remove("hidden");
-      createRoomBtn.textContent = "Room Created";
-    } catch (error) {
-      console.error("Error:", error);
-      alert(error.message || "Failed to create room");
-      createRoomBtn.disabled = false;
-      createRoomBtn.textContent = "Create Room";
-    }
+    socket.emit("create-room", {
+      roomId,
+      roomName,
+      bidIncrement,
+      maxParticipants: 100
+    }, (response) => {
+      if (response?.success) {
+        socket.emit("join-room", {
+          roomId,
+          userName: "Auctioneer",
+          role: "auctioneer"
+        }, (joinResponse) => {
+          if (joinResponse?.success) {
+            roomIdDisplay.textContent = roomId;
+            inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
+            roomInfo.classList.remove("hidden");
+            playerForm.classList.remove("hidden");
+            createRoomBtn.textContent = "Room Created";
+          } else {
+            handleError("Failed to join room");
+          }
+        });
+      } else {
+        handleError(response?.message || "Failed to create room");
+      }
+    });
   });
 
-  // Helper function to generate room ID
   function generateRoomId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
-  // Helper function for socket emits with timeout
-  function emitWithTimeout(socket, event, data, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-      socket.emit(event, data, (response) => {
-        if (response && response.success) {
-          resolve(response);
-        } else {
-          reject(new Error(response?.message || "Request failed"));
-        }
-      });
-
-      setTimeout(() => {
-        reject(new Error("Request timed out"));
-      }, timeout);
-    });
+  function handleError(message) {
+    alert(message);
+    createRoomBtn.disabled = false;
+    createRoomBtn.textContent = "Create Room";
   }
 
-  // Copy invite link to clipboard
+  // Copy invite link
   inviteLink.addEventListener('click', (e) => {
     e.preventDefault();
     navigator.clipboard.writeText(inviteLink.textContent)
-      .then(() => alert("Invite link copied to clipboard!"))
-      .catch(() => alert("Failed to copy link"));
+      .then(() => alert("Link copied!"))
+      .catch(() => alert("Copy failed"));
   });
 });
