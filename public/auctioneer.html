@@ -10,37 +10,38 @@
   <div class="container">
     <header>
       <h1>Auctioneer Panel</h1>
-      <p>Enter room and player details</p>
+      <p id="connection-status">Disconnected</p>
     </header>
 
     <main>
-      <div class="form-group">
-        <label for="roomName">Room Name</label>
-        <input type="text" id="roomName" placeholder="e.g., PremierLeague2025" required>
+      <!-- Room Creation Section -->
+      <div id="roomCreation">
+        <div class="form-group">
+          <label for="roomName">Room Name</label>
+          <input type="text" id="roomName" placeholder="e.g., PremierLeague2025" required>
+        </div>
+        <div class="form-group">
+          <label for="bidIncrement">Bid Increment</label>
+          <select id="bidIncrement" required>
+            <option value="5">₹5</option>
+            <option value="10" selected>₹10</option>
+            <option value="25">₹25</option>
+          </select>
+        </div>
+        <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
       </div>
 
-      <div class="form-group">
-        <label for="bidIncrement">Bid Increment</label>
-        <select id="bidIncrement" required>
-          <option value="5">₹5</option>
-          <option value="10" selected>₹10</option>
-          <option value="25">₹25</option>
-        </select>
-      </div>
-
-      <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
-
+      <!-- Room Info Section (hidden initially) -->
       <div id="roomInfo" class="hidden">
+        <h2>Room Information</h2>
         <p><strong>Room ID:</strong> <span id="roomIdDisplay"></span></p>
-        <p><strong>Invite Link:</strong> 
-          <a href="#" id="inviteLink" style="color: #4f46e5; text-decoration: underline;"></a>
-        </p>
+        <p><strong>Invite Link:</strong> <a href="#" id="inviteLink"></a></p>
+        <p><strong>Participants:</strong> <span id="participantCount">0</span></p>
       </div>
 
-      <hr>
-
+      <!-- Player Form Section (hidden initially) -->
       <div id="playerForm" class="hidden">
-        <h2>Enter Player Info</h2>
+        <h2>Player Details</h2>
         <div class="form-group">
           <label for="playerName">Player Name</label>
           <input type="text" id="playerName" required>
@@ -57,7 +58,26 @@
           <label for="startingPrice">Starting Price (₹)</label>
           <input type="number" id="startingPrice" min="1" required>
         </div>
-        <button id="startAuctionBtn" class="btn btn-success">Start Auction</button>
+        <div class="button-group">
+          <button id="startAuctionBtn" class="btn btn-success">Start Bidding</button>
+          <button id="finalCallBtn" class="btn btn-warning hidden">Final Call!</button>
+          <button id="nextPlayerBtn" class="btn btn-info hidden">Next Player</button>
+        </div>
+      </div>
+
+      <!-- Player Preview Section -->
+      <div id="playerPreview" class="hidden">
+        <h2>Current Player</h2>
+        <div class="player-card">
+          <p><strong>Name:</strong> <span id="previewName">-</span></p>
+          <p><strong>Club:</strong> <span id="previewClub">-</span></p>
+          <p><strong>Position:</strong> <span id="previewPosition">-</span></p>
+          <p><strong>Starting Price:</strong> ₹<span id="previewPrice">0</span></p>
+        </div>
+        <div class="auction-status">
+          <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
+          <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
+        </div>
       </div>
     </main>
   </div>
