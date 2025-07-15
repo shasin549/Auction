@@ -1,6 +1,4 @@
-// auctioneer.js
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize Socket.io connection
   const socket = io();
   
   // DOM Elements
@@ -12,42 +10,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const roomInfo = document.getElementById("roomInfo");
   const playerForm = document.getElementById("playerForm");
 
-  // Player form elements
-  const playerNameInput = document.getElementById("playerName");
-  const playerClubInput = document.getElementById("playerClub");
-  const playerPositionInput = document.getElementById("playerPosition");
-  const startingPriceInput = document.getElementById("startingPrice");
-  const startAuctionBtn = document.getElementById("startAuctionBtn");
-
-  // Preview elements
-  const previewName = document.getElementById("previewName");
-  const previewClub = document.getElementById("previewClub");
-  const previewPosition = document.getElementById("previewPosition");
-  const previewPrice = document.getElementById("previewPrice");
-  const playerPreview = document.getElementById("playerPreview");
-
   let roomId = "";
 
-  // Connection status indicators
+  // Connection handling
   socket.on('connect', () => {
     console.log('✅ Connected to server');
     createRoomBtn.disabled = false;
-    createRoomBtn.textContent = "Create Room";
   });
 
   socket.on('disconnect', () => {
     console.log('❌ Disconnected from server');
     createRoomBtn.disabled = true;
-    createRoomBtn.textContent = "Disconnected";
   });
 
-  // Generate random room ID
-  function generateRoomId() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  }
-
   // Create Room Button Handler
-  createRoomBtn.addEventListener("click", () => {
+  createRoomBtn.addEventListener("click", async () => {
     const roomName = roomNameInput.value.trim();
     const bidIncrement = parseInt(bidIncrementInput.value);
 
@@ -56,78 +33,62 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Generate room ID and create room
+    // Generate room ID
     roomId = generateRoomId();
     createRoomBtn.disabled = true;
     createRoomBtn.textContent = "Creating...";
 
-    socket.emit("create-room", {
-      roomId,
-      roomName,
-      bidIncrement,
-      maxParticipants: 100
-    }, (response) => {
-      if (response && response.success) {
-        // Join the room as auctioneer
-        socket.emit("join-room", {
-          roomId,
-          userName: "Auctioneer",
-          role: "auctioneer"
-        }, (joinResponse) => {
-          if (joinResponse && joinResponse.success) {
-            // Update UI
-            roomIdDisplay.textContent = roomId;
-            inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
-            roomInfo.classList.remove("hidden");
-            playerForm.classList.remove("hidden");
-            createRoomBtn.textContent = "Room Created!";
-          } else {
-            alert("Failed to join room");
-            createRoomBtn.disabled = false;
-            createRoomBtn.textContent = "Create Room";
-          }
-        });
-      } else {
-        alert("Failed to create room");
-        createRoomBtn.disabled = false;
-        createRoomBtn.textContent = "Create Room";
-      }
-    });
-  });
+    try {
+      // Create room
+      await emitWithTimeout(socket, "create-room", {
+        roomId,
+        roomName,
+        bidIncrement,
+        maxParticipants: 100
+      });
 
-  // Start Auction Button Handler
-  startAuctionBtn.addEventListener("click", () => {
-    const playerName = playerNameInput.value.trim();
-    const playerClub = playerClubInput.value.trim();
-    const playerPosition = playerPositionInput.value.trim();
-    const startingPrice = parseInt(startingPriceInput.value);
+      // Join room as auctioneer
+      await emitWithTimeout(socket, "join-room", {
+        roomId,
+        userName: "Auctioneer",
+        role: "auctioneer"
+      });
 
-    if (!playerName || !playerClub || !playerPosition || isNaN(startingPrice)) {
-      alert("Please fill all player fields correctly");
-      return;
+      // Update UI
+      roomIdDisplay.textContent = roomId;
+      inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
+      roomInfo.classList.remove("hidden");
+      playerForm.classList.remove("hidden");
+      createRoomBtn.textContent = "Room Created";
+    } catch (error) {
+      console.error("Error:", error);
+      alert(error.message || "Failed to create room");
+      createRoomBtn.disabled = false;
+      createRoomBtn.textContent = "Create Room";
     }
-
-    const playerData = {
-      playerName,
-      playerClub,
-      playerPosition,
-      startingPrice
-    };
-
-    // Show preview
-    previewName.textContent = playerName;
-    previewClub.textContent = playerClub;
-    previewPosition.textContent = playerPosition;
-    previewPrice.textContent = startingPrice;
-    playerPreview.classList.remove("hidden");
-
-    // Start auction
-    socket.emit("start-auction", playerData, (response) => {
-      if (!response || !response.success) {
-        alert("Failed to start auction");
-      }
-    });
   });
+
+  // Helper function to generate room ID
+  function generateRoomId() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
+
+  // Helper function for socket emits with timeout
+  function emitWithTimeout(socket, event, data, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+      socket.emit(event, data, (response) => {
+        if (response && response.success) {
+          resolve(response);
+        } else {
+          reject(new Error(response?.message || "Request failed"));
+        }
+      });
+
+      setTimeout(() => {
+        reject(new Error("Request timed out"));
+      }, timeout);
+    });
+  }
 
   // Copy invite link to clipboard
   inviteLink.addEventListener('click', (e) => {
