@@ -14,37 +14,37 @@ const io = socketIo(server, {
   }
 });
 
-// Serve static files (index.html, script.js, style.css, etc.)
+// ✅ Serve static files from /public
 app.use(express.static(path.join(__dirname, 'public')));
-// Serve socket.io client library if needed
-app.get('/socket.io/socket.io.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
+
+// ✅ Serve index.html for the root path
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Store rooms in memory
+// ====== Auction Room Logic ======
+
 const rooms = new Map();
 
 io.on('connection', (socket) => {
-  console.log(`🔌 New client connected: ${socket.id}`);
+  console.log(`🔌 Connected: ${socket.id}`);
 
-  // Join a room
+  // Join room
   socket.on('join-room', ({ roomId, userName, role }) => {
     socket.join(roomId);
     socket.roomId = roomId;
     socket.userName = userName;
     socket.role = role;
 
-    // If room doesn't exist, skip
     if (!rooms.has(roomId)) return;
 
     const room = rooms.get(roomId);
-
-    // Add participant
-    if (!room.participants.find(p => p.id === socket.id)) {
+    const alreadyInRoom = room.participants.find(p => p.id === socket.id);
+    if (!alreadyInRoom) {
       room.participants.push({ id: socket.id, name: userName, role });
     }
 
-    // Send room state to user
+    // Send room state
     socket.emit('room-state', {
       participants: room.participants,
       currentAuction: room.currentAuction,
@@ -53,7 +53,6 @@ io.on('connection', (socket) => {
       bidIncrement: room.bidIncrement
     });
 
-    // Notify others in room
     io.to(roomId).emit('participant-joined', {
       name: userName,
       participants: room.participants
@@ -62,7 +61,7 @@ io.on('connection', (socket) => {
     console.log(`✅ ${userName} joined ${roomId} as ${role}`);
   });
 
-  // Create a room
+  // Create room
   socket.on('create-room', ({ roomId, roomName, bidIncrement, maxParticipants }) => {
     rooms.set(roomId, {
       roomName,
@@ -76,12 +75,12 @@ io.on('connection', (socket) => {
     console.log(`🏠 Room created: ${roomId} (${roomName})`);
   });
 
-  // Start an auction
+  // Start auction
   socket.on('start-auction', ({ playerName, playerClub, playerPosition, startingPrice }) => {
     const room = rooms.get(socket.roomId);
     if (!room || socket.role !== 'auctioneer') return;
 
-    const auctionData = {
+    const auction = {
       playerName,
       playerClub,
       playerPosition,
@@ -91,20 +90,19 @@ io.on('connection', (socket) => {
       isActive: true
     };
 
-    room.currentAuction = auctionData;
+    room.currentAuction = auction;
     room.bidHistory = [];
 
-    io.to(socket.roomId).emit('auction-started', auctionData);
-    console.log(`🚀 Auction started in ${socket.roomId} for ${playerName}`);
+    io.to(socket.roomId).emit('auction-started', auction);
+    console.log(`🚀 Auction started in ${socket.roomId}: ${playerName}`);
   });
 
-  // Place a bid
+  // Place bid
   socket.on('place-bid', () => {
     const room = rooms.get(socket.roomId);
-    if (!room || !room.currentAuction || !room.currentAuction.isActive || socket.role !== 'bidder') return;
+    if (!room || !room.currentAuction || !room.currentAuction.isActive) return;
 
     const newBid = room.currentAuction.currentBid + room.bidIncrement;
-
     room.currentAuction.currentBid = newBid;
     room.currentAuction.leadingBidder = socket.userName;
 
@@ -122,13 +120,13 @@ io.on('connection', (socket) => {
       bidHistory: room.bidHistory
     });
 
-    console.log(`💰 ${socket.userName} placed ₹${newBid} in ${socket.roomId}`);
+    console.log(`💰 ${socket.userName} bid ₹${newBid} in ${socket.roomId}`);
   });
 
-  // End the auction
+  // End auction
   socket.on('end-auction', () => {
     const room = rooms.get(socket.roomId);
-    if (!room || socket.role !== 'auctioneer' || !room.currentAuction) return;
+    if (!room || !room.currentAuction || socket.role !== 'auctioneer') return;
 
     room.currentAuction.isActive = false;
 
@@ -141,7 +139,7 @@ io.on('connection', (socket) => {
     console.log(`🏁 Auction ended in ${socket.roomId}`);
   });
 
-  // Handle disconnection
+  // Disconnect
   socket.on('disconnect', () => {
     const roomId = socket.roomId;
     const room = rooms.get(roomId);
@@ -156,7 +154,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start server
+// ✅ Start the server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
