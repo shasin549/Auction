@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Auction Room - Role Selection</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Card Auction</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -23,13 +23,28 @@
     </main>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    document.getElementById("auctioneerBtn").addEventListener("click", () => {
-      window.open("auctioneer.html", "_blank");
-    });
+    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize Socket.io connection
+      const socket = io();
+      
+      document.getElementById("auctioneerBtn").addEventListener("click", () => {
+        window.location.href = "auctioneer.html";
+      });
 
-    document.getElementById("bidderBtn").addEventListener("click", () => {
-      window.open("bidder.html", "_blank");
+      document.getElementById("bidderBtn").addEventListener("click", () => {
+        window.location.href = "bidder.html";
+      });
+
+      // Connection status handling
+      socket.on('connect', () => {
+        console.log('Connected to server');
+      });
+
+      socket.on('disconnect', () => {
+        console.log('Disconnected from server');
+      });
     });
   </script>
 </body>
