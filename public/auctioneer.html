@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auctioneer Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Auctioneer Panel</h1>
+      <p>Enter room and player details</p>
+    </header><main>
+  <div class="form-group">
+    <label for="roomName">Room Name</label>
+    <input type="text" id="roomName" placeholder="e.g., PremierLeague2025">
+  </div>
+
+  <div class="form-group">
+    <label for="bidIncrement">Bid Increment</label>
+    <select id="bidIncrement">
+      <option value="5">₹5</option>
+      <option value="10" selected>₹10</option>
+      <option value="25">₹25</option>
+    </select>
+  </div>
+
+  <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
+
+  <div id="roomInfo" class="hidden">
+    <p><strong>Room ID:</strong> <span id="roomIdDisplay"></span></p>
+    <p><strong>Invite Link:</strong> <span id="inviteLink"></span></p>
+  </div>
+
+  <hr>
+  <div id="playerForm" class="hidden">
+    <h2>Enter Player Info</h2>
+    <div class="form-group">
+      <label for="playerName">Player Name</label>
+      <input type="text" id="playerName">
+    </div>
+    <div class="form-group">
+      <label for="playerClub">Club</label>
+      <input type="text" id="playerClub">
+    </div>
+    <div class="form-group">
+      <label for="playerPosition">Position</label>
+      <input type="text" id="playerPosition">
+    </div>
+    <div class="form-group">
+      <label for="startingPrice">Starting Price (₹)</label>
+      <input type="number" id="startingPrice" min="1">
+    </div>
+    <button id="startAuctionBtn" class="btn btn-success">Start Auction</button>
+  </div>
+
+  <div id="playerPreview" class="hidden">
+    <h3>Preview</h3>
+    <p><strong>Name:</strong> <span id="previewName"></span></p>
+    <p><strong>Club:</strong> <span id="previewClub"></span></p>
+    <p><strong>Position:</strong> <span id="previewPosition"></span></p>
+    <p><strong>Price:</strong> ₹<span id="previewPrice"></span></p>
+  </div>
+</main>
+
+  </div>  <script src="/socket.io/socket.io.js"></script>  <script src="auctioneer.js"></script></body>
+</html>
