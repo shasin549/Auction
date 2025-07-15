@@ -15,8 +15,7 @@ const io = socketIo(server, {
 });
 
 // Serve static files (index.html, script.js, style.css, etc.)
-app.use(express.static(path.join(__dirname)));
-
+app.use(express.static(path.join(__dirname, 'public')));
 // Serve socket.io client library if needed
 app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
