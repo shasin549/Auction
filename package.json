@@ -46,16 +46,16 @@
     "socket.io",
     "express"
   ],
-  "author": "Your Name",
+  "author": "Shasin",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/auction-platform.git"
+    "url": "https://github.com/shasin549/Auction.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/auction-platform/issues"
+    "url": "https://github.com/shasin549/Auction/issues"
   },
-  "homepage": "https://github.com/yourusername/auction-platform#readme",
+  "homepage": "https://github.com/shasin549/Auction#readme",
   "jest": {
     "testEnvironment": "node",
     "coveragePathIgnorePatterns": [
