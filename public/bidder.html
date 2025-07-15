@@ -4,68 +4,95 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bidder Panel</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Load Socket.IO client from CDN as fallback -->
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: rgba(0,0,0,0.3);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    h1, h2 { margin-bottom: 15px; }
+    .hidden { display: none; }
+    input, button {
+      padding: 10px 15px;
+      border-radius: 5px;
+      border: none;
+      margin: 5px 0;
+      width: 100%;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled { background: #cccccc; cursor: not-allowed; }
+    .winner-card {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid #4CAF50;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .bid-history, .participant-list {
+      margin: 15px 0;
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .bid-item, .participant-item {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <header>
+    <div id="joinForm">
       <h1>Bidder Panel</h1>
-      <div id="connection-status" class="connection-badge disconnected">Disconnected</div>
-    </header>
-
-    <main>
-      <!-- Join Form Section -->
-      <div id="joinForm">
-        <div class="form-group">
-          <label for="bidderName">Your Name</label>
-          <input type="text" id="bidderName" placeholder="Enter your name" required>
+      <input type="text" id="bidderName" placeholder="Your Name">
+      <input type="text" id="roomId" placeholder="Room ID">
+      <button id="joinBtn">Join Auction</button>
+    </div>
+    
+    <div id="auctionArea" class="hidden">
+      <h2 id="playerNameDisplay">-</h2>
+      <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
+      <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
+      <button id="placeBidBtn" disabled>Place Bid</button>
+      
+      <div id="winnerSection" class="hidden winner-card">
+        <h2>FINAL CALL</h2>
+        <h3>AUCTION WINNER</h3>
+        <p><strong>Player:</strong> <span id="wonPlayer">-</span></p>
+        <p><strong>Winner:</strong> <span id="winnerName">-</span></p>
+        <p><strong>Winning Bid:</strong> ₹<span id="winningBid">0</span></p>
+        
+        <div class="participant-list">
+          <h4>Participants</h4>
+          <div id="participantsList"></div>
         </div>
-        <div class="form-group">
-          <button id="joinBtn" class="btn btn-primary">Join Auction Room</button>
-        </div>
-        <div id="roomInfo" class="hidden">
-          <p>Joined room: <span id="roomIdDisplay"></span></p>
-        </div>
-      </div>
-
-      <!-- Auction Area (hidden initially) -->
-      <div id="auctionArea" class="hidden">
-        <div class="player-card">
-          <h2>Current Player</h2>
-          <p><strong>Name:</strong> <span id="livePlayerName">-</span></p>
-          <p><strong>Club:</strong> <span id="livePlayerClub">-</span></p>
-          <p><strong>Position:</strong> <span id="livePlayerPosition">-</span></p>
-        </div>
-
-        <div class="auction-status">
-          <p><strong>Current Bid:</strong> ₹<span id="liveBid">0</span></p>
-          <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
-        </div>
-
-        <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid</button>
-
-        <!-- Winner Information -->
-        <div id="winInfo" class="hidden winner-card">
-          <h3>🏆 Auction Result</h3>
-          <p><strong>Winner:</strong> <span id="winnerName">-</span></p>
-          <p><strong>Player:</strong> <span id="winnerPlayer">-</span></p>
-          <p><strong>Winning Bid:</strong> ₹<span id="winnerAmount">0</span></p>
+        
+        <div class="bid-history">
+          <h4>Bid History</h4>
+          <div id="bidHistoryList"></div>
         </div>
       </div>
-    </main>
+    </div>
   </div>
 
-  <script>
-    // Extract roomId from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomId = urlParams.get('room');
-    if (roomId) {
-      document.getElementById('roomIdDisplay').textContent = roomId;
-    }
-  </script>
-  
+  <script src="/socket.io/socket.io.js"></script>
   <script src="bidder.js"></script>
 </body>
 </html>
