@@ -9,26 +9,19 @@ const io = socketIo(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  },
-  transports: ['websocket', 'polling']
+  }
 });
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Routes
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// In-memory store for rooms
+// In-memory store
 const rooms = new Map();
 
-// Socket.IO connection handler
 io.on('connection', (socket) => {
   console.log(`New connection: ${socket.id}`);
 
-  // Create room (auctioneer only)
+  // Create room
   socket.on('create-room', ({ roomId, roomName, bidIncrement }, callback) => {
     rooms.set(roomId, {
       roomName,
@@ -38,16 +31,13 @@ io.on('connection', (socket) => {
       bidIncrement: bidIncrement || 10,
       wins: {}
     });
-    console.log(`Room created: ${roomId}`);
     callback({ success: true });
   });
 
   // Join room
   socket.on('join-room', ({ roomId, userName, role }, callback) => {
     const room = rooms.get(roomId);
-    if (!room) {
-      return callback({ success: false, message: "Room not found" });
-    }
+    if (!room) return callback({ success: false, message: "Room not found" });
 
     socket.join(roomId);
     socket.roomId = roomId;
@@ -56,22 +46,18 @@ io.on('connection', (socket) => {
 
     room.participants.push({ id: socket.id, name: userName, role });
 
-    // Notify room
     io.to(roomId).emit('participant-joined', {
       name: userName,
       participants: room.participants
     });
 
-    // Send current state
-    callback({
+    callback({ 
       success: true,
-      participants: room.participants,
-      currentAuction: room.currentAuction,
-      bidHistory: room.bidHistory
+      currentAuction: room.currentAuction
     });
   });
 
-  // Start auction (auctioneer only)
+  // Start auction
   socket.on('start-auction', (playerData, callback) => {
     const room = rooms.get(socket.roomId);
     if (!room || socket.role !== 'auctioneer') {
@@ -88,15 +74,17 @@ io.on('connection', (socket) => {
     room.currentAuction = auction;
     room.bidHistory = [];
 
-    // Send minimal data to bidders
-    const bidderData = { 
+    // Send to bidders
+    socket.to(socket.roomId).emit('auction-started', {
       playerName: playerData.playerName,
+      playerClub: playerData.playerClub,
+      playerPosition: playerData.playerPosition,
       startingPrice: playerData.startingPrice
-    };
+    });
 
-    socket.to(socket.roomId).emit('auction-started', bidderData);
-    socket.emit('auction-started', playerData); // Full data to auctioneer
-    
+    // Send to auctioneer (full data)
+    socket.emit('auction-started', playerData);
+
     callback({ success: true });
   });
 
@@ -111,17 +99,15 @@ io.on('connection', (socket) => {
     room.currentAuction.currentBid = newBid;
     room.currentAuction.leadingBidder = socket.userName;
 
-    const bid = {
+    room.bidHistory.push({
       bidder: socket.userName,
       amount: newBid,
       timestamp: new Date()
-    };
-    room.bidHistory.unshift(bid);
+    });
 
     io.to(socket.roomId).emit('bid-placed', {
       currentBid: newBid,
-      leadingBidder: socket.userName,
-      bidHistory: room.bidHistory
+      leadingBidder: socket.userName
     });
 
     callback({ success: true });
@@ -151,14 +137,13 @@ io.on('connection', (socket) => {
     io.to(socket.roomId).emit('auction-ended', {
       playerName: auction.playerName,
       winnerName,
-      winningBid,
-      participants: room.participants
+      winningBid
     });
 
     callback({ success: true });
   });
 
-  // Disconnection handler
+  // Disconnect
   socket.on('disconnect', () => {
     const room = rooms.get(socket.roomId);
     if (room) {
@@ -171,7 +156,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
