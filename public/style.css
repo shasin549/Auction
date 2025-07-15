@@ -1,45 +1,284 @@
-/* style.css */
+/* style.css - Complete Styles for Auction Platform */
 
-{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+/* Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
+body {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  line-height: 1.6;
+}
 
-body { background: linear-gradient(135deg, #667eea, #764ba2); color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+/* Container Styles */
+.container {
+  width: 100%;
+  max-width: 800px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
 
-.container { width: 100%; max-width: 600px; background: rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 20px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); }
+/* Header Styles */
+header {
+  text-align: center;
+  margin-bottom: 30px;
+  position: relative;
+}
 
-header { text-align: center; margin-bottom: 30px; }
+header h1 {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
 
-header h1 { font-size: 2rem; margin-bottom: 10px; }
+header p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
 
-header p { font-size: 1rem; color: #ddd; }
+#connection-status {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.8rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
 
-.form-group { margin-bottom: 20px; }
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
 
-label { display: block; margin-bottom: 8px; font-weight: 600; }
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
 
-input, select { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 1rem; background: rgba(255, 255, 255, 0.2); color: white; }
+input, select {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transition: all 0.3s ease;
+}
 
-input::placeholder { color: rgba(255, 255, 255, 0.6); }
+input:focus, select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
+}
 
-.btn { width: 100%; padding: 12px; font-size: 1rem; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; transition: background 0.3s ease; }
+input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
 
-.btn-primary { background: #4f46e5; color: white; }
+/* Button Styles */
+.btn {
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: inline-block;
+}
 
-.btn-primary:hover { background: #4338ca; }
+.btn-primary {
+  background: #4f46e5;
+  color: white;
+}
 
-.btn-success { background: #10b981; color: white; }
+.btn-primary:hover {
+  background: #4338ca;
+}
 
-.btn-success:hover { background: #059669; }
+.btn-success {
+  background: #10b981;
+  color: white;
+}
 
-.btn-danger { background: #ef4444; color: white; }
+.btn-success:hover {
+  background: #059669;
+}
 
-.btn-danger:hover { background: #dc2626; }
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
 
-.hidden { display: none; }
+.btn-warning:hover {
+  background: #d97706;
+}
 
-hr { border: none; height: 1px; background: rgba(255, 255, 255, 0.2); margin: 30px 0; }
+.btn-info {
+  background: #3b82f6;
+  color: white;
+}
 
-#winInfo { margin-top: 20px; padding: 20px; background: rgba(0, 0, 0, 0.2); border-radius: 10px; text-align: center; }
+.btn-info:hover {
+  background: #2563eb;
+}
 
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
 
+.btn-danger:hover {
+  background: #dc2626;
+}
 
+.btn-disabled {
+  background: #6b7280 !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+/* Room Info Styles */
+#roomInfo {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+#roomInfo p {
+  margin-bottom: 10px;
+}
+
+#inviteLink {
+  color: #a5b4fc;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+#inviteLink:hover {
+  color: #818cf8;
+}
+
+/* Player Card Styles */
+.player-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-card p {
+  margin-bottom: 10px;
+}
+
+.auction-status {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.auction-status p {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#currentBid {
+  color: #10b981;
+  font-weight: 700;
+}
+
+#leadingBidder {
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block;
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 30px 0;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px;
+  }
+  
+  header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.player-card, .auction-status {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  background: #333;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  animation: fadeIn 0.3s;
+}
+
+.toast.success { background: #10b981; }
+.toast.error { background: #ef4444; }
+.toast.warning { background: #f59e0b; }
+.toast.info { background: #3b82f6; }
