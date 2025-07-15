@@ -4,247 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bidder Panel</title>
-  <style>
-    :root {
-      --primary-color: #3a86ff;
-      --secondary-color: #8338ec;
-      --dark-color: #212529;
-      --light-color: #f8f9fa;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, var(--dark-color), #343a40);
-      color: var(--light-color);
-      margin: 0;
-      padding: 20px;
-      min-height: 100vh;
-    }
-    
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    
-    .panel {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    h1, h2 {
-      color: var(--light-color);
-      margin-top: 0;
-      border-bottom: 2px solid var(--primary-color);
-      padding-bottom: 10px;
-    }
-    
-    .player-details {
-      margin-bottom: 20px;
-    }
-    
-    .detail-item {
-      margin-bottom: 15px;
-    }
-    
-    .detail-label {
-      font-weight: bold;
-      color: var(--primary-color);
-      display: block;
-      margin-bottom: 5px;
-    }
-    
-    .detail-value {
-      background: rgba(0, 0, 0, 0.2);
-      padding: 8px 12px;
-      border-radius: 5px;
-      display: inline-block;
-    }
-    
-    .price-display {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #ffbe0b;
-      margin: 20px 0;
-    }
-    
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s;
-      flex: 1;
-    }
-    
-    .btn-primary {
-      background: var(--primary-color);
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background: #2667cc;
-    }
-    
-    .btn-warning {
-      background: #ffbe0b;
-      color: var(--dark-color);
-    }
-    
-    .btn-warning:hover {
-      background: #e0a800;
-    }
-    
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-    
-    .btn-secondary:hover {
-      background: #5a6268;
-    }
-    
-    .btn:disabled {
-      background: #6c757d;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-    
-    .hidden {
-      display: none;
-    }
-    
-    .bid-status {
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 8px;
-    }
-    
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    
-    .status-label {
-      font-weight: bold;
-    }
-    
-    .status-value {
-      font-weight: bold;
-      color: #ffbe0b;
-    }
-    
-    @media (max-width: 768px) {
-      .container {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <!-- Player Details Panel -->
-    <div class="panel">
-      <h1>Player Details</h1>
-      
-      <div id="joinForm">
-        <div class="detail-item">
-          <span class="detail-label">Your Name</span>
-          <input type="text" id="bidderName" class="detail-value" placeholder="Enter your name">
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Room ID</span>
-          <input type="text" id="roomId" class="detail-value" placeholder="Enter room ID">
-        </div>
-        <button id="joinBtn" class="btn btn-primary">Join Auction</button>
+    <header>
+      <h1>Bidder Panel</h1>
+      <div id="connectionStatus" class="connection-status">
+        <span class="status-icon"></span>
+        <span class="status-text">Disconnected</span>
       </div>
-      
-      <div id="playerDetails" class="hidden">
-        <div class="detail-item">
-          <span class="detail-label">Player Name</span>
-          <span id="playerName" class="detail-value">-</span>
+    </header>
+
+    <main>
+      <!-- Join Form Section -->
+      <div id="joinSection">
+        <div class="form-group">
+          <label for="bidderName">Your Name</label>
+          <input type="text" id="bidderName" placeholder="Enter your name">
         </div>
-        <div class="detail-item">
-          <span class="detail-label">Club</span>
-          <span id="playerClub" class="detail-value">-</span>
+        <div class="form-group">
+          <label for="roomId">Room ID</label>
+          <input type="text" id="roomId" placeholder="Enter room ID">
         </div>
-        <div class="detail-item">
-          <span class="detail-label">Position</span>
-          <span id="playerPosition" class="detail-value">-</span>
-        </div>
-        
-        <div class="price-display">
-          <span class="detail-label">Starting Price (¥)</span>
-          <div id="startingPrice" class="detail-value">0</div>
-        </div>
-        
-        <div class="action-buttons">
-          <button id="startBidBtn" class="btn btn-primary" disabled>Start Bidding</button>
-          <button id="finalCallBtn" class="btn btn-warning hidden">Final Call!</button>
-          <button id="nextPlayerBtn" class="btn btn-secondary hidden">Next Player</button>
-        </div>
+        <button id="joinBtn" class="btn btn-primary">Join Room</button>
       </div>
-    </div>
-    
-    <!-- Current Player Panel -->
-    <div class="panel">
-      <h2>Current Player</h2>
-      
-      <div id="currentPlayerInfo">
-        <div class="detail-item">
-          <span class="detail-label">Name</span>
-          <span id="currentPlayerName" class="detail-value">-</span>
+
+      <!-- Auction Display Section -->
+      <div id="auctionSection" class="hidden">
+        <div class="player-card">
+          <h2 id="playerNameDisplay">Player Name</h2>
+          <div class="player-details">
+            <p><strong>Club:</strong> <span id="playerClub">-</span></p>
+            <p><strong>Position:</strong> <span id="playerPosition">-</span></p>
+          </div>
         </div>
-        <div class="detail-item">
-          <span class="detail-label">Club</span>
-          <span id="currentPlayerClub" class="detail-value">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Position</span>
-          <span id="currentPlayerPosition" class="detail-value">-</span>
-        </div>
-        
+
         <div class="bid-status">
-          <div class="status-item">
-            <span class="status-label">Current Bid:</span>
-            <span id="currentBid" class="status-value">¥0</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">Leading Bidder:</span>
-            <span id="leadingBidder" class="status-value">-</span>
-          </div>
+          <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
+          <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
         </div>
-        
-        <button id="placeBidBtn" class="btn btn-primary" disabled>Place Bid</button>
-      </div>
-      
-      <div id="winnerInfo" class="hidden">
-        <h3>Auction Result</h3>
-        <div class="detail-item">
-          <span class="detail-label">Winner:</span>
-          <span id="winnerName" class="detail-value">-</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Winning Bid:</span>
-          <span id="winningBid" class="detail-value">¥0</span>
+
+        <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid</button>
+
+        <!-- Winner Announcement -->
+        <div id="winnerSection" class="winner-card hidden">
+          <h3>🏆 Auction Winner</h3>
+          <p><strong>Player:</strong> <span id="wonPlayer">-</span></p>
+          <p><strong>Winner:</strong> <span id="winnerName">-</span></p>
+          <p><strong>Winning Bid:</strong> ₹<span id="winningBid">0</span></p>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
