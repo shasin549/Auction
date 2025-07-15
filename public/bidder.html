@@ -1,36 +1,71 @@
-// bidder.js
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bidder Panel</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Load Socket.IO client from CDN as fallback -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bidder Panel</h1>
+      <div id="connection-status" class="connection-badge disconnected">Disconnected</div>
+    </header>
 
-document.addEventListener("DOMContentLoaded", () => { const socket = io();
+    <main>
+      <!-- Join Form Section -->
+      <div id="joinForm">
+        <div class="form-group">
+          <label for="bidderName">Your Name</label>
+          <input type="text" id="bidderName" placeholder="Enter your name" required>
+        </div>
+        <div class="form-group">
+          <button id="joinBtn" class="btn btn-primary">Join Auction Room</button>
+        </div>
+        <div id="roomInfo" class="hidden">
+          <p>Joined room: <span id="roomIdDisplay"></span></p>
+        </div>
+      </div>
 
-const bidderNameInput = document.getElementById("bidderName"); const joinBtn = document.getElementById("joinBtn"); const auctionArea = document.getElementById("auctionArea"); const placeBidBtn = document.getElementById("placeBidBtn");
+      <!-- Auction Area (hidden initially) -->
+      <div id="auctionArea" class="hidden">
+        <div class="player-card">
+          <h2>Current Player</h2>
+          <p><strong>Name:</strong> <span id="livePlayerName">-</span></p>
+          <p><strong>Club:</strong> <span id="livePlayerClub">-</span></p>
+          <p><strong>Position:</strong> <span id="livePlayerPosition">-</span></p>
+        </div>
 
-const livePlayerName = document.getElementById("livePlayerName"); const livePlayerClub = document.getElementById("livePlayerClub"); const livePlayerPosition = document.getElementById("livePlayerPosition"); const liveBid = document.getElementById("liveBid"); const leadingBidder = document.getElementById("leadingBidder");
+        <div class="auction-status">
+          <p><strong>Current Bid:</strong> ₹<span id="liveBid">0</span></p>
+          <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
+        </div>
 
-const winnerInfo = document.getElementById("winInfo"); const winnerName = document.getElementById("winnerName"); const winnerPlayer = document.getElementById("winnerPlayer"); const winnerAmount = document.getElementById("winnerAmount");
+        <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid</button>
 
-let roomId = ""; let userName = "";
+        <!-- Winner Information -->
+        <div id="winInfo" class="hidden winner-card">
+          <h3>🏆 Auction Result</h3>
+          <p><strong>Winner:</strong> <span id="winnerName">-</span></p>
+          <p><strong>Player:</strong> <span id="winnerPlayer">-</span></p>
+          <p><strong>Winning Bid:</strong> ₹<span id="winnerAmount">0</span></p>
+        </div>
+      </div>
+    </main>
+  </div>
 
-// Extract roomId from URL const urlParams = new URLSearchParams(window.location.search); roomId = urlParams.get("room");
-
-// Join room joinBtn.addEventListener("click", () => { userName = bidderNameInput.value.trim(); if (!userName) return alert("Please enter your name"); if (!roomId) return alert("Invalid or missing room link");
-
-socket.emit("join-room", {
-  roomId,
-  userName,
-  role: "bidder"
-});
-
-auctionArea.classList.remove("hidden");
-
-});
-
-// Receive auction start socket.on("auction-started", (data) => { livePlayerName.textContent = data.playerName; livePlayerClub.textContent = data.playerClub; livePlayerPosition.textContent = data.playerPosition; liveBid.textContent = data.startingPrice; leadingBidder.textContent = "-"; winnerInfo.classList.add("hidden"); });
-
-// Receive bid updates socket.on("bid-placed", ({ currentBid, leadingBidder: name }) => { liveBid.textContent = currentBid; leadingBidder.textContent = name; });
-
-// Place bid placeBidBtn.addEventListener("click", () => { socket.emit("place-bid"); });
-
-// Auction ended socket.on("auction-ended", ({ winnerName: name, playerName, winningBid }) => { winnerInfo.classList.remove("hidden"); winnerName.textContent = name; winnerPlayer.textContent = playerName; winnerAmount.textContent = winningBid; }); });
-
-
-
+  <script>
+    // Extract roomId from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room');
+    if (roomId) {
+      document.getElementById('roomIdDisplay').textContent = roomId;
+    }
+  </script>
+  
+  <script src="bidder.js"></script>
+</body>
+</html>
