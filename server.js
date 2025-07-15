@@ -1,18 +1,18 @@
-// server.js (FINAL version) const express = require('express'); const http = require('http'); const socketIo = require('socket.io'); const path = require('path');
+// server.js (FINAL fixed version) const express = require('express'); const http = require('http'); const socketIo = require('socket.io'); const path = require('path');
 
-const app = express(); const server = http.createServer(app); const io = socketIo(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
+const app = express(); const server = http.createServer(app); // ✅ Make sure server is created before passing to socket.io const io = socketIo(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
-// ✅ Serve all frontend files from public/ app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from public folder app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Serve index.html at root app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+// Serve index.html for root app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
-// 🧠 In-memory store for all auction rooms const rooms = new Map();
+const rooms = new Map();
 
 io.on('connection', (socket) => { console.log(✅ Socket connected: ${socket.id});
 
-// 🏠 Create a new room socket.on('create-room', ({ roomId, roomName, bidIncrement, maxParticipants }) => { rooms.set(roomId, { roomName, participants: [], currentAuction: null, bidHistory: [], bidIncrement, maxParticipants, wins: {} // Track players each participant has won }); console.log(🎯 Room created: ${roomId} (${roomName})); });
+socket.on('create-room', ({ roomId, roomName, bidIncrement, maxParticipants }) => { rooms.set(roomId, { roomName, participants: [], currentAuction: null, bidHistory: [], bidIncrement, maxParticipants, wins: {} }); console.log(🎯 Room created: ${roomId} (${roomName})); });
 
-// 🚪 Join a room socket.on('join-room', ({ roomId, userName, role }) => { socket.join(roomId); socket.roomId = roomId; socket.userName = userName; socket.role = role;
+socket.on('join-room', ({ roomId, userName, role }) => { socket.join(roomId); socket.roomId = roomId; socket.userName = userName; socket.role = role;
 
 const room = rooms.get(roomId);
 if (!room) return;
@@ -34,7 +34,7 @@ socket.emit('room-state', {
 
 });
 
-// 🚀 Start auction socket.on('start-auction', (data) => { const room = rooms.get(socket.roomId); if (!room || socket.role !== 'auctioneer') return;
+socket.on('start-auction', (data) => { const room = rooms.get(socket.roomId); if (!room || socket.role !== 'auctioneer') return;
 
 const auction = {
   ...data,
@@ -51,7 +51,7 @@ console.log(`📢 Auction started: ${data.playerName}`);
 
 });
 
-// 💸 Place a bid socket.on('place-bid', () => { const room = rooms.get(socket.roomId); if (!room || !room.currentAuction || !room.currentAuction.isActive) return;
+socket.on('place-bid', () => { const room = rooms.get(socket.roomId); if (!room || !room.currentAuction || !room.currentAuction.isActive) return;
 
 const newBid = room.currentAuction.currentBid + room.bidIncrement;
 room.currentAuction.currentBid = newBid;
@@ -68,7 +68,7 @@ io.to(socket.roomId).emit('bid-placed', {
 
 });
 
-// 🔚 End auction socket.on('end-auction', () => { const room = rooms.get(socket.roomId); if (!room || !room.currentAuction) return;
+socket.on('end-auction', () => { const room = rooms.get(socket.roomId); if (!room || !room.currentAuction) return;
 
 const auction = room.currentAuction;
 auction.isActive = false;
@@ -92,9 +92,9 @@ io.to(socket.roomId).emit('auction-ended', {
 
 });
 
-// 📜 Get winner list (for participant click) socket.on('get-winner-list', () => { const room = rooms.get(socket.roomId); if (!room) return; const wins = room.wins[socket.userName] || []; socket.emit('winner-list', wins); });
+socket.on('get-winner-list', () => { const room = rooms.get(socket.roomId); if (!room) return; const wins = room.wins[socket.userName] || []; socket.emit('winner-list', wins); });
 
-// ❌ Disconnect socket.on('disconnect', () => { const room = rooms.get(socket.roomId); if (!room) return; room.participants = room.participants.filter(p => p.id !== socket.id); io.to(socket.roomId).emit('participant-left', { name: socket.userName, participants: room.participants }); console.log(❌ Socket disconnected: ${socket.id}); }); });
+socket.on('disconnect', () => { const room = rooms.get(socket.roomId); if (!room) return; room.participants = room.participants.filter(p => p.id !== socket.id); io.to(socket.roomId).emit('participant-left', { name: socket.userName, participants: room.participants }); console.log(❌ Socket disconnected: ${socket.id}); }); });
 
 const PORT = process.env.PORT || 5000; server.listen(PORT, '0.0.0.0', () => { console.log(🚀 Server running at http://localhost:${PORT}); });
 
