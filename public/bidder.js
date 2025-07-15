@@ -5,27 +5,24 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // DOM Elements
-  const joinForm = document.getElementById("joinForm");
-  const bidderNameInput = document.getElementById("bidderName");
+  const joinSection = document.getElementById("joinSection");
+  const auctionSection = document.getElementById("auctionSection");
+  const connectionStatus = document.getElementById("connectionStatus");
   const joinBtn = document.getElementById("joinBtn");
-  const playerDetails = document.getElementById("playerDetails");
-  
-  // Player Details
-  const playerNameDisplay = document.getElementById("playerName");
-  const playerClubDisplay = document.getElementById("playerClub");
-  const playerPositionDisplay = document.getElementById("playerPosition");
-  const startingPriceDisplay = document.getElementById("startingPrice");
-  
-  // Current Player
-  const currentPlayerName = document.getElementById("currentPlayerName");
-  const currentPlayerClub = document.getElementById("currentPlayerClub");
-  const currentPlayerPosition = document.getElementById("currentPlayerPosition");
-  const currentBidDisplay = document.getElementById("currentBid");
-  const leadingBidderDisplay = document.getElementById("leadingBidder");
   const placeBidBtn = document.getElementById("placeBidBtn");
   
+  // Player Info
+  const playerNameDisplay = document.getElementById("playerNameDisplay");
+  const playerClubDisplay = document.getElementById("playerClub");
+  const playerPositionDisplay = document.getElementById("playerPosition");
+  
+  // Bid Info
+  const currentBidDisplay = document.getElementById("currentBid");
+  const leadingBidderDisplay = document.getElementById("leadingBidder");
+  
   // Winner Info
-  const winnerInfo = document.getElementById("winnerInfo");
+  const winnerSection = document.getElementById("winnerSection");
+  const wonPlayerDisplay = document.getElementById("wonPlayer");
   const winnerNameDisplay = document.getElementById("winnerName");
   const winningBidDisplay = document.getElementById("winningBid");
 
@@ -41,9 +38,20 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("roomId").value = roomIdFromUrl;
   }
 
+  // Connection Status
+  socket.on('connect', () => {
+    connectionStatus.querySelector('.status-text').textContent = 'Connected';
+    connectionStatus.querySelector('.status-icon').style.backgroundColor = '#10B981';
+  });
+
+  socket.on('disconnect', () => {
+    connectionStatus.querySelector('.status-text').textContent = 'Disconnected';
+    connectionStatus.querySelector('.status-icon').style.backgroundColor = '#EF4444';
+  });
+
   // Join Room
   joinBtn.addEventListener("click", () => {
-    userName = bidderNameInput.value.trim();
+    userName = document.getElementById("bidderName").value.trim();
     roomId = document.getElementById("roomId").value.trim();
     
     if (!userName || !roomId) {
@@ -57,15 +65,15 @@ document.addEventListener("DOMContentLoaded", () => {
       role: "bidder" 
     }, (response) => {
       if (response.success) {
-        joinForm.classList.add("hidden");
-        playerDetails.classList.remove("hidden");
+        joinSection.classList.add("hidden");
+        auctionSection.classList.remove("hidden");
       } else {
         alert(response.message || "Failed to join room");
       }
     });
   });
 
-  // Place Bid
+  // Place Bid (one bid per increment)
   placeBidBtn.addEventListener("click", () => {
     if (hasBid) {
       alert("Wait for another bid before placing again");
@@ -84,32 +92,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Socket Event Handlers
+  // Socket Events
   socket.on("auction-started", (playerData) => {
-    // Update player details
     playerNameDisplay.textContent = playerData.playerName;
     playerClubDisplay.textContent = playerData.playerClub;
     playerPositionDisplay.textContent = playerData.playerPosition;
-    startingPriceDisplay.textContent = playerData.startingPrice;
-    
-    // Update current player display
-    currentPlayerName.textContent = playerData.playerName;
-    currentPlayerClub.textContent = playerData.playerClub;
-    currentPlayerPosition.textContent = playerData.playerPosition;
-    currentBidDisplay.textContent = `¥${playerData.startingPrice}`;
+    currentBidDisplay.textContent = playerData.startingPrice;
     leadingBidderDisplay.textContent = "-";
     
-    // Reset bid state
     hasBid = false;
     placeBidBtn.disabled = false;
-    winnerInfo.classList.add("hidden");
+    winnerSection.classList.add("hidden");
   });
 
   socket.on("bid-placed", ({ currentBid, leadingBidder }) => {
-    currentBidDisplay.textContent = `¥${currentBid}`;
+    currentBidDisplay.textContent = currentBid;
     leadingBidderDisplay.textContent = leadingBidder;
     
-    // Enable bidding if someone else bid
     if (leadingBidder !== userName) {
       hasBid = false;
       placeBidBtn.disabled = false;
@@ -117,9 +116,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   socket.on("auction-ended", ({ playerName, winnerName, winningBid }) => {
+    wonPlayerDisplay.textContent = playerName;
     winnerNameDisplay.textContent = winnerName;
-    winningBidDisplay.textContent = `¥${winningBid}`;
-    winnerInfo.classList.remove("hidden");
+    winningBidDisplay.textContent = winningBid;
+    winnerSection.classList.remove("hidden");
     placeBidBtn.disabled = true;
   });
 });
