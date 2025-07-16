@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
             roomInfo.classList.remove("hidden");
             playerForm.classList.remove("hidden");
             createRoomBtn.textContent = "Room Created";
-            
+
             // Enable copy functionality
             inviteLink.addEventListener('click', (e) => {
               e.preventDefault();
@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
   finalCallBtn.addEventListener("click", () => {
     finalCallBtn.disabled = true;
     nextPlayerBtn.classList.remove("hidden");
-    
+
     // End the auction
     socket.emit("end-auction", (response) => {
       if (!response?.success) {
@@ -193,10 +193,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updatePlayerPreview(player) {
-    previewName.textContent = player.playerName;
+    previewName.textContent = player.playerName.toUpperCase();
     previewClub.textContent = player.playerClub;
     previewPosition.textContent = player.playerPosition;
-    previewPrice.textContent = player.startingPrice;
+    previewPrice.textContent = `₹${player.startingPrice}M`;
     currentBidDisplay.textContent = player.startingPrice;
     leadingBidderDisplay.textContent = "-";
   }
