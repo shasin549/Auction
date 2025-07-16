@@ -32,20 +32,30 @@
 
       <!-- Auction Display Section -->
       <div id="auctionSection" class="hidden">
-        <div class="player-card">
-          <h2 id="playerNameDisplay">Player Name</h2>
-          <div class="player-details">
-            <p><strong>Club:</strong> <span id="playerClub">-</span></p>
-            <p><strong>Position:</strong> <span id="playerPosition">-</span></p>
+        <div class="player-card-glass">
+          <span class="version-badge">Live Auction</span>
+          <h2 class="player-name" id="playerNameDisplay">-</h2>
+          <div class="player-detail">
+            <span class="player-detail-label">CLUB</span>
+            <span class="player-detail-value" id="playerClub">-</span>
           </div>
+          <div class="player-detail">
+            <span class="player-detail-label">POSITION</span>
+            <span class="player-detail-value" id="playerPosition">-</span>
+          </div>
+          <div class="player-detail">
+            <span class="player-detail-label">STARTING PRICE</span>
+            <span class="player-detail-value" id="startingPriceDisplay">-</span>
+          </div>
+          <div class="player-footer">PLAYER CARD 2025</div>
         </div>
 
-        <div class="bid-status">
+        <div class="bid-status-glass">
           <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
           <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
         </div>
 
-        <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid</button>
+        <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid (+₹<span id="bidIncrementValue">10</span>)</button>
 
         <!-- Winner Announcement -->
         <div id="winnerSection" class="winner-card hidden">
