@@ -61,20 +61,32 @@
         <div class="button-group">
           <button id="startAuctionBtn" class="btn btn-success">Start Bidding</button>
           <button id="finalCallBtn" class="btn btn-warning hidden">Final Call!</button>
-          <button id="nextPlayerBtn" class="btn btn-info hidden">Next Player</button>
+          <button id="nextPlayerBtn" class="btn btn-primary hidden">Next Player</button>
         </div>
       </div>
 
       <!-- Player Preview Section -->
       <div id="playerPreview" class="hidden">
         <h2>Current Player</h2>
-        <div class="player-card">
-          <p><strong>Name:</strong> <span id="previewName">-</span></p>
-          <p><strong>Club:</strong> <span id="previewClub">-</span></p>
-          <p><strong>Position:</strong> <span id="previewPosition">-</span></p>
-          <p><strong>Starting Price:</strong> ₹<span id="previewPrice">0</span></p>
+        <div class="player-card-glass">
+          <span class="version-badge">Version 3 of 3</span>
+          <h2 class="player-name" id="previewName">-</h2>
+          <div class="player-detail">
+            <span class="player-detail-label">CLUB</span>
+            <span class="player-detail-value" id="previewClub">-</span>
+          </div>
+          <div class="player-detail">
+            <span class="player-detail-label">POSITION</span>
+            <span class="player-detail-value" id="previewPosition">-</span>
+          </div>
+          <div class="player-detail">
+            <span class="player-detail-label">PRICE</span>
+            <span class="player-detail-value" id="previewPrice">-</span>
+          </div>
+          <div class="player-footer">PLAYER CARD 2025</div>
         </div>
-        <div class="auction-status">
+
+        <div class="bid-status-glass">
           <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
           <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
         </div>
