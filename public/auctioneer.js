@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Socket.IO connection with enhanced configuration
   const socket = io('https://auction-zfku.onrender.com', {
     transports: ['websocket', 'polling'],
     reconnectionAttempts: 5,
@@ -86,14 +85,12 @@ document.addEventListener("DOMContentLoaded", () => {
       maxParticipants: 100
     }, (response) => {
       if (response?.success) {
-        // Join as auctioneer
         socket.emit("join-room", {
           roomId,
           userName: "Auctioneer",
           role: "auctioneer"
         }, (joinResponse) => {
           if (joinResponse?.success) {
-            // Update UI
             roomIdDisplay.textContent = roomId;
             inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
             inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
@@ -101,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
             playerForm.classList.remove("hidden");
             createRoomBtn.textContent = "Room Created";
 
-            // Enable copy functionality
             inviteLink.addEventListener('click', (e) => {
               e.preventDefault();
               navigator.clipboard.writeText(inviteLink.textContent)
@@ -137,13 +133,13 @@ document.addEventListener("DOMContentLoaded", () => {
       startingPrice
     };
 
-    // Update preview
     updatePlayerPreview(currentPlayer);
     playerPreview.classList.remove("hidden");
     startAuctionBtn.disabled = true;
     finalCallBtn.classList.remove("hidden");
+    finalCallBtn.textContent = "Final Call!";
+    finalCallBtn.className = "btn btn-warning";
 
-    // Start auction
     socket.emit("start-auction", currentPlayer, (response) => {
       if (!response?.success) {
         alert(response?.message || "Failed to start auction");
@@ -155,15 +151,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Final Call Button Handler
   finalCallBtn.addEventListener("click", () => {
-    finalCallBtn.disabled = true;
-    nextPlayerBtn.classList.remove("hidden");
-
-    // End the auction
-    socket.emit("end-auction", (response) => {
-      if (!response?.success) {
-        alert(response?.message || "Failed to end auction");
-        finalCallBtn.disabled = false;
-        nextPlayerBtn.classList.add("hidden");
+    socket.emit("final-call", (response) => {
+      if (response?.success) {
+        if (response.callCount === 3) {
+          finalCallBtn.disabled = true;
+          nextPlayerBtn.classList.remove("hidden");
+        }
+      } else {
+        alert(response?.message || "Failed to process final call");
       }
     });
   });
@@ -198,6 +193,30 @@ document.addEventListener("DOMContentLoaded", () => {
     leadingBidderDisplay.textContent = data.leadingBidder;
   });
 
+  socket.on("call-update", ({ callCount, message }) => {
+    if (callCount > 0) {
+      finalCallBtn.textContent = message;
+      finalCallBtn.className = "btn btn-warning";
+      
+      switch(callCount) {
+        case 1:
+          finalCallBtn.classList.add("first-call");
+          break;
+        case 2:
+          finalCallBtn.classList.add("second-call");
+          break;
+        case 3:
+          finalCallBtn.classList.add("final-call");
+          break;
+      }
+      
+      alert(message);
+    } else {
+      finalCallBtn.className = "btn btn-warning";
+      finalCallBtn.textContent = "Final Call!";
+    }
+  });
+
   // Modal functionality
   closeModalBtn.addEventListener('click', () => {
     participantModal.classList.remove('show');
@@ -225,10 +244,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateParticipantsList(participants) {
     participantsContainer.innerHTML = '';
-    
-    // Filter out the auctioneer
     const bidders = participants.filter(p => p.role === 'bidder');
-    
+
     bidders.forEach(participant => {
       const participantElement = document.createElement('div');
       participantElement.className = 'participant-item';
@@ -236,11 +253,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>${participant.name}</span>
         <span>${participant.wins ? participant.wins.length : 0} wins</span>
       `;
-      
+
       participantElement.addEventListener('click', () => {
         showParticipantWins(participant.name);
       });
-      
+
       participantsContainer.appendChild(participantElement);
     });
   }
@@ -250,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.success) {
         modalParticipantName.textContent = participantName;
         wonPlayersList.innerHTML = '';
-        
+
         if (response.wins && response.wins.length > 0) {
           response.wins.forEach(win => {
             const wonPlayerElement = document.createElement('div');
@@ -264,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           wonPlayersList.innerHTML = '<p>No players won yet</p>';
         }
-        
+
         participantModal.classList.add('show');
       } else {
         alert(response.message || "Failed to get participant wins");
