@@ -44,7 +44,12 @@ io.on('connection', (socket) => {
     socket.userName = userName;
     socket.role = role;
 
-    room.participants.push({ id: socket.id, name: userName, role });
+    room.participants.push({ 
+      id: socket.id, 
+      name: userName, 
+      role,
+      wins: room.wins[userName] || [] 
+    });
 
     io.to(roomId).emit('participant-joined', {
       name: userName,
@@ -53,7 +58,8 @@ io.on('connection', (socket) => {
 
     callback({ 
       success: true,
-      currentAuction: room.currentAuction
+      currentAuction: room.currentAuction,
+      bidIncrement: room.bidIncrement
     });
   });
 
@@ -132,6 +138,12 @@ io.on('connection', (socket) => {
         playerName: auction.playerName,
         amount: winningBid
       });
+
+      // Update the participant's wins count
+      const winner = room.participants.find(p => p.name === winnerName);
+      if (winner) {
+        winner.wins = room.wins[winnerName];
+      }
     }
 
     io.to(socket.roomId).emit('auction-ended', {
@@ -140,7 +152,21 @@ io.on('connection', (socket) => {
       winningBid
     });
 
+    // Update all clients with the new participant data
+    io.to(socket.roomId).emit('participant-updated', {
+      participants: room.participants
+    });
+
     callback({ success: true });
+  });
+
+  // Get participant wins
+  socket.on('get-participant-wins', ({ roomId, participantName }, callback) => {
+    const room = rooms.get(roomId);
+    if (!room) return callback({ success: false, message: "Room not found" });
+
+    const wins = room.wins[participantName] || [];
+    callback({ success: true, wins });
   });
 
   // Disconnect
