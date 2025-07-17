@@ -327,3 +327,59 @@ input::placeholder {
 .won-player-item span:first-child {
   font-weight: bold;
 }
+
+/* Final Call Button States */
+.btn-warning.first-call {
+  background: #f59e0b;
+  animation: pulse 2s infinite;
+}
+
+.btn-warning.second-call {
+  background: #f97316;
+  animation: pulse 1.5s infinite;
+}
+
+.btn-warning.final-call {
+  background: #dc2626;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Toast Notification Styles */
+.call-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  z-index: 1000;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.call-toast.show {
+  opacity: 1;
+}
+
+.call-toast.first {
+  background: rgba(245, 158, 11, 0.9);
+}
+
+.call-toast.second {
+  background: rgba(249, 115, 22, 0.9);
+}
+
+.call-toast.final {
+  background: rgba(220, 38, 38, 0.9);
+}
