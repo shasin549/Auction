@@ -37,6 +37,11 @@
         <p><strong>Room ID:</strong> <span id="roomIdDisplay"></span></p>
         <p><strong>Invite Link:</strong> <a href="#" id="inviteLink"></a></p>
         <p><strong>Participants:</strong> <span id="participantCount">0</span></p>
+        
+        <div class="participants-list">
+          <h3>Participants</h3>
+          <div id="participantsContainer"></div>
+        </div>
       </div>
 
       <!-- Player Form Section (hidden initially) -->
@@ -92,6 +97,18 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Participant Wins Modal -->
+  <div id="participantModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2 id="modalParticipantName"></h2>
+      <div class="modal-body">
+        <h3>Won Players</h3>
+        <div id="wonPlayersList"></div>
+      </div>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
