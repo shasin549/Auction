@@ -195,24 +195,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   socket.on("call-update", ({ callCount, message }) => {
     if (callCount > 0) {
+      let type = '';
+      if (callCount === 1) type = 'first';
+      else if (callCount === 2) type = 'second';
+      else if (callCount === 3) type = 'final';
+      
+      showCallPopup(message, type);
+      
+      // Update the auctioneer's button text
       finalCallBtn.textContent = message;
-      finalCallBtn.className = "btn btn-warning";
-      
-      switch(callCount) {
-        case 1:
-          finalCallBtn.classList.add("first-call");
-          break;
-        case 2:
-          finalCallBtn.classList.add("second-call");
-          break;
-        case 3:
-          finalCallBtn.classList.add("final-call");
-          break;
-      }
-      
-      alert(message);
     } else {
-      finalCallBtn.className = "btn btn-warning";
       finalCallBtn.textContent = "Final Call!";
     }
   });
@@ -301,5 +293,22 @@ document.addEventListener("DOMContentLoaded", () => {
     alert(message);
     createRoomBtn.disabled = false;
     createRoomBtn.textContent = "Create Room";
+  }
+
+  // Show animated call popup
+  function showCallPopup(message, type) {
+    const popup = document.createElement('div');
+    popup.className = `call-popup ${type}`;
+    popup.textContent = message;
+    document.body.appendChild(popup);
+    
+    // Trigger animation
+    setTimeout(() => popup.classList.add('show'), 10);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      popup.classList.remove('show');
+      setTimeout(() => popup.remove(), 500);
+    }, 3000);
   }
 });
