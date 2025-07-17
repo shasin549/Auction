@@ -131,7 +131,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   socket.on("call-update", ({ callCount, message }) => {
     if (callCount > 0) {
-      alert(message);
+      let type = '';
+      if (callCount === 1) type = 'first';
+      else if (callCount === 2) type = 'second';
+      else if (callCount === 3) type = 'final';
+      
+      showCallPopup(message, type);
     }
   });
+
+  // Show animated call popup
+  function showCallPopup(message, type) {
+    const popup = document.createElement('div');
+    popup.className = `call-popup ${type}`;
+    popup.textContent = message;
+    document.body.appendChild(popup);
+    
+    // Trigger animation
+    setTimeout(() => popup.classList.add('show'), 10);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      popup.classList.remove('show');
+      setTimeout(() => popup.remove(), 500);
+    }, 3000);
+  }
 });
