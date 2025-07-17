@@ -128,4 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
     winnerSection.classList.remove("hidden");
     placeBidBtn.disabled = true;
   });
+
+  socket.on("call-update", ({ callCount, message }) => {
+    if (callCount > 0) {
+      alert(message);
+    }
+  });
 });
