@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
     timeout: 10000
   });
 
-  // DOM Elements
   const connectionStatus = document.getElementById("connection-status");
   const createRoomBtn = document.getElementById("createRoomBtn");
   const roomNameInput = document.getElementById("roomName");
@@ -23,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const wonPlayersList = document.getElementById("wonPlayersList");
   const closeModalBtn = document.querySelector(".close-btn");
 
-  // Player form elements
   const playerNameInput = document.getElementById("playerName");
   const playerClubInput = document.getElementById("playerClub");
   const playerPositionInput = document.getElementById("playerPosition");
@@ -32,7 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const finalCallBtn = document.getElementById("finalCallBtn");
   const nextPlayerBtn = document.getElementById("nextPlayerBtn");
 
-  // Preview elements
   const previewName = document.getElementById("previewName");
   const previewClub = document.getElementById("previewClub");
   const previewPosition = document.getElementById("previewPosition");
@@ -43,28 +40,23 @@ document.addEventListener("DOMContentLoaded", () => {
   let roomId = "";
   let currentPlayer = null;
 
-  // Connection handling
   socket.on('connect', () => {
-    console.log('✅ Connected to server');
     connectionStatus.textContent = "Connected";
     connectionStatus.style.color = "#10B981";
     createRoomBtn.disabled = false;
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ Disconnected from server');
     connectionStatus.textContent = "Disconnected";
     connectionStatus.style.color = "#EF4444";
     createRoomBtn.disabled = true;
   });
 
   socket.on('connect_error', (err) => {
-    console.error('Connection error:', err);
     connectionStatus.textContent = "Connection Error";
     connectionStatus.style.color = "#F59E0B";
   });
 
-  // Create Room Button Handler
   createRoomBtn.addEventListener("click", () => {
     const roomName = roomNameInput.value.trim();
     const bidIncrement = parseInt(bidIncrementInput.value);
@@ -114,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Start Auction Button Handler
   startAuctionBtn.addEventListener("click", () => {
     const playerName = playerNameInput.value.trim();
     const playerClub = playerClubInput.value.trim();
@@ -149,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Final Call Button Handler
   finalCallBtn.addEventListener("click", () => {
     socket.emit("final-call", (response) => {
       if (response?.success) {
@@ -163,7 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Next Player Button Handler
   nextPlayerBtn.addEventListener("click", () => {
     resetPlayerForm();
     playerPreview.classList.add("hidden");
@@ -173,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
     finalCallBtn.disabled = false;
   });
 
-  // Socket event listeners
   socket.on("participant-joined", (data) => {
     participantCount.textContent = data.participants.length;
     updateParticipantsList(data.participants);
@@ -199,17 +187,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (callCount === 1) type = 'first';
       else if (callCount === 2) type = 'second';
       else if (callCount === 3) type = 'final';
-      
+
       showCallPopup(message, type);
-      
-      // Update the auctioneer's button text
       finalCallBtn.textContent = message;
     } else {
       finalCallBtn.textContent = "Final Call!";
     }
   });
 
-  // Modal functionality
   closeModalBtn.addEventListener('click', () => {
     participantModal.classList.remove('show');
   });
@@ -220,7 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Helper functions
   function generateRoomId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
@@ -245,11 +229,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>${participant.name}</span>
         <span>${participant.wins ? participant.wins.length : 0} wins</span>
       `;
-
       participantElement.addEventListener('click', () => {
         showParticipantWins(participant.name);
       });
-
       participantsContainer.appendChild(participantElement);
     });
   }
@@ -259,7 +241,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.success) {
         modalParticipantName.textContent = participantName;
         wonPlayersList.innerHTML = '';
-
         if (response.wins && response.wins.length > 0) {
           response.wins.forEach(win => {
             const wonPlayerElement = document.createElement('div');
@@ -273,7 +254,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           wonPlayersList.innerHTML = '<p>No players won yet</p>';
         }
-
         participantModal.classList.add('show');
       } else {
         alert(response.message || "Failed to get participant wins");
@@ -295,17 +275,25 @@ document.addEventListener("DOMContentLoaded", () => {
     createRoomBtn.textContent = "Create Room";
   }
 
-  // Show animated call popup
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
     popup.textContent = message;
     document.body.appendChild(popup);
-    
-    // Trigger animation
+
+    // 🔊 Play audio based on type
+    let audioPath = "";
+    if (type === 'first') audioPath = 'audio/first-call.mp3';
+    else if (type === 'second') audioPath = 'audio/second-call.mp3';
+    else if (type === 'final') audioPath = 'audio/final-call.mp3'; // ⬅️ You can replace this file later
+
+    if (audioPath) {
+      const audio = new Audio(audioPath);
+      audio.play().catch(err => console.warn(`Audio playback failed for ${type} call:`, err));
+    }
+
     setTimeout(() => popup.classList.add('show'), 10);
-    
-    // Auto-remove after 3 seconds
+
     setTimeout(() => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
