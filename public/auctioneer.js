@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const participantCount = document.getElementById("participantCount");
   const playerForm = document.getElementById("playerForm");
   const playerPreview = document.getElementById("playerPreview");
+  const participantsContainer = document.getElementById("participantsContainer");
+  const participantModal = document.getElementById("participantModal");
+  const modalParticipantName = document.getElementById("modalParticipantName");
+  const wonPlayersList = document.getElementById("wonPlayersList");
+  const closeModalBtn = document.querySelector(".close-btn");
 
   // Player form elements
   const playerNameInput = document.getElementById("playerName");
@@ -176,15 +181,32 @@ document.addEventListener("DOMContentLoaded", () => {
   // Socket event listeners
   socket.on("participant-joined", (data) => {
     participantCount.textContent = data.participants.length;
+    updateParticipantsList(data.participants);
   });
 
   socket.on("participant-left", (data) => {
     participantCount.textContent = data.participants.length;
+    updateParticipantsList(data.participants);
+  });
+
+  socket.on("participant-updated", (data) => {
+    updateParticipantsList(data.participants);
   });
 
   socket.on("bid-placed", (data) => {
     currentBidDisplay.textContent = data.currentBid;
     leadingBidderDisplay.textContent = data.leadingBidder;
+  });
+
+  // Modal functionality
+  closeModalBtn.addEventListener('click', () => {
+    participantModal.classList.remove('show');
+  });
+
+  participantModal.addEventListener('click', (e) => {
+    if (e.target === participantModal) {
+      participantModal.classList.remove('show');
+    }
   });
 
   // Helper functions
@@ -199,6 +221,55 @@ document.addEventListener("DOMContentLoaded", () => {
     previewPrice.textContent = `₹${player.startingPrice}M`;
     currentBidDisplay.textContent = player.startingPrice;
     leadingBidderDisplay.textContent = "-";
+  }
+
+  function updateParticipantsList(participants) {
+    participantsContainer.innerHTML = '';
+    
+    // Filter out the auctioneer
+    const bidders = participants.filter(p => p.role === 'bidder');
+    
+    bidders.forEach(participant => {
+      const participantElement = document.createElement('div');
+      participantElement.className = 'participant-item';
+      participantElement.innerHTML = `
+        <span>${participant.name}</span>
+        <span>${participant.wins ? participant.wins.length : 0} wins</span>
+      `;
+      
+      participantElement.addEventListener('click', () => {
+        showParticipantWins(participant.name);
+      });
+      
+      participantsContainer.appendChild(participantElement);
+    });
+  }
+
+  function showParticipantWins(participantName) {
+    socket.emit("get-participant-wins", { roomId, participantName }, (response) => {
+      if (response.success) {
+        modalParticipantName.textContent = participantName;
+        wonPlayersList.innerHTML = '';
+        
+        if (response.wins && response.wins.length > 0) {
+          response.wins.forEach(win => {
+            const wonPlayerElement = document.createElement('div');
+            wonPlayerElement.className = 'won-player-item';
+            wonPlayerElement.innerHTML = `
+              <span>${win.playerName}</span>
+              <span>₹${win.amount}M</span>
+            `;
+            wonPlayersList.appendChild(wonPlayerElement);
+          });
+        } else {
+          wonPlayersList.innerHTML = '<p>No players won yet</p>';
+        }
+        
+        participantModal.classList.add('show');
+      } else {
+        alert(response.message || "Failed to get participant wins");
+      }
+    });
   }
 
   function resetPlayerForm() {
