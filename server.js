@@ -29,7 +29,9 @@ io.on('connection', (socket) => {
       currentAuction: null,
       bidHistory: [],
       bidIncrement: bidIncrement || 10,
-      wins: {}
+      wins: {},
+      callCount: 0,
+      lastCallTime: null
     });
     callback({ success: true });
   });
@@ -79,8 +81,9 @@ io.on('connection', (socket) => {
 
     room.currentAuction = auction;
     room.bidHistory = [];
+    room.callCount = 0;
+    room.lastCallTime = null;
 
-    // Send to bidders
     socket.to(socket.roomId).emit('auction-started', {
       playerName: playerData.playerName,
       playerClub: playerData.playerClub,
@@ -88,9 +91,7 @@ io.on('connection', (socket) => {
       startingPrice: playerData.startingPrice
     });
 
-    // Send to auctioneer (full data)
     socket.emit('auction-started', playerData);
-
     callback({ success: true });
   });
 
@@ -104,6 +105,7 @@ io.on('connection', (socket) => {
     const newBid = room.currentAuction.currentBid + room.bidIncrement;
     room.currentAuction.currentBid = newBid;
     room.currentAuction.leadingBidder = socket.userName;
+    room.callCount = 0;
 
     room.bidHistory.push({
       bidder: socket.userName,
@@ -116,48 +118,76 @@ io.on('connection', (socket) => {
       leadingBidder: socket.userName
     });
 
+    io.to(socket.roomId).emit('call-update', {
+      callCount: 0,
+      message: "New bid placed!"
+    });
+
     callback({ success: true });
   });
 
-  // End auction
-  socket.on('end-auction', (callback) => {
+  // Final call
+  socket.on('final-call', (callback) => {
     const room = rooms.get(socket.roomId);
-    if (!room?.currentAuction) {
+    if (!room || socket.role !== 'auctioneer') {
+      return callback({ success: false, message: "Not authorized" });
+    }
+
+    if (!room.currentAuction?.isActive) {
       return callback({ success: false, message: "No active auction" });
     }
 
-    const auction = room.currentAuction;
-    auction.isActive = false;
-
-    const winnerName = auction.leadingBidder || 'No Winner';
-    const winningBid = auction.currentBid;
-
-    if (winnerName !== 'No Winner') {
-      if (!room.wins[winnerName]) room.wins[winnerName] = [];
-      room.wins[winnerName].push({
-        playerName: auction.playerName,
-        amount: winningBid
-      });
-
-      // Update the participant's wins count
-      const winner = room.participants.find(p => p.name === winnerName);
-      if (winner) {
-        winner.wins = room.wins[winnerName];
-      }
+    const lastBid = room.bidHistory[room.bidHistory.length - 1];
+    if (lastBid && room.lastCallTime && lastBid.timestamp > room.lastCallTime) {
+      room.callCount = 0;
     }
 
-    io.to(socket.roomId).emit('auction-ended', {
-      playerName: auction.playerName,
-      winnerName,
-      winningBid
+    room.callCount++;
+    room.lastCallTime = new Date();
+
+    const message = getCallMessage(room.callCount);
+    io.to(socket.roomId).emit('call-update', {
+      callCount: room.callCount,
+      message
     });
 
-    // Update all clients with the new participant data
-    io.to(socket.roomId).emit('participant-updated', {
-      participants: room.participants
-    });
+    if (room.callCount === 3) {
+      setTimeout(() => {
+        if (room.callCount === 3) { // Check if still at final call
+          room.currentAuction.isActive = false;
+          const winnerName = room.currentAuction.leadingBidder || 'No Winner';
+          const winningBid = room.currentAuction.currentBid;
 
-    callback({ success: true });
+          if (winnerName !== 'No Winner') {
+            if (!room.wins[winnerName]) room.wins[winnerName] = [];
+            room.wins[winnerName].push({
+              playerName: room.currentAuction.playerName,
+              amount: winningBid
+            });
+
+            const winner = room.participants.find(p => p.name === winnerName);
+            if (winner) {
+              winner.wins = room.wins[winnerName];
+            }
+          }
+
+          io.to(socket.roomId).emit('auction-ended', {
+            playerName: room.currentAuction.playerName,
+            winnerName,
+            winningBid
+          });
+
+          io.to(socket.roomId).emit('participant-updated', {
+            participants: room.participants
+          });
+        }
+      }, 3000); // 3 second delay after final call
+    }
+
+    callback({ 
+      success: true,
+      callCount: room.callCount
+    });
   });
 
   // Get participant wins
@@ -181,6 +211,15 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+function getCallMessage(count) {
+  switch(count) {
+    case 1: return "First Call!";
+    case 2: return "Second Call!";
+    case 3: return "Final Call!";
+    default: return "Going once...";
+  }
+}
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
