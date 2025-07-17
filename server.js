@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
 
     if (room.callCount === 3) {
       setTimeout(() => {
-        if (room.callCount === 3) { // Check if still at final call
+        if (room.callCount === 3) {
           room.currentAuction.isActive = false;
           const winnerName = room.currentAuction.leadingBidder || 'No Winner';
           const winningBid = room.currentAuction.currentBid;
@@ -181,7 +181,7 @@ io.on('connection', (socket) => {
             participants: room.participants
           });
         }
-      }, 3000); // 3 second delay after final call
+      }, 3000);
     }
 
     callback({ 
