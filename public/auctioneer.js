@@ -57,17 +57,34 @@ document.addEventListener("DOMContentLoaded", () => {
     connectionStatus.textContent = "Connected";
     connectionStatus.style.color = "#10B981";
     createRoomBtn.disabled = false;
+    console.log("Connected to server");
   });
 
   socket.on('disconnect', () => {
     connectionStatus.textContent = "Disconnected";
     connectionStatus.style.color = "#EF4444";
     createRoomBtn.disabled = true;
+    console.log("Disconnected from server");
   });
 
   socket.on('connect_error', (err) => {
     connectionStatus.textContent = "Connection Error";
     connectionStatus.style.color = "#F59E0B";
+    console.error("Connection error:", err);
+  });
+
+  socket.on('reconnect_attempt', (attempt) => {
+    console.log(`Reconnect attempt ${attempt}`);
+  });
+
+  socket.on('reconnect_error', (err) => {
+    console.error('Reconnection error:', err);
+  });
+
+  socket.on('reconnect_failed', () => {
+    console.error('Reconnection failed');
+    connectionStatus.textContent = "Disconnected";
+    connectionStatus.style.color = "#EF4444";
   });
 
   // Create Room Button Handler
@@ -83,6 +100,11 @@ document.addEventListener("DOMContentLoaded", () => {
     roomId = generateRoomId();
     createRoomBtn.disabled = true;
     createRoomBtn.textContent = "Creating...";
+    createRoomBtn.classList.add("btn-processing");
+
+    const timeout = setTimeout(() => {
+      handleError("Connection timeout. Please check your internet and try again.");
+    }, 10000);
 
     socket.emit("create-room", {
       roomId,
@@ -90,6 +112,8 @@ document.addEventListener("DOMContentLoaded", () => {
       bidIncrement,
       maxParticipants: 100
     }, (response) => {
+      clearTimeout(timeout);
+      
       if (response?.success) {
         socket.emit("join-room", {
           roomId,
@@ -103,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
             roomInfo.classList.remove("hidden");
             playerForm.classList.remove("hidden");
             createRoomBtn.textContent = "Room Created";
+            createRoomBtn.classList.remove("btn-processing");
 
             inviteLink.addEventListener('click', (e) => {
               e.preventDefault();
@@ -157,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Final Call Button Handler (Fixed Implementation)
+  // Final Call Button Handler
   finalCallBtn.addEventListener("click", () => {
     if (!roomId) {
       alert("Please create a room and start an auction first");
@@ -311,6 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
     alert(message);
     createRoomBtn.disabled = false;
     createRoomBtn.textContent = "Create Room";
+    createRoomBtn.classList.remove("btn-processing");
   }
 
   function showCallPopup(message, type) {
@@ -333,6 +359,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (type === 'first') audioElement = firstCallAudio;
       else if (type === 'second') audioElement = secondCallAudio;
       else if (type === 'final') audioElement = finalCallAudio;
-      
+
       if (audioElement) {
-        audioElement.currentTim
+        audioElement.currentTime = 0;
+        audioElement.play().catch(e => console.error("Audio play failed:", e));
+      }
+    } catch (e) {
+      console.error("Error playing sound:", e);
+    }
+  }
+});
