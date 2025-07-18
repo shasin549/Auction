@@ -40,26 +40,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentBidDisplay = document.getElementById("currentBid");
   const leadingBidderDisplay = document.getElementById("leadingBidder");
 
+  // Audio elements
+  const firstCallAudio = document.getElementById('firstCallAudio');
+  const secondCallAudio = document.getElementById('secondCallAudio');
+  const finalCallAudio = document.getElementById('finalCallAudio');
+
   let roomId = "";
   let currentPlayer = null;
 
+  // Initialize button states
+  finalCallBtn.textContent = "Final Call!";
+  finalCallBtn.disabled = true;
+
   // Connection handling
   socket.on('connect', () => {
-    console.log('✅ Connected to server');
     connectionStatus.textContent = "Connected";
     connectionStatus.style.color = "#10B981";
     createRoomBtn.disabled = false;
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ Disconnected from server');
     connectionStatus.textContent = "Disconnected";
     connectionStatus.style.color = "#EF4444";
     createRoomBtn.disabled = true;
   });
 
   socket.on('connect_error', (err) => {
-    console.error('Connection error:', err);
     connectionStatus.textContent = "Connection Error";
     connectionStatus.style.color = "#F59E0B";
   });
@@ -139,19 +145,32 @@ document.addEventListener("DOMContentLoaded", () => {
     finalCallBtn.classList.remove("hidden");
     finalCallBtn.textContent = "Final Call!";
     finalCallBtn.className = "btn btn-warning";
+    finalCallBtn.disabled = false;
 
     socket.emit("start-auction", currentPlayer, (response) => {
       if (!response?.success) {
         alert(response?.message || "Failed to start auction");
         startAuctionBtn.disabled = false;
         finalCallBtn.classList.add("hidden");
+        finalCallBtn.disabled = true;
       }
     });
   });
 
-  // Final Call Button Handler
+  // Final Call Button Handler (Fixed Implementation)
   finalCallBtn.addEventListener("click", () => {
-    socket.emit("final-call", (response) => {
+    if (!roomId) {
+      alert("Please create a room and start an auction first");
+      return;
+    }
+
+    finalCallBtn.disabled = true;
+    finalCallBtn.innerHTML = '<span class="spinner"></span> Processing...';
+
+    socket.emit("final-call", { roomId }, (response) => {
+      finalCallBtn.disabled = false;
+      finalCallBtn.textContent = "Final Call!";
+
       if (response?.success) {
         if (response.callCount === 3) {
           finalCallBtn.disabled = true;
@@ -199,11 +218,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (callCount === 1) type = 'first';
       else if (callCount === 2) type = 'second';
       else if (callCount === 3) type = 'final';
-      
+
       showCallPopup(message, type);
-      
-      // Update the auctioneer's button text
       finalCallBtn.textContent = message;
+      playCallSound(type);
     } else {
       finalCallBtn.textContent = "Final Call!";
     }
@@ -295,20 +313,26 @@ document.addEventListener("DOMContentLoaded", () => {
     createRoomBtn.textContent = "Create Room";
   }
 
-  // Show call popup
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
     popup.textContent = message;
     document.body.appendChild(popup);
-    
-    // Trigger animation
+
     setTimeout(() => popup.classList.add('show'), 10);
-    
-    // Auto-remove after 3 seconds
+
     setTimeout(() => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
     }, 3000);
   }
-});
+
+  function playCallSound(type) {
+    try {
+      let audioElement;
+      if (type === 'first') audioElement = firstCallAudio;
+      else if (type === 'second') audioElement = secondCallAudio;
+      else if (type === 'final') audioElement = finalCallAudio;
+      
+      if (audioElement) {
+        audioElement.currentTim
