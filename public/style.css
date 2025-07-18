@@ -328,49 +328,49 @@ input::placeholder {
   font-weight: bold;
 }
 
-/* Call Popup Styles */
-.call-popup {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-100px);
-  background: rgba(0, 0, 0, 0.9);
-  color: white;
-  padding: 20px 40px;
-  border-radius: 10px;
-  z-index: 10000;
-  font-size: 1.5rem;
-  font-weight: bold;
+/* Final Call Modal */
+.call-modal {
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  border: 2px solid;
-}
-
-.call-popup.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.call-popup.first {
+  padding: 40px;
   background: rgba(245, 158, 11, 0.9);
-  border-color: #f59e0b;
 }
 
-.call-popup.second {
-  background: rgba(249, 115, 22, 0.9);
-  border-color: #f97316;
+.call-modal.second-call {
+  background: rgba(239, 68, 68, 0.9);
 }
 
-.call-popup.final {
+.call-modal.final-call {
   background: rgba(220, 38, 38, 0.9);
-  border-color: #dc2626;
-  animation: pulse 1s infinite;
+}
+
+#callMessage {
+  font-size: 3rem;
+  color: white;
+  text-transform: uppercase;
+  animation: pulse 0.5s infinite alternate;
+  margin: 0;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-  70% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+/* Notification Styles */
+.call-notification {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 8px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { bottom: -50px; opacity: 0; }
+  to { bottom: 20px; opacity: 1; }
 }
