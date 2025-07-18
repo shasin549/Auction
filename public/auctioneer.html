@@ -37,7 +37,7 @@
         <p><strong>Room ID:</strong> <span id="roomIdDisplay"></span></p>
         <p><strong>Invite Link:</strong> <a href="#" id="inviteLink"></a></p>
         <p><strong>Participants:</strong> <span id="participantCount">0</span></p>
-        
+
         <div class="participants-list">
           <h3>Participants</h3>
           <div id="participantsContainer"></div>
@@ -111,12 +111,16 @@
     </div>
   </div>
 
-  <!-- Final Call Modal -->
-  <div id="callModal" class="modal hidden">
-    <div class="modal-content call-modal">
-      <h2 id="callMessage">FIRST CALL!</h2>
-    </div>
-  </div>
+  <!-- Audio Elements -->
+  <audio id="firstCallAudio" preload="auto">
+    <source src="audio/first-call.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="secondCallAudio" preload="auto">
+    <source src="audio/second-call.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="finalCallAudio" preload="auto">
+    <source src="audio/final-call.mp3" type="audio/mpeg">
+  </audio>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="auctioneer.js"></script>
