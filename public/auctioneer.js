@@ -40,33 +40,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentBidDisplay = document.getElementById("currentBid");
   const leadingBidderDisplay = document.getElementById("leadingBidder");
 
-  // Audio elements
-  const firstCallAudio = document.getElementById('firstCallAudio');
-  const secondCallAudio = document.getElementById('secondCallAudio');
-  const finalCallAudio = document.getElementById('finalCallAudio');
-
   let roomId = "";
   let currentPlayer = null;
 
-  // Preload audio
-  if (firstCallAudio) firstCallAudio.load();
-  if (secondCallAudio) secondCallAudio.load();
-  if (finalCallAudio) finalCallAudio.load();
-
   // Connection handling
   socket.on('connect', () => {
+    console.log('✅ Connected to server');
     connectionStatus.textContent = "Connected";
     connectionStatus.style.color = "#10B981";
     createRoomBtn.disabled = false;
   });
 
   socket.on('disconnect', () => {
+    console.log('❌ Disconnected from server');
     connectionStatus.textContent = "Disconnected";
     connectionStatus.style.color = "#EF4444";
     createRoomBtn.disabled = true;
   });
 
   socket.on('connect_error', (err) => {
+    console.error('Connection error:', err);
     connectionStatus.textContent = "Connection Error";
     connectionStatus.style.color = "#F59E0B";
   });
@@ -206,12 +199,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (callCount === 1) type = 'first';
       else if (callCount === 2) type = 'second';
       else if (callCount === 3) type = 'final';
-
-      showCallPopup(message, type);
-      finalCallBtn.textContent = message;
       
-      // Play corresponding audio
-      playCallSound(type);
+      showCallPopup(message, type);
+      
+      // Update the auctioneer's button text
+      finalCallBtn.textContent = message;
     } else {
       finalCallBtn.textContent = "Final Call!";
     }
@@ -303,37 +295,20 @@ document.addEventListener("DOMContentLoaded", () => {
     createRoomBtn.textContent = "Create Room";
   }
 
-  // Show animated call popup
+  // Show call popup
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
     popup.textContent = message;
     document.body.appendChild(popup);
-
+    
+    // Trigger animation
     setTimeout(() => popup.classList.add('show'), 10);
-
+    
+    // Auto-remove after 3 seconds
     setTimeout(() => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
     }, 3000);
-  }
-
-  // Play audio for call type
-  function playCallSound(type) {
-    try {
-      let audioElement;
-      if (type === 'first') audioElement = firstCallAudio;
-      else if (type === 'second') audioElement = secondCallAudio;
-      else if (type === 'final') audioElement = finalCallAudio;
-      
-      if (audioElement) {
-        audioElement.currentTime = 0;
-        audioElement.play().catch(err => {
-          console.warn(`Audio playback failed for ${type} call:`, err);
-        });
-      }
-    } catch (e) {
-      console.error('Error playing call sound:', e);
-    }
   }
 });
