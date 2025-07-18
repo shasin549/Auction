@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Socket.IO connection with enhanced configuration
   const socket = io('https://auction-zfku.onrender.com', {
     transports: ['websocket', 'polling'],
     reconnectionAttempts: 5,
@@ -22,6 +23,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalParticipantName = document.getElementById("modalParticipantName");
   const wonPlayersList = document.getElementById("wonPlayersList");
   const closeModalBtn = document.querySelector(".close-btn");
+  const callModal = document.getElementById("callModal");
+  const callMessage = document.getElementById("callMessage");
 
   // Player form elements
   const playerNameInput = document.getElementById("playerName");
@@ -40,33 +43,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const currentBidDisplay = document.getElementById("currentBid");
   const leadingBidderDisplay = document.getElementById("leadingBidder");
 
-  // Audio elements
-  const firstCallAudio = document.getElementById('firstCallAudio');
-  const secondCallAudio = document.getElementById('secondCallAudio');
-  const finalCallAudio = document.getElementById('finalCallAudio');
-
+  // State variables
   let roomId = "";
   let currentPlayer = null;
-
-  // Preload audio
-  if (firstCallAudio) firstCallAudio.load();
-  if (secondCallAudio) secondCallAudio.load();
-  if (finalCallAudio) finalCallAudio.load();
+  let finalCallStage = 0; // 0=not started, 1=first call, 2=second call, 3=final call
+  let callModalTimeout;
 
   // Connection handling
   socket.on('connect', () => {
+    console.log('✅ Connected to server');
     connectionStatus.textContent = "Connected";
     connectionStatus.style.color = "#10B981";
     createRoomBtn.disabled = false;
   });
 
   socket.on('disconnect', () => {
+    console.log('❌ Disconnected from server');
     connectionStatus.textContent = "Disconnected";
     connectionStatus.style.color = "#EF4444";
     createRoomBtn.disabled = true;
   });
 
   socket.on('connect_error', (err) => {
+    console.error('Connection error:', err);
     connectionStatus.textContent = "Connection Error";
     connectionStatus.style.color = "#F59E0B";
   });
@@ -92,12 +91,14 @@ document.addEventListener("DOMContentLoaded", () => {
       maxParticipants: 100
     }, (response) => {
       if (response?.success) {
+        // Join as auctioneer
         socket.emit("join-room", {
           roomId,
           userName: "Auctioneer",
           role: "auctioneer"
         }, (joinResponse) => {
           if (joinResponse?.success) {
+            // Update UI
             roomIdDisplay.textContent = roomId;
             inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
             inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
@@ -105,6 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
             playerForm.classList.remove("hidden");
             createRoomBtn.textContent = "Room Created";
 
+            // Enable copy functionality
             inviteLink.addEventListener('click', (e) => {
               e.preventDefault();
               navigator.clipboard.writeText(inviteLink.textContent)
@@ -140,13 +142,14 @@ document.addEventListener("DOMContentLoaded", () => {
       startingPrice
     };
 
+    // Update preview
     updatePlayerPreview(currentPlayer);
     playerPreview.classList.remove("hidden");
     startAuctionBtn.disabled = true;
     finalCallBtn.classList.remove("hidden");
-    finalCallBtn.textContent = "Final Call!";
-    finalCallBtn.className = "btn btn-warning";
+    finalCallStage = 0; // Reset final call state
 
+    // Start auction
     socket.emit("start-auction", currentPlayer, (response) => {
       if (!response?.success) {
         alert(response?.message || "Failed to start auction");
@@ -158,16 +161,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Final Call Button Handler
   finalCallBtn.addEventListener("click", () => {
-    socket.emit("final-call", (response) => {
-      if (response?.success) {
-        if (response.callCount === 3) {
-          finalCallBtn.disabled = true;
-          nextPlayerBtn.classList.remove("hidden");
-        }
-      } else {
-        alert(response?.message || "Failed to process final call");
-      }
-    });
+    finalCallStage++;
+    
+    // Show appropriate call message
+    switch(finalCallStage) {
+      case 1:
+        showCall("FIRST CALL!", "first-call");
+        break;
+      case 2:
+        showCall("SECOND CALL!", "second-call");
+        break;
+      case 3:
+        showCall("FINAL CALL!", "final-call");
+        // Disable button after final call
+        finalCallBtn.disabled = true;
+        nextPlayerBtn.classList.remove("hidden");
+        // End auction after delay
+        setTimeout(() => {
+          socket.emit("end-auction");
+        }, 2000);
+        break;
+    }
+    
+    // Notify bidders
+    socket.emit("final-call-notification", { stage: finalCallStage });
   });
 
   // Next Player Button Handler
@@ -178,6 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
     finalCallBtn.classList.add("hidden");
     nextPlayerBtn.classList.add("hidden");
     finalCallBtn.disabled = false;
+    finalCallStage = 0; // Reset final call state
   });
 
   // Socket event listeners
@@ -198,22 +216,16 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("bid-placed", (data) => {
     currentBidDisplay.textContent = data.currentBid;
     leadingBidderDisplay.textContent = data.leadingBidder;
-  });
-
-  socket.on("call-update", ({ callCount, message }) => {
-    if (callCount > 0) {
-      let type = '';
-      if (callCount === 1) type = 'first';
-      else if (callCount === 2) type = 'second';
-      else if (callCount === 3) type = 'final';
-
-      showCallPopup(message, type);
-      finalCallBtn.textContent = message;
+    
+    // If we're in final call stage and a bid is placed
+    if (finalCallStage > 0 && finalCallStage < 3) {
+      // Reset the final call process
+      clearTimeout(callModalTimeout);
+      callModal.classList.add("hidden");
+      finalCallStage = 0;
       
-      // Play corresponding audio
-      playCallSound(type);
-    } else {
-      finalCallBtn.textContent = "Final Call!";
+      // Show notification
+      alert("New bid received! Final call reset to first call.");
     }
   });
 
@@ -244,8 +256,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateParticipantsList(participants) {
     participantsContainer.innerHTML = '';
+    
+    // Filter out the auctioneer
     const bidders = participants.filter(p => p.role === 'bidder');
-
+    
     bidders.forEach(participant => {
       const participantElement = document.createElement('div');
       participantElement.className = 'participant-item';
@@ -253,11 +267,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>${participant.name}</span>
         <span>${participant.wins ? participant.wins.length : 0} wins</span>
       `;
-
+      
       participantElement.addEventListener('click', () => {
         showParticipantWins(participant.name);
       });
-
+      
       participantsContainer.appendChild(participantElement);
     });
   }
@@ -267,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.success) {
         modalParticipantName.textContent = participantName;
         wonPlayersList.innerHTML = '';
-
+        
         if (response.wins && response.wins.length > 0) {
           response.wins.forEach(win => {
             const wonPlayerElement = document.createElement('div');
@@ -281,12 +295,24 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           wonPlayersList.innerHTML = '<p>No players won yet</p>';
         }
-
+        
         participantModal.classList.add('show');
       } else {
         alert(response.message || "Failed to get participant wins");
       }
     });
+  }
+
+  function showCall(message, className) {
+    callMessage.textContent = message;
+    callModal.className = "modal-content call-modal " + className;
+    callModal.classList.remove("hidden");
+    
+    // Auto-hide after 1.5 seconds
+    clearTimeout(callModalTimeout);
+    callModalTimeout = setTimeout(() => {
+      callModal.classList.add("hidden");
+    }, 1500);
   }
 
   function resetPlayerForm() {
@@ -301,39 +327,5 @@ document.addEventListener("DOMContentLoaded", () => {
     alert(message);
     createRoomBtn.disabled = false;
     createRoomBtn.textContent = "Create Room";
-  }
-
-  // Show animated call popup
-  function showCallPopup(message, type) {
-    const popup = document.createElement('div');
-    popup.className = `call-popup ${type}`;
-    popup.textContent = message;
-    document.body.appendChild(popup);
-
-    setTimeout(() => popup.classList.add('show'), 10);
-
-    setTimeout(() => {
-      popup.classList.remove('show');
-      setTimeout(() => popup.remove(), 500);
-    }, 3000);
-  }
-
-  // Play audio for call type
-  function playCallSound(type) {
-    try {
-      let audioElement;
-      if (type === 'first') audioElement = firstCallAudio;
-      else if (type === 'second') audioElement = secondCallAudio;
-      else if (type === 'final') audioElement = finalCallAudio;
-      
-      if (audioElement) {
-        audioElement.currentTime = 0;
-        audioElement.play().catch(err => {
-          console.warn(`Audio playback failed for ${type} call:`, err);
-        });
-      }
-    } catch (e) {
-      console.error('Error playing call sound:', e);
-    }
   }
 });
