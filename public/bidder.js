@@ -28,21 +28,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const winnerNameDisplay = document.getElementById("winnerName");
   const winningBidDisplay = document.getElementById("winningBid");
 
-  // Audio elements
-  const firstCallAudio = document.getElementById('firstCallAudio');
-  const secondCallAudio = document.getElementById('secondCallAudio');
-  const finalCallAudio = document.getElementById('finalCallAudio');
-
   // State
   let userName = "";
   let roomId = "";
   let hasBid = false;
   let currentBidIncrement = 10;
-
-  // Preload audio
-  if (firstCallAudio) firstCallAudio.load();
-  if (secondCallAudio) secondCallAudio.load();
-  if (finalCallAudio) finalCallAudio.load();
 
   // Extract room ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -145,13 +135,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (callCount === 1) type = 'first';
       else if (callCount === 2) type = 'second';
       else if (callCount === 3) type = 'final';
-
+      
       showCallPopup(message, type);
-      playCallSound(type);
     }
   });
 
-  // Show animated call popup
+  // Show call popup
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
@@ -166,24 +155,5 @@ document.addEventListener("DOMContentLoaded", () => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
     }, 3000);
-  }
-
-  // Play audio for call type
-  function playCallSound(type) {
-    try {
-      let audioElement;
-      if (type === 'first') audioElement = firstCallAudio;
-      else if (type === 'second') audioElement = secondCallAudio;
-      else if (type === 'final') audioElement = finalCallAudio;
-      
-      if (audioElement) {
-        audioElement.currentTime = 0;
-        audioElement.play().catch(err => {
-          console.warn(`Audio playback failed for ${type} call:`, err);
-        });
-      }
-    } catch (e) {
-      console.error('Error playing call sound:', e);
-    }
   }
 });
