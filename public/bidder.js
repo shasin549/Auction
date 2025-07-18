@@ -28,11 +28,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const winnerNameDisplay = document.getElementById("winnerName");
   const winningBidDisplay = document.getElementById("winningBid");
 
+  // Audio elements
+  const firstCallAudio = document.getElementById('firstCallAudio');
+  const secondCallAudio = document.getElementById('secondCallAudio');
+  const finalCallAudio = document.getElementById('finalCallAudio');
+
   // State
   let userName = "";
   let roomId = "";
   let hasBid = false;
   let currentBidIncrement = 10;
+
+  // Preload audio
+  if (firstCallAudio) firstCallAudio.load();
+  if (secondCallAudio) secondCallAudio.load();
+  if (finalCallAudio) finalCallAudio.load();
 
   // Extract room ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -97,27 +107,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Final call notification
-  socket.on("final-call-update", ({ stage }) => {
-    let message = "";
-    switch(stage) {
-      case 1: message = "FIRST CALL! Bid now!"; break;
-      case 2: message = "SECOND CALL! Last chance!"; break;
-      case 3: message = "FINAL CALL! Auction closing!"; break;
-    }
-    
-    // Create notification
-    const notification = document.createElement('div');
-    notification.className = 'call-notification';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
-  });
-
   // Socket Events
   socket.on("auction-started", (playerData) => {
     playerNameDisplay.textContent = playerData.playerName.toUpperCase();
@@ -149,4 +138,52 @@ document.addEventListener("DOMContentLoaded", () => {
     winnerSection.classList.remove("hidden");
     placeBidBtn.disabled = true;
   });
+
+  socket.on("call-update", ({ callCount, message }) => {
+    if (callCount > 0) {
+      let type = '';
+      if (callCount === 1) type = 'first';
+      else if (callCount === 2) type = 'second';
+      else if (callCount === 3) type = 'final';
+
+      showCallPopup(message, type);
+      playCallSound(type);
+    }
+  });
+
+  // Show animated call popup
+  function showCallPopup(message, type) {
+    const popup = document.createElement('div');
+    popup.className = `call-popup ${type}`;
+    popup.textContent = message;
+    document.body.appendChild(popup);
+    
+    // Trigger animation
+    setTimeout(() => popup.classList.add('show'), 10);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      popup.classList.remove('show');
+      setTimeout(() => popup.remove(), 500);
+    }, 3000);
+  }
+
+  // Play audio for call type
+  function playCallSound(type) {
+    try {
+      let audioElement;
+      if (type === 'first') audioElement = firstCallAudio;
+      else if (type === 'second') audioElement = secondCallAudio;
+      else if (type === 'final') audioElement = finalCallAudio;
+      
+      if (audioElement) {
+        audioElement.currentTime = 0;
+        audioElement.play().catch(err => {
+          console.warn(`Audio playback failed for ${type} call:`, err);
+        });
+      }
+    } catch (e) {
+      console.error('Error playing call sound:', e);
+    }
+  }
 });
