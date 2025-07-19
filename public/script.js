@@ -1,10 +1,9 @@
+// script.js - Main entry point for the auction system
 document.addEventListener("DOMContentLoaded", () => {
   const auctioneerBtn = document.getElementById("auctioneerBtn");
   const bidderBtn = document.getElementById("bidderBtn");
-  const appContainer = document.querySelector(".container");
-  const roleSelector = document.querySelector(".role-selector");
 
-  // Add ripple effect to buttons
+  // Initialize ripple effect for buttons
   function createRipple(event) {
     const button = event.currentTarget;
     const circle = document.createElement("span");
@@ -17,116 +16,97 @@ document.addEventListener("DOMContentLoaded", () => {
     circle.classList.add("ripple");
 
     const ripple = button.getElementsByClassName("ripple")[0];
-    if (ripple) {
-      ripple.remove();
-    }
+    if (ripple) ripple.remove();
 
     button.appendChild(circle);
   }
 
-  // Add animation to container
-  function animateContainer() {
-    appContainer.style.opacity = 0;
-    appContainer.style.transform = "translateY(20px)";
-    setTimeout(() => {
-      appContainer.style.transition = "opacity 0.3s ease, transform 0.3s ease";
-      appContainer.style.opacity = 1;
-      appContainer.style.transform = "translateY(0)";
-    }, 10);
+  // Add hover effects
+  function setupButtonHover(button) {
+    button.addEventListener("mouseenter", () => {
+      button.style.transform = "translateY(-2px)";
+      button.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+      button.style.transition = "all 0.2s ease";
+    });
+
+    button.addEventListener("mouseleave", () => {
+      button.style.transform = "translateY(0)";
+      button.style.boxShadow = "none";
+    });
   }
 
-  // Check for return visits
-  function checkReturningUser() {
-    const lastRole = localStorage.getItem('lastRole');
-    if (lastRole) {
-      const lastVisit = localStorage.getItem('lastVisit');
-      const daysSinceLastVisit = lastVisit ? Math.floor((Date.now() - parseInt(lastVisit)) / (1000 * 60 * 60 * 24)) : null;
+  // Navigation handlers
+  function navigateTo(page) {
+    // Add loading state
+    document.body.classList.add("page-transition");
+    
+    setTimeout(() => {
+      window.location.href = page;
+    }, 300);
+  }
+
+  // Event listeners with error handling
+  try {
+    auctioneerBtn.addEventListener("click", (e) => {
+      createRipple(e);
+      setTimeout(() => navigateTo("auctioneer.html"), 300);
+    });
+
+    bidderBtn.addEventListener("click", (e) => {
+      createRipple(e);
+      setTimeout(() => navigateTo("bidder.html"), 300);
+    });
+
+    // Setup hover effects
+    setupButtonHover(auctioneerBtn);
+    setupButtonHover(bidderBtn);
+
+    // Check if coming from a room link
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('room')) {
+      const roomId = urlParams.get('room');
+      sessionStorage.setItem('lastRoom', roomId);
       
-      if (daysSinceLastVisit !== null && daysSinceLastVisit < 7) {
-        showWelcomeBackMessage(lastRole, daysSinceLastVisit);
+      // Auto-navigate bidders if coming from room link
+      if (window.location.pathname.endsWith("bidder.html")) {
+        document.getElementById("roomId").value = roomId;
       }
     }
-    localStorage.setItem('lastVisit', Date.now().toString());
-  }
 
-  function showWelcomeBackMessage(role, days) {
-    const welcomeMsg = document.createElement('div');
-    welcomeMsg.className = 'welcome-message';
-    welcomeMsg.innerHTML = `
-      <p>Welcome back! Last time you were a ${role}.</p>
-      <small>${days} day${days !== 1 ? 's' : ''} since last visit</small>
-    `;
-    roleSelector.insertBefore(welcomeMsg, roleSelector.firstChild);
-    setTimeout(() => welcomeMsg.classList.add('show'), 100);
-  }
-
-  // Handle role selection
-  function handleRoleSelection(role, e) {
-    createRipple(e);
-    
-    // Store selection
-    localStorage.setItem('lastRole', role);
-    
-    // Add loading state
-    const button = e.currentTarget;
-    const originalContent = button.innerHTML;
-    button.innerHTML = `<span class="spinner"></span> Loading...`;
-    button.disabled = true;
-    
-    // Animate transition
-    appContainer.style.transition = "opacity 0.3s ease, transform 0.3s ease";
-    appContainer.style.opacity = 0;
-    appContainer.style.transform = "translateY(-20px)";
-    
-    setTimeout(() => {
-      window.location.href = `${role}.html`;
-    }, 300);
-    
-    // Restore button if navigation fails
-    setTimeout(() => {
-      button.innerHTML = originalContent;
-      button.disabled = false;
-    }, 2000);
-  }
-
-  // Add event listeners
-  auctioneerBtn.addEventListener("click", (e) => handleRoleSelection('auctioneer', e));
-  bidderBtn.addEventListener("click", (e) => handleRoleSelection('bidder', e));
-
-  // Add hover effect to buttons
-  [auctioneerBtn, bidderBtn].forEach(btn => {
-    btn.addEventListener("mouseenter", () => {
-      btn.style.transform = "translateY(-2px)";
-      btn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
-    });
-    
-    btn.addEventListener("mouseleave", () => {
-      btn.style.transform = "translateY(0)";
-      btn.style.boxShadow = "none";
-    });
-    
-    btn.addEventListener("focus", () => {
-      btn.style.outline = "2px solid var(--primary)";
-      btn.style.outlineOffset = "2px";
-    });
-    
-    btn.addEventListener("blur", () => {
-      btn.style.outline = "none";
-    });
-  });
-
-  // Initialize
-  animateContainer();
-  checkReturningUser();
-
-  // Service Worker Registration
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').then(registration => {
-        console.log('ServiceWorker registration successful');
-      }).catch(err => {
-        console.log('ServiceWorker registration failed: ', err);
-      });
-    });
+  } catch (error) {
+    console.error("Initialization error:", error);
+    // Fallback navigation if ripple effects fail
+    auctioneerBtn.onclick = () => navigateTo("auctioneer.html");
+    bidderBtn.onclick = () => navigateTo("bidder.html");
   }
 });
+
+// Add CSS for ripple effect dynamically
+const style = document.createElement('style');
+style.textContent = `
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.7);
+    transform: scale(0);
+    animation: ripple 600ms linear;
+    pointer-events: none;
+  }
+  
+  @keyframes ripple {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  
+  .page-transition {
+    animation: fadeOut 300ms ease forwards;
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
