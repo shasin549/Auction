@@ -3,73 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Player Card Auction Platform</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <title>Player Card Auction</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="background-animation"></div>
-  
   <div class="container">
-    <header class="header">
+    <header class="index-header">
       <div class="logo">
-        <i class="fas fa-gavel auction-icon"></i>
-        <h1>Card<span>Auction</span></h1>
+        <svg class="auction-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 20L22 12M14 20L12 18M14 20L17 17M10 8L4 14L6 16L12 10M10 8L12 10M10 8L7 11M12 10L14 12M22 12L20 10M22 12L20 14" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>Player Card Auction</h1>
       </div>
-      <p class="tagline">The ultimate player card bidding experience</p>
+      <p>Select your role to begin the fantasy sports experience</p>
     </header>
 
-    <main class="main-content">
-      <div class="role-cards">
-        <div class="role-card auctioneer-card" id="auctioneerBtn">
-          <div class="card-content">
-            <div class="icon-circle">
-              <i class="fas fa-user-tie"></i>
-            </div>
-            <h2>Auctioneer</h2>
-            <p>Host and manage live auctions with real-time bidding</p>
-            <div class="features">
-              <span><i class="fas fa-check"></i> Create auction rooms</span>
-              <span><i class="fas fa-check"></i> Manage players</span>
-              <span><i class="fas fa-check"></i> Control bidding flow</span>
-            </div>
-          </div>
-          <button class="btn btn-primary">
-            Enter as Auctioneer
-            <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
-
-        <div class="role-card bidder-card" id="bidderBtn">
-          <div class="card-content">
-            <div class="icon-circle">
-              <i class="fas fa-user"></i>
-            </div>
-            <h2>Bidder</h2>
-            <p>Participate in exciting auctions and win player cards</p>
-            <div class="features">
-              <span><i class="fas fa-check"></i> Join live auctions</span>
-              <span><i class="fas fa-check"></i> Real-time bidding</span>
-              <span><i class="fas fa-check"></i> Track your wins</span>
-            </div>
-          </div>
-          <button class="btn btn-secondary">
-            Enter as Bidder
-            <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
-      </div>
+    <main class="role-selector">
+      <button id="auctioneerBtn" class="btn btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px;">
+          <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19.4 15C19.2669 15.3016 19.227 15.6363 19.286 15.9606C19.345 16.2849 19.5003 16.5833 19.73 16.82L19.79 16.88C19.976 17.0659 20.122 17.2876 20.22 17.5329C20.3179 17.7782 20.3658 18.0421 20.36 18.308C20.36 19.241 19.6 20 18.67 20H5.33C4.4 20 3.64 19.241 3.64 18.308C3.63416 18.0421 3.68211 17.7782 3.78 17.5329C3.87789 17.2876 4.024 17.0659 4.21 16.88L4.27 16.82C4.49971 16.5833 4.65504 16.2849 4.714 15.9606C4.77296 15.6363 4.73309 15.3016 4.6 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        I'm an Auctioneer
+      </button>
+      
+      <button id="bidderBtn" class="btn btn-success">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 8px;">
+          <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M17 11L19 13L23 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        I'm a Bidder
+      </button>
     </main>
-
-    <footer class="footer">
-      <p>© 2023 CardAuction Platform. All rights reserved.</p>
-      <div class="social-links">
-        <a href="#"><i class="fab fa-twitter"></i></a>
-        <a href="#"><i class="fab fa-discord"></i></a>
-        <a href="#"><i class="fab fa-github"></i></a>
-      </div>
-    </footer>
   </div>
 
   <script src="script.js"></script>
