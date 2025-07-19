@@ -3,97 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auctioneer Panel</title>
+  <title>Auctioneer Panel | CardAuction</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="background-animation"></div>
+  
   <div class="container">
-    <header>
-      <h1>Auctioneer Panel</h1>
+    <header class="header">
+      <div class="logo">
+        <i class="fas fa-gavel auction-icon"></i>
+        <h1>Auctioneer <span>Panel</span></h1>
+      </div>
       <div class="connection-status">
         <span class="status-icon"></span>
         <span id="connection-status">Disconnected</span>
       </div>
     </header>
 
-    <main>
+    <main class="auctioneer-main">
       <!-- Room Creation Section -->
-      <div id="roomCreation" class="glass-panel">
-        <h2>Create Auction Room</h2>
-        <div class="form-group">
-          <label for="roomName">Room Name</label>
-          <input type="text" id="roomName" placeholder="e.g., PremierLeague2025" required>
+      <div class="glass-panel" id="roomCreation">
+        <h2><i class="fas fa-plus-circle"></i> Create Auction Room</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="roomName"><i class="fas fa-signature"></i> Room Name</label>
+            <input type="text" id="roomName" placeholder="e.g., PremierLeague2025">
+          </div>
+          <div class="form-group">
+            <label for="bidIncrement"><i class="fas fa-arrow-up"></i> Bid Increment</label>
+            <select id="bidIncrement">
+              <option value="5">₹5</option>
+              <option value="10" selected>₹10</option>
+              <option value="25">₹25</option>
+              <option value="50">₹50</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="bidIncrement">Bid Increment</label>
-          <select id="bidIncrement" required>
-            <option value="5">₹5</option>
-            <option value="10" selected>₹10</option>
-            <option value="25">₹25</option>
-            <option value="50">₹50</option>
-          </select>
-        </div>
-        <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
+        <button id="createRoomBtn" class="btn btn-primary">
+          <i class="fas fa-plus"></i> Create Room
+        </button>
       </div>
 
-      <!-- Room Info Section (hidden initially) -->
-      <div id="roomInfo" class="glass-panel hidden">
-        <h2>Room Information</h2>
+      <!-- Room Info Section -->
+      <div class="glass-panel hidden" id="roomInfo">
+        <h2><i class="fas fa-info-circle"></i> Room Information</h2>
+        
         <div class="info-grid">
-          <div>
-            <p><strong>Room ID:</strong></p>
-            <p id="roomIdDisplay" class="info-value"></p>
+          <div class="info-item">
+            <label><i class="fas fa-id-card"></i> Room ID</label>
+            <div class="info-value" id="roomIdDisplay"></div>
           </div>
-          <div>
-            <p><strong>Participants:</strong></p>
-            <p id="participantCount" class="info-value">0</p>
+          <div class="info-item">
+            <label><i class="fas fa-users"></i> Participants</label>
+            <div class="info-value" id="participantCount">0</div>
           </div>
         </div>
         
         <div class="form-group">
-          <label for="inviteLink">Invite Link</label>
-          <input type="text" id="inviteLink" readonly>
-          <button id="copyLinkBtn" class="btn btn-secondary">Copy</button>
+          <label><i class="fas fa-link"></i> Invite Link</label>
+          <div class="input-group">
+            <input type="text" id="inviteLink" readonly>
+            <button id="copyLinkBtn" class="btn btn-secondary">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
         </div>
 
-        <div class="participants-list glass-panel">
-          <h3>Participants</h3>
-          <div id="participantsContainer"></div>
+        <div class="participants-section">
+          <h3><i class="fas fa-user-friends"></i> Participants</h3>
+          <div id="participantsContainer" class="participants-list"></div>
         </div>
       </div>
 
       <!-- Player Form Section -->
-      <div id="playerForm" class="glass-panel hidden">
-        <h2>Add New Player</h2>
+      <div class="glass-panel hidden" id="playerForm">
+        <h2><i class="fas fa-user-plus"></i> Add New Player</h2>
         <div class="form-row">
           <div class="form-group">
-            <label for="playerName">Player Name</label>
-            <input type="text" id="playerName" required>
+            <label><i class="fas fa-user"></i> Player Name</label>
+            <input type="text" id="playerName">
           </div>
           <div class="form-group">
-            <label for="playerClub">Club</label>
-            <input type="text" id="playerClub" required>
+            <label><i class="fas fa-tshirt"></i> Club</label>
+            <input type="text" id="playerClub">
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="playerPosition">Position</label>
-            <input type="text" id="playerPosition" required>
+            <label><i class="fas fa-map-marker-alt"></i> Position</label>
+            <input type="text" id="playerPosition">
           </div>
           <div class="form-group">
-            <label for="startingPrice">Starting Price (₹)</label>
-            <input type="number" id="startingPrice" min="1" required>
+            <label><i class="fas fa-rupee-sign"></i> Starting Price</label>
+            <input type="number" id="startingPrice" min="1">
           </div>
         </div>
         <div class="button-group">
-          <button id="startAuctionBtn" class="btn btn-success">Start Bidding</button>
-          <button id="finalCallBtn" class="btn btn-warning hidden">Final Call!</button>
-          <button id="nextPlayerBtn" class="btn btn-primary hidden">Next Player</button>
+          <button id="startAuctionBtn" class="btn btn-success">
+            <i class="fas fa-gavel"></i> Start Bidding
+          </button>
+          <button id="finalCallBtn" class="btn btn-warning hidden">
+            <i class="fas fa-bell"></i> Final Call!
+          </button>
+          <button id="nextPlayerBtn" class="btn btn-primary hidden">
+            <i class="fas fa-arrow-right"></i> Next Player
+          </button>
         </div>
       </div>
 
       <!-- Player Preview Section -->
-      <div id="playerPreview" class="hidden">
+      <div class="hidden" id="playerPreview">
         <div class="player-card-glass">
           <span class="version-badge">Live Auction</span>
           <h2 class="player-name" id="previewName">-</h2>
@@ -114,28 +136,16 @@
 
         <div class="bid-status-glass">
           <div class="bid-info">
-            <span>Current Bid:</span>
+            <span><i class="fas fa-hammer"></i> Current Bid:</span>
             <span id="currentBid" class="bid-value">₹0</span>
           </div>
           <div class="bid-info">
-            <span>Leading Bidder:</span>
+            <span><i class="fas fa-crown"></i> Leading Bidder:</span>
             <span id="leadingBidder" class="bid-value">-</span>
           </div>
         </div>
       </div>
     </main>
-  </div>
-
-  <!-- Participant Wins Modal -->
-  <div id="participantModal" class="modal hidden">
-    <div class="modal-content glass-panel">
-      <span class="close-btn">&times;</span>
-      <h2 id="modalParticipantName"></h2>
-      <div class="modal-body">
-        <h3>Won Players</h3>
-        <div id="wonPlayersList"></div>
-      </div>
-    </div>
   </div>
 
   <!-- Audio Elements -->
@@ -150,7 +160,6 @@
   </audio>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="js/supabaseClient.js"></script>
-  <script src="js/auctioneer.js"></script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
