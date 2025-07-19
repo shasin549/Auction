@@ -1,112 +1,179 @@
+<!-- Bidder Panel -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bidder Panel | CardAuction</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
+  <title>Bidder Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --secondary: #10b981;
+      --dark: #1e293b;
+      --light: #f8fafc;
+      --gray: #94a3b8;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f1f5f9;
+      color: var(--dark);
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 24px;
+    }
+    h1 {
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      margin-right: 8px;
+    }
+    .status.connected .status-dot {
+      background: var(--secondary);
+    }
+    .section {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    .btn-secondary {
+      background: var(--secondary);
+    }
+    .player-card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+    }
+    .player-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .bid-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px dashed #e2e8f0;
+    }
+    .winner-card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+  </style>
 </head>
 <body>
-  <div class="background-animation"></div>
-  
   <div class="container">
-    <header class="header">
-      <div class="logo">
-        <i class="fas fa-hand-holding-usd auction-icon"></i>
-        <h1>Bidder <span>Panel</span></h1>
+    <h1>Bidder Panel</h1>
+    <div class="status">
+      <div class="status-dot"></div>
+      <span>Disconnected</span>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Join Auction Room</h2>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" placeholder="Enter your name">
       </div>
-      <div class="connection-status">
-        <span class="status-icon"></span>
-        <span id="connectionStatus">Disconnected</span>
+      <div class="form-group">
+        <label>Room ID</label>
+        <input type="text" placeholder="Enter room ID">
       </div>
-    </header>
+      <button class="btn">Join Room</button>
+    </div>
 
-    <main class="bidder-main">
-      <!-- Join Form Section -->
-      <div class="glass-panel" id="joinSection">
-        <h2><i class="fas fa-sign-in-alt"></i> Join Auction Room</h2>
-        <div class="form-group">
-          <label><i class="fas fa-user"></i> Your Name</label>
-          <input type="text" id="bidderName" placeholder="Enter your name">
+    <div class="section">
+      <div class="player-card">
+        <h3>Live Auction</h3>
+        <div class="player-info">
+          <span>CLUB - POSITION</span>
+          <span>STARTING PRICE</span>
         </div>
-        <div class="form-group">
-          <label><i class="fas fa-door-open"></i> Room ID</label>
-          <input type="text" id="roomId" placeholder="Enter room ID">
+        <div class="player-info">
+          <span>-</span>
+          <span>-</span>
         </div>
-        <button id="joinBtn" class="btn btn-primary">
-          <i class="fas fa-arrow-right"></i> Join Room
-        </button>
-      </div>
-
-      <!-- Auction Display Section -->
-      <div class="hidden" id="auctionSection">
-        <div class="player-card-glass">
-          <span class="version-badge">Live Auction</span>
-          <h2 class="player-name" id="playerNameDisplay">-</h2>
-          <div class="player-detail">
-            <span class="player-detail-label">CLUB</span>
-            <span class="player-detail-value" id="playerClub">-</span>
-          </div>
-          <div class="player-detail">
-            <span class="player-detail-label">POSITION</span>
-            <span class="player-detail-value" id="playerPosition">-</span>
-          </div>
-          <div class="player-detail">
-            <span class="player-detail-label">STARTING PRICE</span>
-            <span class="player-detail-value" id="startingPriceDisplay">-</span>
-          </div>
-          <div class="player-footer">PLAYER CARD 2025</div>
+        <div class="bid-info">
+          <span>Current Bid:</span>
+          <span>₹0</span>
         </div>
-
-        <div class="bid-status-glass">
-          <div class="bid-info">
-            <span><i class="fas fa-hammer"></i> Current Bid:</span>
-            <span id="currentBid" class="bid-value">₹0</span>
-          </div>
-          <div class="bid-info">
-            <span><i class="fas fa-crown"></i> Leading Bidder:</span>
-            <span id="leadingBidder" class="bid-value">-</span>
-          </div>
-        </div>
-
-        <button id="placeBidBtn" class="btn btn-success" disabled>
-          <i class="fas fa-gavel"></i> Place Bid (+₹<span id="bidIncrementValue">10</span>)
-        </button>
-
-        <!-- Winner Announcement -->
-        <div id="winnerSection" class="winner-card hidden">
-          <h3><i class="fas fa-trophy"></i> Auction Winner</h3>
-          <div class="winner-info">
-            <span><i class="fas fa-user"></i> Player:</span>
-            <span id="wonPlayer">-</span>
-          </div>
-          <div class="winner-info">
-            <span><i class="fas fa-crown"></i> Winner:</span>
-            <span id="winnerName">-</span>
-          </div>
-          <div class="winner-info">
-            <span><i class="fas fa-rupee-sign"></i> Winning Bid:</span>
-            <span id="winningBid">₹0</span>
-          </div>
+        <div class="bid-info">
+          <span>Leading Bidder:</span>
+          <span>-</span>
         </div>
       </div>
-    </main>
+      <button class="btn btn-secondary">Place Bid (+₹10)</button>
+    </div>
+
+    <div class="winner-card">
+      <h3 class="section-title">Auction Winner</h3>
+      <div class="player-info">
+        <span>Player:</span>
+        <span>-</span>
+      </div>
+      <div class="player-info">
+        <span>Winner:</span>
+        <span>-</span>
+      </div>
+      <div class="player-info">
+        <span>Winning Bid:</span>
+        <span>₹0</span>
+      </div>
+    </div>
   </div>
-
-  <!-- Audio Elements -->
-  <audio id="firstCallAudio" preload="auto">
-    <source src="audio/first-call.mp3" type="audio/mpeg">
-  </audio>
-  <audio id="secondCallAudio" preload="auto">
-    <source src="audio/second-call.mp3" type="audio/mpeg">
-  </audio>
-  <audio id="finalCallAudio" preload="auto">
-    <source src="audio/final-call.mp3" type="audio/mpeg">
-  </audio>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="bidder.js"></script>
 </body>
 </html>
