@@ -2,24 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Player Card Auction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Card Auction Platform</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+  <div class="background-animation"></div>
+  
   <div class="container">
-    <header>
-      <h1>Player Card Auction</h1>
-      <p>Select your role</p>
+    <header class="header">
+      <div class="logo">
+        <i class="fas fa-gavel auction-icon"></i>
+        <h1>Card<span>Auction</span></h1>
+      </div>
+      <p class="tagline">The ultimate player card bidding experience</p>
     </header>
 
-    <main class="role-selector">
-      <button id="auctioneerBtn" class="btn btn-primary">I'm an Auctioneer</button>
-      <button id="bidderBtn"   class="btn btn-success">I'm a Bidder</button>
+    <main class="main-content">
+      <div class="role-cards">
+        <div class="role-card auctioneer-card" id="auctioneerBtn">
+          <div class="card-content">
+            <div class="icon-circle">
+              <i class="fas fa-user-tie"></i>
+            </div>
+            <h2>Auctioneer</h2>
+            <p>Host and manage live auctions with real-time bidding</p>
+            <div class="features">
+              <span><i class="fas fa-check"></i> Create auction rooms</span>
+              <span><i class="fas fa-check"></i> Manage players</span>
+              <span><i class="fas fa-check"></i> Control bidding flow</span>
+            </div>
+          </div>
+          <button class="btn btn-primary">
+            Enter as Auctioneer
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <div class="role-card bidder-card" id="bidderBtn">
+          <div class="card-content">
+            <div class="icon-circle">
+              <i class="fas fa-user"></i>
+            </div>
+            <h2>Bidder</h2>
+            <p>Participate in exciting auctions and win player cards</p>
+            <div class="features">
+              <span><i class="fas fa-check"></i> Join live auctions</span>
+              <span><i class="fas fa-check"></i> Real-time bidding</span>
+              <span><i class="fas fa-check"></i> Track your wins</span>
+            </div>
+          </div>
+          <button class="btn btn-secondary">
+            Enter as Bidder
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-container">
+        <div class="stat-card">
+          <i class="fas fa-users"></i>
+          <div>
+            <h3>1,000+</h3>
+            <p>Active Bidders</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-trophy"></i>
+          <div>
+            <h3>5,000+</h3>
+            <p>Cards Auctioned</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <i class="fas fa-bolt"></i>
+          <div>
+            <h3>Real-time</h3>
+            <p>Bidding System</p>
+          </div>
+        </div>
+      </div>
     </main>
+
+    <footer class="footer">
+      <p>© 2023 CardAuction Platform. All rights reserved.</p>
+      <div class="social-links">
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-discord"></i></a>
+        <a href="#"><i class="fab fa-github"></i></a>
+      </div>
+    </footer>
   </div>
 
-  <!-- Link your JS file here -->
   <script src="script.js"></script>
 </body>
 </html>
