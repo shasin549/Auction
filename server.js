@@ -54,17 +54,17 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===== STATIC FILE SERVING ===== //
+// ===== STATIC FILES ===== //
 app.use(express.static(publicPath));
 app.use('/audio', express.static(path.join(publicPath, 'audio')));
 
-// HTML ROUTES
+// ===== ROUTES ===== //
 app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
 app.get('/auctioneer', (req, res) => res.sendFile(path.join(publicPath, 'auctioneer.html')));
 app.get('/bidder', (req, res) => res.sendFile(path.join(publicPath, 'bidder.html')));
 
-// API ROUTES
-app.get('/api/room/:id', async (req, res) => {
+// API Endpoint for room validation
+app.get('/api/rooms/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('rooms')
@@ -101,11 +101,11 @@ const io = new Server(server, {
 // Track active rooms and participants
 const activeRooms = new Map();
 
-// ===== AUCTION EVENT HANDLERS ===== //
+// ===== SOCKET EVENT HANDLERS ===== //
 io.on('connection', (socket) => {
   console.log(`New connection: ${socket.id}`);
 
-  // Join Room
+  // Join Room Handler
   socket.on('join-room', async ({ roomId, userName, role }, callback) => {
     try {
       // Verify room exists
@@ -140,7 +140,7 @@ io.on('connection', (socket) => {
       activeRooms.get(roomId).add(socket.id);
       socket.join(roomId);
 
-      // Get current participants count
+      // Get participant count
       const { count } = await supabase
         .from('participants')
         .select('*', { count: 'exact', head: true })
@@ -164,10 +164,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Start Auction
+  // Start Auction Handler
   socket.on('start-auction', async ({ roomId, playerId, playerName, playerClub, playerPosition, startingPrice }) => {
     try {
-      // Verify room and player
       const { data: room, error: roomError } = await supabase
         .from('rooms')
         .select('*')
@@ -176,7 +175,6 @@ io.on('connection', (socket) => {
 
       if (roomError || !room) throw new Error('Invalid room');
 
-      // Notify all participants
       io.to(roomId).emit('auction-started', { 
         playerId,
         playerName,
@@ -193,21 +191,27 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Place Bid
+  // Place Bid Handler
   socket.on('place-bid', async ({ roomId, playerId, bidderName, amount }) => {
     try {
-      // Verify player exists and get current bid
-      const { data: player, error: playerError } = await supabase
-        .from('players')
-        .select('current_bid')
-        .eq('id', playerId)
-        .single();
+      // Get current highest bid
+      const { data: bids, error: bidError } = await supabase
+        .from('bids')
+        .select('amount')
+        .eq('player_id', playerId)
+        .order('amount', { ascending: false })
+        .limit(1);
 
-      if (playerError || !player) throw new Error('Player not found');
-      if (amount <= player.current_bid) throw new Error('Bid too low');
+      if (bidError) throw bidError;
 
-      // Record bid in Supabase
-      const { error: bidError } = await supabase
+      const currentHighest = bids.length > 0 ? bids[0].amount : 0;
+      
+      if (amount <= currentHighest) {
+        throw new Error(`Bid must be higher than current ₹${currentHighest}`);
+      }
+
+      // Record bid
+      const { error } = await supabase
         .from('bids')
         .insert([{
           player_id: playerId,
@@ -217,17 +221,7 @@ io.on('connection', (socket) => {
           timestamp: new Date().toISOString()
         }]);
 
-      if (bidError) throw bidError;
-
-      // Update player with new bid
-      await supabase
-        .from('players')
-        .update({ 
-          current_bid: amount,
-          leading_bidder: bidderName,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', playerId);
+      if (error) throw error;
 
       // Notify all participants
       io.to(roomId).emit('bid-update', { 
@@ -244,8 +238,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Final Call
-  socket.on('final-call', async ({ roomId, callCount, message }) => {
+  // Final Call Handler
+  socket.on('final-call', ({ roomId, callCount, message }) => {
     try {
       io.to(roomId).emit('call-update', { 
         callCount, 
@@ -259,10 +253,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  // End Auction
+  // End Auction Handler
   socket.on('auction-ended', async ({ roomId, playerId, playerName, winnerName, winningBid }) => {
     try {
-      // Record winner in Supabase
       if (winnerName !== 'No Winner') {
         await supabase
           .from('winners')
@@ -275,16 +268,6 @@ io.on('connection', (socket) => {
           }]);
       }
 
-      // Update player status
-      await supabase
-        .from('players')
-        .update({ 
-          status: 'sold',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', playerId);
-
-      // Notify all participants
       io.to(roomId).emit('auction-ended', { 
         playerName, 
         winnerName, 
@@ -302,25 +285,21 @@ io.on('connection', (socket) => {
   // Disconnect Handler
   socket.on('disconnect', async () => {
     try {
-      // Find and remove from active rooms
       for (const [roomId, sockets] of activeRooms) {
         if (sockets.has(socket.id)) {
           sockets.delete(socket.id);
-          
-          // Update participant status in Supabase
+
           await supabase
             .from('participants')
             .update({ is_online: false })
             .eq('socket_id', socket.id);
 
-          // Get updated count
           const { count } = await supabase
             .from('participants')
             .select('*', { count: 'exact', head: true })
             .eq('room_id', roomId)
             .eq('is_online', true);
 
-          // Notify remaining participants
           if (sockets.size > 0) {
             io.to(roomId).emit('participant-update', {
               action: 'left',
@@ -331,20 +310,19 @@ io.on('connection', (socket) => {
           }
         }
       }
-
       console.log(`Disconnected: ${socket.id}`);
     } catch (err) {
       console.error('Disconnect error:', err);
     }
   });
 
-  // Error handling
+  // Error Handler
   socket.on('error', (err) => {
     console.error('Socket error:', err);
   });
 });
 
-// ===== HEALTH CHECK & METRICS ===== //
+// ===== HEALTH CHECK ===== //
 app.get('/health', async (req, res) => {
   try {
     const { count: activeRoomsCount } = await supabase
