@@ -12,23 +12,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // DOM Elements
-  const connectionStatus = document.querySelector('.status-text');
-  const statusDot = document.querySelector('.status-dot');
   const joinSection = document.getElementById("joinSection");
   const auctionSection = document.getElementById("auctionSection");
+  const connectionStatus = document.getElementById("connectionStatus");
   const joinBtn = document.getElementById("joinBtn");
   const placeBidBtn = document.getElementById("placeBidBtn");
-  const continueBtn = document.getElementById("continueBtn");
   const bidIncrementValue = document.getElementById("bidIncrementValue");
-  const connectionToast = document.getElementById("connectionToast");
 
-  // Player Info
+  // Player Info Displays
   const playerNameDisplay = document.getElementById("playerNameDisplay");
   const playerClubDisplay = document.getElementById("playerClub");
   const playerPositionDisplay = document.getElementById("playerPosition");
   const startingPriceDisplay = document.getElementById("startingPriceDisplay");
 
-  // Bid Info
+  // Bid Info Displays
   const currentBidDisplay = document.getElementById("currentBid");
   const leadingBidderDisplay = document.getElementById("leadingBidder");
 
@@ -42,8 +39,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   let userName = "";
   let roomId = "";
   let hasBid = false;
-  let currentBidIncrement = 10;
+  const currentBidIncrement = 10; // Fixed increment since not in schema
   let currentPlayerId = null;
+
+  // Set fixed bid increment display
+  bidIncrementValue.textContent = currentBidIncrement;
 
   // Extract room ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -54,53 +54,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Connection Status
   socket.on('connect', () => {
-    connectionStatus.textContent = 'Connected';
-    connectionStatus.style.color = '#10B981';
-    statusDot.style.backgroundColor = '#10B981';
-    showToast('Connected to auction server', 'success');
+    connectionStatus.querySelector('span').textContent = 'Connected';
+    connectionStatus.querySelector('.status-dot').style.backgroundColor = '#10B981';
   });
 
   socket.on('disconnect', () => {
-    connectionStatus.textContent = 'Disconnected';
-    connectionStatus.style.color = '#EF4444';
-    statusDot.style.backgroundColor = '#EF4444';
-    showToast('Disconnected from server', 'error');
+    connectionStatus.querySelector('span').textContent = 'Disconnected';
+    connectionStatus.querySelector('.status-dot').style.backgroundColor = '#EF4444';
   });
 
-  socket.on('connect_error', (err) => {
-    connectionStatus.textContent = 'Connection Error';
-    connectionStatus.style.color = '#F59E0B';
-    statusDot.style.backgroundColor = '#F59E0B';
-    showToast(`Connection error: ${err.message}`, 'warning');
-  });
-
-  // Join Room with Supabase
+  // Join Room
   joinBtn.addEventListener("click", async () => {
     userName = document.getElementById("bidderName").value.trim();
     roomId = document.getElementById("roomId").value.trim();
 
     if (!userName || !roomId) {
-      showToast("Please enter your name and room ID", "error");
+      alert("Please enter your name and room ID");
       return;
     }
 
-    joinBtn.disabled = true;
-    joinBtn.innerHTML = '<span class="spinner"></span> Joining...';
-
     try {
-      // Check if room exists
+      // Check if room exists (simplified check)
       const { data: room, error: roomError } = await supabase
         .from('rooms')
-        .select('bid_increment')
+        .select('id')
         .eq('id', roomId)
         .single();
 
       if (roomError || !room) {
         throw roomError || new Error("Room not found");
       }
-
-      currentBidIncrement = room.bid_increment || 10;
-      bidIncrementValue.textContent = currentBidIncrement;
 
       // Join room in Supabase
       const { error: joinError } = await supabase
@@ -127,43 +110,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         .from('players')
         .select('*')
         .eq('room_id', roomId)
-        .eq('status', 'auctioning')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (!auctionError && currentAuction) {
-        updatePlayerDisplay(currentAuction);
-        currentPlayerId = currentAuction.id;
+      if (!auctionError && currentAuction && currentAuction.length > 0) {
+        updatePlayerDisplay(currentAuction[0]);
+        currentPlayerId = currentAuction[0].id;
       }
 
       // Update UI
       joinSection.classList.add("hidden");
       auctionSection.classList.remove("hidden");
-      joinBtn.disabled = false;
-      joinBtn.innerHTML = '<i class="fas fa-door-open"></i> Join Room';
-      showToast(`Joined room ${roomId} successfully`, 'success');
 
     } catch (err) {
-      showToast(err.message || "Failed to join room", "error");
+      alert(err.message || "Failed to join room");
       console.error(err);
-      joinBtn.disabled = false;
-      joinBtn.innerHTML = '<i class="fas fa-door-open"></i> Join Room';
     }
   });
 
-  // Place Bid with Supabase
+  // Place Bid
   placeBidBtn.addEventListener("click", async () => {
     if (!currentPlayerId) {
-      showToast("No active auction to bid on", "error");
+      alert("No active auction to bid on");
       return;
     }
 
     if (hasBid) {
-      showToast("Wait for another bid before placing again", "warning");
+      alert("Wait for another bid before placing again");
       return;
     }
-
-    placeBidBtn.disabled = true;
-    placeBidBtn.innerHTML = '<span class="spinner"></span> Placing Bid...';
 
     try {
       // Get current highest bid
@@ -176,7 +151,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (bidError) throw bidError;
 
-      const currentBid = highestBid.length > 0 ? highestBid[0].amount : 0;
+      const currentBid = highestBid.length > 0 ? highestBid[0].amount : 
+        parseInt(currentBidDisplay.textContent.replace('₹', '')) || 0;
       const newBid = currentBid + currentBidIncrement;
 
       // Record bid in Supabase
@@ -201,22 +177,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       hasBid = true;
       placeBidBtn.disabled = true;
-      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Bid Placed!';
-      showToast(`Bid placed: ₹${newBid}`, "success");
 
     } catch (err) {
-      showToast("Failed to place bid", "error");
+      alert("Failed to place bid");
       console.error(err);
       hasBid = false;
       placeBidBtn.disabled = false;
-      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Place Bid';
     }
-  });
-
-  // Continue Bidding Button
-  continueBtn.addEventListener("click", () => {
-    winnerSection.classList.add("hidden");
-    auctionSection.classList.remove("hidden");
   });
 
   // Socket Events
@@ -235,31 +202,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentPlayerId = player.id;
       hasBid = false;
       placeBidBtn.disabled = false;
-      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Place Bid';
       winnerSection.classList.add("hidden");
-      auctionSection.classList.remove("hidden");
     } catch (err) {
       console.error("Error updating player display:", err);
     }
   });
 
   socket.on("bid-placed", ({ currentBid, leadingBidder }) => {
-    currentBidDisplay.textContent = currentBid;
+    currentBidDisplay.textContent = `₹${currentBid}`;
     leadingBidderDisplay.textContent = leadingBidder;
 
     if (leadingBidder !== userName) {
       hasBid = false;
       placeBidBtn.disabled = false;
-      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Place Bid';
     }
   });
 
   socket.on("auction-ended", ({ playerName, winnerName, winningBid }) => {
     wonPlayerDisplay.textContent = playerName;
     winnerNameDisplay.textContent = winnerName;
-    winningBidDisplay.textContent = winningBid;
+    winningBidDisplay.textContent = `₹${winningBid}`;
     winnerSection.classList.remove("hidden");
-    auctionSection.classList.add("hidden");
     placeBidBtn.disabled = true;
     currentPlayerId = null;
   });
@@ -281,34 +244,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     playerClubDisplay.textContent = player.club;
     playerPositionDisplay.textContent = player.position;
     startingPriceDisplay.textContent = `₹${player.starting_price}M`;
-    currentBidDisplay.textContent = player.starting_price;
+    currentBidDisplay.textContent = `₹${player.starting_price}`;
     leadingBidderDisplay.textContent = "-";
   }
 
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
-    popup.innerHTML = `
-      <i class="fas fa-bell"></i>
-      <span>${message}</span>
-    `;
-    document.getElementById('callPopupContainer').appendChild(popup);
+    popup.textContent = message;
+    document.body.appendChild(popup);
 
     setTimeout(() => popup.classList.add('show'), 10);
 
     setTimeout(() => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
-    }, 3000);
-  }
-
-  function showToast(message, type = 'info') {
-    connectionToast.textContent = message;
-    connectionToast.className = `toast toast-${type}`;
-    connectionToast.classList.remove('hidden');
-    
-    setTimeout(() => {
-      connectionToast.classList.add('hidden');
     }, 3000);
   }
 
