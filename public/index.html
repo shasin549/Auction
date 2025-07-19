@@ -5,6 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Player Card Auction</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Additional styles for better mobile experience */
+    .role-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 30px;
+    }
+    
+    .btn {
+      padding: 15px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: #4f46e5;
+      color: white;
+    }
+    
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -14,36 +45,47 @@
     </header>
 
     <main class="role-selector">
-      <div class="form-group">
-        <button id="auctioneerBtn" class="btn btn-primary">I'm an Auctioneer</button>
-      </div>
-      <div class="form-group">
-        <button id="bidderBtn" class="btn btn-success">I'm a Bidder</button>
-      </div>
+      <button id="auctioneerBtn" class="btn btn-primary">I'm an Auctioneer</button>
+      <button id="bidderBtn" class="btn btn-success">I'm a Bidder</button>
     </main>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Initialize Socket.io connection
-      const socket = io();
+      const auctioneerBtn = document.getElementById("auctioneerBtn");
+      const bidderBtn = document.getElementById("bidderBtn");
+
+      // Add click event listeners with proper error handling
+      function handleAuctioneerClick() {
+        try {
+          window.location.href = "auctioneer.html";
+        } catch (error) {
+          console.error("Error navigating to auctioneer page:", error);
+          alert("Failed to open auctioneer panel. Please try again.");
+        }
+      }
+
+      function handleBidderClick() {
+        try {
+          window.location.href = "bidder.html";
+        } catch (error) {
+          console.error("Error navigating to bidder page:", error);
+          alert("Failed to open bidder panel. Please try again.");
+        }
+      }
+
+      // Add both touch and click events for better mobile support
+      auctioneerBtn.addEventListener("click", handleAuctioneerClick);
+      auctioneerBtn.addEventListener("touchend", handleAuctioneerClick);
       
-      document.getElementById("auctioneerBtn").addEventListener("click", () => {
-        window.location.href = "auctioneer.html";
-      });
+      bidderBtn.addEventListener("click", handleBidderClick);
+      bidderBtn.addEventListener("touchend", handleBidderClick);
 
-      document.getElementById("bidderBtn").addEventListener("click", () => {
-        window.location.href = "bidder.html";
-      });
-
-      // Connection status handling
-      socket.on('connect', () => {
-        console.log('Connected to server');
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Disconnected from server');
+      // Prevent default behavior for touch events to avoid double-tap zoom
+      [auctioneerBtn, bidderBtn].forEach(btn => {
+        btn.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+        }, { passive: false });
       });
     });
   </script>
