@@ -18,7 +18,8 @@
 
     <main>
       <!-- Join Form Section -->
-      <div id="joinSection">
+      <div id="joinSection" class="glass-panel">
+        <h2>Join Auction Room</h2>
         <div class="form-group">
           <label for="bidderName">Your Name</label>
           <input type="text" id="bidderName" placeholder="Enter your name">
@@ -51,18 +52,35 @@
         </div>
 
         <div class="bid-status-glass">
-          <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
-          <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
+          <div class="bid-info">
+            <span>Current Bid:</span>
+            <span id="currentBid" class="bid-value">₹0</span>
+          </div>
+          <div class="bid-info">
+            <span>Leading Bidder:</span>
+            <span id="leadingBidder" class="bid-value">-</span>
+          </div>
         </div>
 
-        <button id="placeBidBtn" class="btn btn-success" disabled>Place Bid (+₹<span id="bidIncrementValue">10</span>)</button>
+        <button id="placeBidBtn" class="btn btn-success" disabled>
+          Place Bid (+₹<span id="bidIncrementValue">10</span>)
+        </button>
 
         <!-- Winner Announcement -->
         <div id="winnerSection" class="winner-card hidden">
           <h3>🏆 Auction Winner</h3>
-          <p><strong>Player:</strong> <span id="wonPlayer">-</span></p>
-          <p><strong>Winner:</strong> <span id="winnerName">-</span></p>
-          <p><strong>Winning Bid:</strong> ₹<span id="winningBid">0</span></p>
+          <div class="winner-info">
+            <span>Player:</span>
+            <span id="wonPlayer">-</span>
+          </div>
+          <div class="winner-info">
+            <span>Winner:</span>
+            <span id="winnerName">-</span>
+          </div>
+          <div class="winner-info">
+            <span>Winning Bid:</span>
+            <span id="winningBid">₹0</span>
+          </div>
         </div>
       </div>
     </main>
