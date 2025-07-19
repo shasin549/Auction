@@ -3,75 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Player Card Auction Platform</title>
+  <title>Player Card Auction</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="background-animation"></div>
-  
   <div class="container">
-    <header class="header">
-      <div class="logo">
-        <i class="fas fa-gavel auction-icon"></i>
-        <h1>Player<span>Auctions</span></h1>
-      </div>
-      <p class="tagline">The ultimate fantasy sports card bidding platform</p>
+    <header class="index-header">
+      <h1><i class="fas fa-gavel"></i> Player Card Auction</h1>
+      <p>Select your role to begin</p>
     </header>
 
-    <main class="main-content">
-      <div class="role-cards">
-        <div class="role-card auctioneer-card">
-          <div class="card-content">
-            <div class="icon-circle">
-              <i class="fas fa-user-tie"></i>
-            </div>
-            <h2>Auctioneer</h2>
-            <p>Host and manage live auctions with real-time bidding controls</p>
-            <div class="features">
-              <span><i class="fas fa-check-circle"></i> Create custom rooms</span>
-              <span><i class="fas fa-check-circle"></i> Manage player listings</span>
-              <span><i class="fas fa-check-circle"></i> Control bidding flow</span>
-            </div>
-          </div>
-          <button id="auctioneerBtn" class="btn btn-primary">
-            Enter as Auctioneer
-            <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
-
-        <div class="role-card bidder-card">
-          <div class="card-content">
-            <div class="icon-circle">
-              <i class="fas fa-user"></i>
-            </div>
-            <h2>Bidder</h2>
-            <p>Compete in live auctions to build your dream team</p>
-            <div class="features">
-              <span><i class="fas fa-check-circle"></i> Join active auctions</span>
-              <span><i class="fas fa-check-circle"></i> Real-time bidding</span>
-              <span><i class="fas fa-check-circle"></i> Track your collection</span>
-            </div>
-          </div>
-          <button id="bidderBtn" class="btn btn-secondary">
-            Enter as Bidder
-            <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
-      </div>
+    <main class="role-selector">
+      <button id="auctioneerBtn" class="btn btn-primary">
+        <i class="fas fa-gavel"></i> I'm an Auctioneer
+      </button>
+      <button id="bidderBtn" class="btn btn-secondary">
+        <i class="fas fa-hand-paper"></i> I'm a Bidder
+      </button>
     </main>
-
-    <footer class="footer">
-      <div class="footer-content">
-        <p>© 2023 PlayerAuctions. All rights reserved.</p>
-        <div class="social-links">
-          <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-          <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
-          <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
-        </div>
-      </div>
-    </footer>
   </div>
 
   <script src="script.js"></script>
