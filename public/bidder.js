@@ -1,12 +1,14 @@
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialize Supabase client
+document.addEventListener("DOMContentLoaded", async () => {
+  // Initialize Supabase
   const supabaseUrl = 'https://flwqvepusbjmgoovqvmi.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const socket = io('https://auction-zfku.onrender.com', {
     transports: ['websocket', 'polling'],
-    reconnectionAttempts: 5
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 10000
   });
 
   // DOM Elements
@@ -58,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     connectionStatus.querySelector('.status-icon').style.backgroundColor = '#EF4444';
   });
 
-  // Join Room
+  // Join Room with Supabase
   joinBtn.addEventListener("click", async () => {
     userName = document.getElementById("bidderName").value.trim();
     roomId = document.getElementById("roomId").value.trim();
@@ -69,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      // Verify room exists
+      // Check if room exists
       const { data: room, error: roomError } = await supabase
         .from('rooms')
         .select('bid_increment')
@@ -77,101 +79,132 @@ document.addEventListener("DOMContentLoaded", () => {
         .single();
 
       if (roomError || !room) {
-        alert("Room not found");
-        return;
+        throw roomError || new Error("Room not found");
       }
 
+      currentBidIncrement = room.bid_increment || 10;
+      bidIncrementValue.textContent = currentBidIncrement;
+
+      // Join room in Supabase
+      const { error: joinError } = await supabase
+        .from('participants')
+        .insert([{
+          room_id: roomId,
+          socket_id: socket.id,
+          name: userName,
+          role: 'bidder',
+          is_online: true
+        }]);
+
+      if (joinError) throw joinError;
+
+      // Join socket room
       socket.emit("join-room", { 
         roomId, 
         userName, 
         role: "bidder" 
-      }, (response) => {
-        if (response.success) {
-          currentBidIncrement = response.bidIncrement || 10;
-          bidIncrementValue.textContent = currentBidIncrement;
-          joinSection.classList.add("hidden");
-          auctionSection.classList.remove("hidden");
-          
-          // Check for active auction
-          checkActiveAuction();
-        } else {
-          alert(response.message || "Failed to join room");
-        }
       });
-    } catch (err) {
-      console.error("Error joining room:", err);
-      alert("Failed to join room");
-    }
-  });
 
-  // Check for active auction when joining
-  async function checkActiveAuction() {
-    try {
-      const { data: player, error } = await supabase
+      // Get current auction if one is active
+      const { data: currentAuction, error: auctionError } = await supabase
         .from('players')
         .select('*')
         .eq('room_id', roomId)
-        .eq('is_active', true)
+        .eq('status', 'auctioning')
         .single();
 
-      if (!error && player) {
-        currentPlayerId = player.id;
-        playerNameDisplay.textContent = player.name.toUpperCase();
-        playerClubDisplay.textContent = player.club;
-        playerPositionDisplay.textContent = player.position;
-        startingPriceDisplay.textContent = `₹${player.starting_price}M`;
-        
-        // Get current highest bid
-        const { data: highestBid, error: bidError } = await supabase
-          .from('bids')
-          .select('amount, bidder_name')
-          .eq('player_id', player.id)
-          .order('amount', { ascending: false })
-          .limit(1)
-          .single();
-
-        currentBidDisplay.textContent = highestBid?.amount || player.starting_price;
-        leadingBidderDisplay.textContent = highestBid?.bidder_name || "-";
-        
-        hasBid = false;
-        placeBidBtn.disabled = false;
+      if (!auctionError && currentAuction) {
+        updatePlayerDisplay(currentAuction);
+        currentPlayerId = currentAuction.id;
       }
-    } catch (err) {
-      console.error("Error checking active auction:", err);
-    }
-  }
 
-  // Place Bid
-  placeBidBtn.addEventListener("click", () => {
+      // Update UI
+      joinSection.classList.add("hidden");
+      auctionSection.classList.remove("hidden");
+
+    } catch (err) {
+      alert(err.message || "Failed to join room");
+      console.error(err);
+    }
+  });
+
+  // Place Bid with Supabase
+  placeBidBtn.addEventListener("click", async () => {
+    if (!currentPlayerId) {
+      alert("No active auction to bid on");
+      return;
+    }
+
     if (hasBid) {
       alert("Wait for another bid before placing again");
       return;
     }
 
-    socket.emit("place-bid", (response) => {
-      if (!response.success) {
-        alert(response.message || "Bid failed");
-        hasBid = false;
-        placeBidBtn.disabled = false;
-      } else {
-        hasBid = true;
-        placeBidBtn.disabled = true;
-      }
-    });
+    try {
+      // Get current highest bid
+      const { data: highestBid, error: bidError } = await supabase
+        .from('bids')
+        .select('amount')
+        .eq('player_id', currentPlayerId)
+        .order('amount', { ascending: false })
+        .limit(1);
+
+      if (bidError) throw bidError;
+
+      const currentBid = highestBid.length > 0 ? highestBid[0].amount : 0;
+      const newBid = currentBid + currentBidIncrement;
+
+      // Record bid in Supabase
+      const { error } = await supabase
+        .from('bids')
+        .insert([{
+          player_id: currentPlayerId,
+          bidder_name: userName,
+          amount: newBid,
+          room_id: roomId
+        }]);
+
+      if (error) throw error;
+
+      // Notify server of bid
+      socket.emit("place-bid", { 
+        roomId,
+        playerId: currentPlayerId,
+        bidderName: userName,
+        amount: newBid
+      });
+
+      hasBid = true;
+      placeBidBtn.disabled = true;
+
+    } catch (err) {
+      alert("Failed to place bid");
+      console.error(err);
+      hasBid = false;
+      placeBidBtn.disabled = false;
+    }
   });
 
   // Socket Events
-  socket.on("auction-started", (playerData) => {
-    playerNameDisplay.textContent = playerData.playerName.toUpperCase();
-    playerClubDisplay.textContent = playerData.playerClub;
-    playerPositionDisplay.textContent = playerData.playerPosition;
-    startingPriceDisplay.textContent = `₹${playerData.startingPrice}M`;
-    currentBidDisplay.textContent = playerData.startingPrice;
-    leadingBidderDisplay.textContent = "-";
+  socket.on("auction-started", async (playerData) => {
+    try {
+      // Get full player details from Supabase
+      const { data: player, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('id', playerData.playerId)
+        .single();
 
-    hasBid = false;
-    placeBidBtn.disabled = false;
-    winnerSection.classList.add("hidden");
+      if (error) throw error;
+
+      updatePlayerDisplay(player);
+      currentPlayerId = player.id;
+      hasBid = false;
+      placeBidBtn.disabled = false;
+      winnerSection.classList.add("hidden");
+    } catch (err) {
+      console.error("Error updating player display:", err);
+    }
   });
 
   socket.on("bid-placed", ({ currentBid, leadingBidder }) => {
@@ -184,14 +217,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  socket.on("auction-ended", async ({ playerName, winnerName, winningBid }) => {
+  socket.on("auction-ended", ({ playerName, winnerName, winningBid }) => {
     wonPlayerDisplay.textContent = playerName;
     winnerNameDisplay.textContent = winnerName;
     winningBidDisplay.textContent = winningBid;
     winnerSection.classList.remove("hidden");
     placeBidBtn.disabled = true;
-    
-    // Update local state
     currentPlayerId = null;
   });
 
@@ -206,27 +237,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Show call popup
+  // Helper functions
+  function updatePlayerDisplay(player) {
+    playerNameDisplay.textContent = player.name.toUpperCase();
+    playerClubDisplay.textContent = player.club;
+    playerPositionDisplay.textContent = player.position;
+    startingPriceDisplay.textContent = `₹${player.starting_price}M`;
+    currentBidDisplay.textContent = player.starting_price;
+    leadingBidderDisplay.textContent = "-";
+  }
+
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
     popup.textContent = message;
     document.body.appendChild(popup);
 
-    // Trigger animation
     setTimeout(() => popup.classList.add('show'), 10);
 
-    // Auto-remove after 3 seconds
     setTimeout(() => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
     }, 3000);
   }
 
-  // Handle page visibility changes
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && roomId) {
-      checkActiveAuction();
+  // Handle page refresh or close
+  window.addEventListener('beforeunload', async () => {
+    try {
+      await supabase
+        .from('participants')
+        .update({ is_online: false })
+        .eq('socket_id', socket.id);
+    } catch (err) {
+      console.error("Error updating participant status:", err);
     }
   });
 });
