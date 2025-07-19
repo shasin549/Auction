@@ -1,5 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Initialize Supabase client
+  // ======================
+  // INITIALIZATION
+  // ======================
+  // Supabase Client
   const supabaseUrl = 'https://flwqvepusbjmgoovqvmi.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM';
   const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -7,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     auth: { persistSession: false }
   });
 
-  // Initialize Socket.IO
+  // Socket.IO Client
   const socket = io('https://auction-zfku.onrender.com', {
     reconnection: true,
     reconnectionAttempts: 5,
@@ -15,62 +18,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     transports: ['websocket']
   });
 
-  // DOM Elements
-  const connectionStatus = document.getElementById("connection-status");
-  const statusDot = document.querySelector('.status-dot');
-  const createRoomBtn = document.getElementById("createRoomBtn");
-  const roomNameInput = document.getElementById("roomName");
-  const roomInfo = document.getElementById("roomInfo");
-  const roomIdDisplay = document.getElementById("roomIdDisplay");
-  const inviteLink = document.getElementById("inviteLink");
-  const copyLinkBtn = document.getElementById("copyLinkBtn");
-  const participantCount = document.getElementById("participantCount");
-  const playerForm = document.getElementById("playerForm");
-  const startAuctionBtn = document.getElementById("startAuctionBtn");
-  const finalCallBtn = document.getElementById("finalCallBtn");
-  const nextPlayerBtn = document.getElementById("nextPlayerBtn");
+  // ======================
+  // DOM ELEMENTS
+  // ======================
+  const elements = {
+    connectionStatus: document.getElementById("connection-status"),
+    statusDot: document.querySelector('.status-dot'),
+    createRoomBtn: document.getElementById("createRoomBtn"),
+    roomNameInput: document.getElementById("roomName"),
+    roomInfo: document.getElementById("roomInfo"),
+    roomIdDisplay: document.getElementById("roomIdDisplay"),
+    inviteLink: document.getElementById("inviteLink"),
+    copyLinkBtn: document.getElementById("copyLinkBtn"),
+    participantCount: document.getElementById("participantCount"),
+    playerForm: document.getElementById("playerForm"),
+    startAuctionBtn: document.getElementById("startAuctionBtn"),
+    finalCallBtn: document.getElementById("finalCallBtn"),
+    nextPlayerBtn: document.getElementById("nextPlayerBtn")
+  };
 
-  // State variables
-  let roomId = "";
-  let currentPlayer = null;
-  let currentAuctionId = null;
-  let callCount = 0;
+  // ======================
+  // STATE MANAGEMENT
+  // ======================
+  const state = {
+    roomId: "",
+    currentPlayer: null,
+    currentAuctionId: null,
+    callCount: 0
+  };
 
-  // Connection status handling
-  function updateConnectionStatus(text, color) {
-    connectionStatus.textContent = text;
-    connectionStatus.style.color = color;
-    statusDot.style.backgroundColor = color;
-  }
+  // ======================
+  // CORE FUNCTIONS
+  // ======================
 
-  socket.on('connect', () => {
-    updateConnectionStatus("Connected", "#10B981");
-    createRoomBtn.disabled = false;
-  });
-
-  socket.on('disconnect', () => {
-    updateConnectionStatus("Disconnected", "#EF4444");
-    createRoomBtn.disabled = true;
-  });
-
-  socket.on('connect_error', (err) => {
-    updateConnectionStatus("Connection Error", "#F59E0B");
-    console.error("Socket error:", err);
-  });
-
-  // Create Room Function (Fixed for mobile)
+  // CREATE ROOM (FIXED FOR MOBILE)
   async function createRoom() {
-    const roomName = roomNameInput.value.trim();
-
-    if (!roomName) {
-      showToast("Please enter a room name", "error");
-      return;
-    }
-
-    setButtonLoading(createRoomBtn, true);
-
     try {
-      // Create room with just name (matches your schema)
+      console.log("[DEBUG] Create room triggered");
+      
+      const roomName = elements.roomNameInput.value.trim();
+      if (!roomName) {
+        showToast("Please enter a room name", "error");
+        return;
+      }
+
+      setButtonLoading(elements.createRoomBtn, true, "Creating...");
+
+      // 1. Create room in Supabase
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
         .insert([{ name: roomName }])
@@ -78,17 +72,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         .single();
 
       if (roomError || !roomData) {
-        throw roomError || new Error("Failed to create room");
+        throw roomError || new Error("Supabase returned no data");
       }
 
-      roomId = roomData.id;
-      console.log("Room created with ID:", roomId);
+      state.roomId = roomData.id;
+      console.log("[DEBUG] Room created with ID:", state.roomId);
 
-      // Join as auctioneer
+      // 2. Join as auctioneer
       const { error: joinError } = await supabase
         .from('participants')
         .insert([{
-          room_id: roomId,
+          room_id: state.roomId,
           socket_id: socket.id,
           name: "Auctioneer",
           role: "auctioneer",
@@ -97,118 +91,62 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (joinError) throw joinError;
 
-      // Update UI
-      roomIdDisplay.textContent = roomId;
-      inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
-      inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
+      // 3. Update UI
+      elements.roomIdDisplay.textContent = state.roomId;
+      elements.inviteLink.href = `${window.location.origin}/bidder.html?room=${state.roomId}`;
+      elements.inviteLink.textContent = `${window.location.origin}/bidder.html?room=${state.roomId}`;
+      elements.roomInfo.classList.remove("hidden");
+      elements.playerForm.classList.remove("hidden");
 
-      // Join socket room
+      // 4. Join socket room
       socket.emit("join-room", {
-        roomId,
+        roomId: state.roomId,
         userName: "Auctioneer",
         role: "auctioneer"
       });
 
-      // Show UI updates
-      roomInfo.classList.remove("hidden");
-      playerForm.classList.remove("hidden");
       showToast("Room created successfully!", "success");
 
     } catch (err) {
-      console.error("Room creation failed:", err);
-      showToast(`Failed to create room: ${err.message}`, "error");
+      console.error("[ERROR] Room creation failed:", err);
+      showToast(`Failed: ${err.message}`, "error");
     } finally {
-      setButtonLoading(createRoomBtn, false, "Create Room");
+      setButtonLoading(elements.createRoomBtn, false, "Create Room");
     }
   }
 
-  // Mobile-friendly event listeners
-  createRoomBtn.addEventListener("click", createRoom);
-  createRoomBtn.addEventListener("touchend", createRoom);
+  // ======================
+  // EVENT HANDLERS
+  // ======================
 
-  // Copy Invite Link
-  copyLinkBtn?.addEventListener("click", () => {
-    navigator.clipboard.writeText(inviteLink.href)
-      .then(() => showToast("Invite link copied!", "success"))
-      .catch(() => showToast("Failed to copy link", "error"));
-  });
+  // MOBILE-FRIENDLY EVENT BINDING
+  function setupEventListeners() {
+    // Universal button handler (works for touch and click)
+    const handleButtonPress = (btn, callback) => {
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        callback();
+      }, { passive: false });
+      
+      btn.addEventListener('click', callback);
+    };
 
-  // Start Auction
-  startAuctionBtn.addEventListener("click", async () => {
-    const playerName = document.getElementById("playerName").value.trim();
-    const playerClub = document.getElementById("playerClub").value.trim();
-    const playerPosition = document.getElementById("playerPosition").value.trim();
-    const startingPrice = parseInt(document.getElementById("startingPrice").value);
-
-    if (!validatePlayerInput(playerName, playerClub, playerPosition, startingPrice)) {
-      return;
-    }
-
-    setButtonLoading(startAuctionBtn, true);
-
-    try {
-      const { data: playerData, error } = await supabase
-        .from('players')
-        .insert([{
-          room_id: roomId,
-          name: playerName,
-          club: playerClub,
-          position: playerPosition,
-          starting_price: startingPrice,
-          status: 'auctioning',
-          current_bid: startingPrice
-        }])
-        .select();
-
-      if (error || !playerData) throw error || new Error("Failed to create player");
-
-      currentAuctionId = playerData[0].id;
-      currentPlayer = { 
-        playerName, playerClub, playerPosition, startingPrice,
-        playerId: playerData[0].id
-      };
-
-      updatePlayerPreview(currentPlayer);
-      document.getElementById("playerPreview").classList.remove("hidden");
-      finalCallBtn.classList.remove("hidden");
-
-      socket.emit("start-auction", {
-        ...currentPlayer,
-        roomId
-      });
-
-      showToast("Auction started!", "success");
-    } catch (err) {
-      console.error("Start auction failed:", err);
-      showToast(`Failed to start auction: ${err.message}`, "error");
-    } finally {
-      setButtonLoading(startAuctionBtn, false, "Start Auction");
-    }
-  });
-
-  // Helper functions
-  function validatePlayerInput(name, club, position, price) {
-    if (!name || !club || !position || isNaN(price) || price <= 0) {
-      showToast("Please fill all fields with valid values", "error");
-      return false;
-    }
-    return true;
+    handleButtonPress(elements.createRoomBtn, createRoom);
+    
+    elements.copyLinkBtn?.addEventListener('click', copyInviteLink);
+    elements.startAuctionBtn?.addEventListener('click', startAuction);
+    elements.finalCallBtn?.addEventListener('click', finalCall);
   }
 
-  function updatePlayerPreview(player) {
-    document.getElementById("previewName").textContent = player.playerName.toUpperCase();
-    document.getElementById("previewClub").textContent = player.playerClub;
-    document.getElementById("previewPosition").textContent = player.playerPosition;
-    document.getElementById("previewPrice").textContent = `₹${player.startingPrice}M`;
-    document.getElementById("currentBid").textContent = player.startingPrice;
-    document.getElementById("leadingBidder").textContent = "-";
-  }
+  // ======================
+  // HELPER FUNCTIONS
+  // ======================
 
-  function setButtonLoading(button, isLoading, originalText = "Create Room") {
+  function setButtonLoading(button, isLoading, text = "Create Room") {
     button.disabled = isLoading;
     button.innerHTML = isLoading 
-      ? '<span class="spinner"></span> Processing...' 
-      : originalText;
+      ? `<span class="spinner"></span> ${text}`
+      : text;
   }
 
   function showToast(message, type) {
@@ -217,22 +155,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     toast.textContent = message;
     document.body.appendChild(toast);
 
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    setTimeout(() => toast.remove(), 3000);
   }
 
-  // Cleanup on page exit
-  window.addEventListener('beforeunload', async () => {
-    try {
-      await supabase
-        .from('participants')
-        .update({ is_online: false })
-        .eq('socket_id', socket.id);
-    } catch (err) {
-      console.error("Cleanup error:", err);
-    }
-  });
+  // ======================
+  // INITIALIZATION
+  // ======================
+  setupEventListeners();
+  console.log("[DEBUG] Auctioneer panel initialized");
 });
