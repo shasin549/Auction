@@ -3,36 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bidder Panel</title>
+  <title>Bidder Panel | CardAuction</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="background-animation"></div>
+  
   <div class="container">
-    <header>
-      <h1>Bidder Panel</h1>
-      <div id="connectionStatus" class="connection-status">
+    <header class="header">
+      <div class="logo">
+        <i class="fas fa-hand-holding-usd auction-icon"></i>
+        <h1>Bidder <span>Panel</span></h1>
+      </div>
+      <div class="connection-status">
         <span class="status-icon"></span>
-        <span class="status-text">Disconnected</span>
+        <span id="connectionStatus">Disconnected</span>
       </div>
     </header>
 
-    <main>
+    <main class="bidder-main">
       <!-- Join Form Section -->
-      <div id="joinSection" class="glass-panel">
-        <h2>Join Auction Room</h2>
+      <div class="glass-panel" id="joinSection">
+        <h2><i class="fas fa-sign-in-alt"></i> Join Auction Room</h2>
         <div class="form-group">
-          <label for="bidderName">Your Name</label>
+          <label><i class="fas fa-user"></i> Your Name</label>
           <input type="text" id="bidderName" placeholder="Enter your name">
         </div>
         <div class="form-group">
-          <label for="roomId">Room ID</label>
+          <label><i class="fas fa-door-open"></i> Room ID</label>
           <input type="text" id="roomId" placeholder="Enter room ID">
         </div>
-        <button id="joinBtn" class="btn btn-primary">Join Room</button>
+        <button id="joinBtn" class="btn btn-primary">
+          <i class="fas fa-arrow-right"></i> Join Room
+        </button>
       </div>
 
       <!-- Auction Display Section -->
-      <div id="auctionSection" class="hidden">
+      <div class="hidden" id="auctionSection">
         <div class="player-card-glass">
           <span class="version-badge">Live Auction</span>
           <h2 class="player-name" id="playerNameDisplay">-</h2>
@@ -53,32 +62,32 @@
 
         <div class="bid-status-glass">
           <div class="bid-info">
-            <span>Current Bid:</span>
+            <span><i class="fas fa-hammer"></i> Current Bid:</span>
             <span id="currentBid" class="bid-value">₹0</span>
           </div>
           <div class="bid-info">
-            <span>Leading Bidder:</span>
+            <span><i class="fas fa-crown"></i> Leading Bidder:</span>
             <span id="leadingBidder" class="bid-value">-</span>
           </div>
         </div>
 
         <button id="placeBidBtn" class="btn btn-success" disabled>
-          Place Bid (+₹<span id="bidIncrementValue">10</span>)
+          <i class="fas fa-gavel"></i> Place Bid (+₹<span id="bidIncrementValue">10</span>)
         </button>
 
         <!-- Winner Announcement -->
         <div id="winnerSection" class="winner-card hidden">
-          <h3>🏆 Auction Winner</h3>
+          <h3><i class="fas fa-trophy"></i> Auction Winner</h3>
           <div class="winner-info">
-            <span>Player:</span>
+            <span><i class="fas fa-user"></i> Player:</span>
             <span id="wonPlayer">-</span>
           </div>
           <div class="winner-info">
-            <span>Winner:</span>
+            <span><i class="fas fa-crown"></i> Winner:</span>
             <span id="winnerName">-</span>
           </div>
           <div class="winner-info">
-            <span>Winning Bid:</span>
+            <span><i class="fas fa-rupee-sign"></i> Winning Bid:</span>
             <span id="winningBid">₹0</span>
           </div>
         </div>
