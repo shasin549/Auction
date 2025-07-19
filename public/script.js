@@ -37,14 +37,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   });
 
-  // Add hover effect to cards
-  const cards = document.querySelectorAll(".role-card");
-  cards.forEach(card => {
-    card.addEventListener("mouseenter", () => {
-      card.querySelector("i").style.transform = "scale(1.1)";
+  // Add hover effect to buttons
+  [auctioneerBtn, bidderBtn].forEach(btn => {
+    btn.addEventListener("mouseenter", () => {
+      btn.style.transform = "translateY(-2px)";
+      btn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
     });
-    card.addEventListener("mouseleave", () => {
-      card.querySelector("i").style.transform = "scale(1)";
+    btn.addEventListener("mouseleave", () => {
+      btn.style.transform = "translateY(0)";
+      btn.style.boxShadow = "none";
     });
   });
 });
