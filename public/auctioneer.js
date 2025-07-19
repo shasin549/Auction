@@ -1,16 +1,20 @@
+// auctioneer.js - Complete Fixed Version
 document.addEventListener("DOMContentLoaded", async () => {
-  // ======================
-  // INITIALIZATION
-  // ======================
-  // Supabase Client
-  const supabaseUrl = 'https://flwqvepusbjmgoovqvmi.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM';
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    db: { schema: 'public' },
-    auth: { persistSession: false }
-  });
+  // =============================================
+  // 1. INITIALIZATION
+  // =============================================
+  
+  // Supabase Configuration
+  const supabase = createClient(
+    'https://flwqvepusbjmgoovqvmi.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM',
+    {
+      db: { schema: 'public' },
+      auth: { persistSession: false }
+    }
+  );
 
-  // Socket.IO Client
+  // Socket.IO Configuration
   const socket = io('https://auction-zfku.onrender.com', {
     reconnection: true,
     reconnectionAttempts: 5,
@@ -18,28 +22,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     transports: ['websocket']
   });
 
-  // ======================
-  // DOM ELEMENTS
-  // ======================
+  // =============================================
+  // 2. DOM ELEMENTS
+  // =============================================
   const elements = {
+    // Connection
     connectionStatus: document.getElementById("connection-status"),
     statusDot: document.querySelector('.status-dot'),
+    
+    // Room Creation
     createRoomBtn: document.getElementById("createRoomBtn"),
     roomNameInput: document.getElementById("roomName"),
+    
+    // Room Info
     roomInfo: document.getElementById("roomInfo"),
     roomIdDisplay: document.getElementById("roomIdDisplay"),
     inviteLink: document.getElementById("inviteLink"),
     copyLinkBtn: document.getElementById("copyLinkBtn"),
     participantCount: document.getElementById("participantCount"),
+    
+    // Auction Controls
     playerForm: document.getElementById("playerForm"),
     startAuctionBtn: document.getElementById("startAuctionBtn"),
     finalCallBtn: document.getElementById("finalCallBtn"),
-    nextPlayerBtn: document.getElementById("nextPlayerBtn")
+    nextPlayerBtn: document.getElementById("nextPlayerBtn"),
+    
+    // Player Display
+    previewName: document.getElementById("previewName"),
+    previewClub: document.getElementById("previewClub"),
+    previewPosition: document.getElementById("previewPosition"),
+    previewPrice: document.getElementById("previewPrice"),
+    currentBid: document.getElementById("currentBid"),
+    leadingBidder: document.getElementById("leadingBidder")
   };
 
-  // ======================
-  // STATE MANAGEMENT
-  // ======================
+  // =============================================
+  // 3. STATE MANAGEMENT
+  // =============================================
   const state = {
     roomId: "",
     currentPlayer: null,
@@ -47,14 +66,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     callCount: 0
   };
 
-  // ======================
-  // CORE FUNCTIONS
-  // ======================
+  // =============================================
+  // 4. CORE FUNCTIONS
+  // =============================================
 
-  // CREATE ROOM (FIXED FOR MOBILE)
+  /**
+   * Creates a new auction room
+   */
   async function createRoom() {
     try {
-      console.log("[DEBUG] Create room triggered");
+      console.log("[DEBUG] Create room initiated");
       
       const roomName = elements.roomNameInput.value.trim();
       if (!roomName) {
@@ -72,7 +93,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .single();
 
       if (roomError || !roomData) {
-        throw roomError || new Error("Supabase returned no data");
+        throw roomError || new Error("Failed to create room");
       }
 
       state.roomId = roomData.id;
@@ -92,11 +113,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (joinError) throw joinError;
 
       // 3. Update UI
-      elements.roomIdDisplay.textContent = state.roomId;
-      elements.inviteLink.href = `${window.location.origin}/bidder.html?room=${state.roomId}`;
-      elements.inviteLink.textContent = `${window.location.origin}/bidder.html?room=${state.roomId}`;
-      elements.roomInfo.classList.remove("hidden");
-      elements.playerForm.classList.remove("hidden");
+      updateRoomUI();
+      showToast("Room created successfully!", "success");
 
       // 4. Join socket room
       socket.emit("join-room", {
@@ -104,8 +122,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         userName: "Auctioneer",
         role: "auctioneer"
       });
-
-      showToast("Room created successfully!", "success");
 
     } catch (err) {
       console.error("[ERROR] Room creation failed:", err);
@@ -115,34 +131,91 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // ======================
-  // EVENT HANDLERS
-  // ======================
+  /**
+   * Starts a new player auction
+   */
+  async function startAuction() {
+    try {
+      const playerName = document.getElementById("playerName").value.trim();
+      const playerClub = document.getElementById("playerClub").value.trim();
+      const playerPosition = document.getElementById("playerPosition").value.trim();
+      const startingPrice = parseInt(document.getElementById("startingPrice").value);
 
-  // MOBILE-FRIENDLY EVENT BINDING
-  function setupEventListeners() {
-    // Universal button handler (works for touch and click)
-    const handleButtonPress = (btn, callback) => {
-      btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        callback();
-      }, { passive: false });
-      
-      btn.addEventListener('click', callback);
-    };
+      if (!validatePlayerInput(playerName, playerClub, playerPosition, startingPrice)) {
+        return;
+      }
 
-    handleButtonPress(elements.createRoomBtn, createRoom);
-    
-    elements.copyLinkBtn?.addEventListener('click', copyInviteLink);
-    elements.startAuctionBtn?.addEventListener('click', startAuction);
-    elements.finalCallBtn?.addEventListener('click', finalCall);
+      setButtonLoading(elements.startAuctionBtn, true, "Starting...");
+
+      const { data: playerData, error } = await supabase
+        .from('players')
+        .insert([{
+          room_id: state.roomId,
+          name: playerName,
+          club: playerClub,
+          position: playerPosition,
+          starting_price: startingPrice,
+          status: 'auctioning',
+          current_bid: startingPrice
+        }])
+        .select();
+
+      if (error || !playerData) throw error || new Error("Failed to create player");
+
+      state.currentAuctionId = playerData[0].id;
+      state.currentPlayer = { 
+        playerName, playerClub, playerPosition, startingPrice,
+        playerId: playerData[0].id
+      };
+
+      updatePlayerDisplay(state.currentPlayer);
+      elements.playerPreview.classList.remove("hidden");
+      elements.finalCallBtn.classList.remove("hidden");
+
+      socket.emit("start-auction", {
+        ...state.currentPlayer,
+        roomId: state.roomId
+      });
+
+      showToast("Auction started!", "success");
+    } catch (err) {
+      console.error("[ERROR] Start auction failed:", err);
+      showToast(`Failed: ${err.message}`, "error");
+    } finally {
+      setButtonLoading(elements.startAuctionBtn, false, "Start Auction");
+    }
   }
 
-  // ======================
-  // HELPER FUNCTIONS
-  // ======================
+  // =============================================
+  // 5. HELPER FUNCTIONS
+  // =============================================
 
-  function setButtonLoading(button, isLoading, text = "Create Room") {
+  function updateRoomUI() {
+    elements.roomIdDisplay.textContent = state.roomId;
+    elements.inviteLink.href = `${window.location.origin}/bidder.html?room=${state.roomId}`;
+    elements.inviteLink.textContent = `${window.location.origin}/bidder.html?room=${state.roomId}`;
+    elements.roomInfo.classList.remove("hidden");
+    elements.playerForm.classList.remove("hidden");
+  }
+
+  function updatePlayerDisplay(player) {
+    elements.previewName.textContent = player.playerName.toUpperCase();
+    elements.previewClub.textContent = player.playerClub;
+    elements.previewPosition.textContent = player.playerPosition;
+    elements.previewPrice.textContent = `₹${player.startingPrice}M`;
+    elements.currentBid.textContent = player.startingPrice;
+    elements.leadingBidder.textContent = "-";
+  }
+
+  function validatePlayerInput(name, club, position, price) {
+    if (!name || !club || !position || isNaN(price) || price <= 0) {
+      showToast("Please fill all fields with valid values", "error");
+      return false;
+    }
+    return true;
+  }
+
+  function setButtonLoading(button, isLoading, text) {
     button.disabled = isLoading;
     button.innerHTML = isLoading 
       ? `<span class="spinner"></span> ${text}`
@@ -155,12 +228,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     toast.textContent = message;
     document.body.appendChild(toast);
 
-    setTimeout(() => toast.remove(), 3000);
+    setTimeout(() => {
+      toast.classList.add('show');
+      setTimeout(() => toast.remove(), 3000);
+    }, 10);
   }
 
-  // ======================
-  // INITIALIZATION
-  // ======================
+  // =============================================
+  // 6. EVENT LISTENERS
+  // =============================================
+
+  function setupEventListeners() {
+    // Mobile-friendly button handling
+    const createRoomBtn = elements.createRoomBtn;
+    createRoomBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      createRoom();
+    }, { passive: false });
+    
+    createRoomBtn.addEventListener('click', createRoom);
+
+    // Other event listeners
+    elements.copyLinkBtn?.addEventListener('click', copyInviteLink);
+    elements.startAuctionBtn?.addEventListener('click', startAuction);
+    elements.finalCallBtn?.addEventListener('click', finalCall);
+
+    // Socket events
+    socket.on('connect', () => {
+      elements.connectionStatus.textContent = "Connected";
+      elements.statusDot.style.backgroundColor = "#10B981";
+    });
+
+    socket.on('disconnect', () => {
+      elements.connectionStatus.textContent = "Disconnected";
+      elements.statusDot.style.backgroundColor = "#EF4444";
+    });
+  }
+
+  // =============================================
+  // 7. INITIALIZATION
+  // =============================================
   setupEventListeners();
-  console.log("[DEBUG] Auctioneer panel initialized");
+  console.log("[INIT] Auctioneer panel ready");
 });
