@@ -1,196 +1,128 @@
-<!-- Auctioneer Panel -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auctioneer Panel</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #4f46e5;
-      --secondary: #10b981;
-      --dark: #1e293b;
-      --light: #f8fafc;
-      --gray: #94a3b8;
-    }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f1f5f9;
-      color: var(--dark);
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      padding: 24px;
-    }
-    h1 {
-      color: var(--primary);
-      margin-bottom: 8px;
-    }
-    .status {
-      display: flex;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #ef4444;
-      margin-right: 8px;
-    }
-    .status.connected .status-dot {
-      background: var(--secondary);
-    }
-    .section {
-      margin-bottom: 32px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .section-title {
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--primary);
-    }
-    .form-group {
-      margin-bottom: 16px;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    .btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .btn-secondary {
-      background: var(--secondary);
-    }
-    .player-card {
-      background: white;
-      border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      margin-bottom: 16px;
-    }
-    .player-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .bid-info {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px dashed #e2e8f0;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Auctioneer Panel</h1>
+  <div class="panel-container">
+    <h1><i class="fas fa-gavel"></i> Auctioneer Panel</h1>
     <div class="status">
       <div class="status-dot"></div>
       <span>Disconnected</span>
     </div>
 
     <div class="section">
-      <h2 class="section-title">Create Auction Room</h2>
+      <h2 class="section-title"><i class="fas fa-plus-circle"></i> Create Auction Room</h2>
       <div class="form-group">
         <label>Room Name</label>
-        <input type="text" placeholder="e.g., PremierLeague2025">
+        <input type="text" placeholder="e.g., PremierLeague2025" id="roomName">
       </div>
       <div class="form-group">
         <label>Bid Increment</label>
-        <select>
-          <option>₹10</option>
-          <option>₹5</option>
-          <option>₹25</option>
+        <select id="bidIncrement">
+          <option value="10">₹10</option>
+          <option value="5">₹5</option>
+          <option value="25">₹25</option>
         </select>
       </div>
-      <button class="btn">+ Create Room</button>
+      <button class="btn btn-primary" id="createRoomBtn">Create Room</button>
     </div>
 
-    <div class="section">
-      <h3 class="section-title">Room Information</h3>
-      <div class="player-card">
+    <div class="section hidden" id="roomInfo">
+      <h3 class="section-title"><i class="fas fa-info-circle"></i> Room Information</h3>
+      <div class="card">
         <div class="player-info">
           <span>Room ID:</span>
-          <span>ABCD1234</span>
+          <span id="roomIdDisplay">-</span>
         </div>
         <div class="player-info">
           <span>Participants:</span>
-          <span>0</span>
+          <span id="participantCount">0</span>
         </div>
         <div class="player-info">
           <span>Invite Link:</span>
-          <span>https://auction/ABCD1234</span>
+          <a href="#" id="inviteLink" style="color: var(--primary);">-</a>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <h3 class="section-title">Participants</h3>
+    <div class="section hidden" id="playerForm">
+      <h3 class="section-title"><i class="fas fa-user-plus"></i> Add Player</h3>
       <div class="form-group">
-        <label>Add New Player</label>
-        <input type="text" placeholder="Player Name">
+        <label>Player Name</label>
+        <input type="text" placeholder="Player Name" id="playerName">
       </div>
-      <div class="form-row" style="display: flex; gap: 16px;">
-        <div class="form-group" style="flex: 1;">
-          <input type="text" placeholder="Club">
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" placeholder="Club" id="playerClub">
         </div>
-        <div class="form-group" style="flex: 1;">
-          <input type="text" placeholder="Position">
+        <div class="form-group">
+          <input type="text" placeholder="Position" id="playerPosition">
         </div>
-        <div class="form-group" style="flex: 1;">
-          <input type="text" placeholder="Starting Price">
+        <div class="form-group">
+          <input type="number" placeholder="Starting Price" id="startingPrice">
         </div>
       </div>
+      <button class="btn btn-primary" id="startAuctionBtn">Start Auction</button>
     </div>
 
-    <div class="section">
-      <div style="display: flex; gap: 12px;">
-        <button class="btn">Start Bidding</button>
-        <button class="btn btn-secondary">Next Player</button>
+    <div class="section hidden" id="auctionControls">
+      <div class="button-group">
+        <button class="btn btn-danger hidden" id="finalCallBtn">Final Call!</button>
+        <button class="btn btn-secondary hidden" id="nextPlayerBtn">Next Player</button>
       </div>
-      <div class="player-card" style="margin-top: 16px;">
+      
+      <div class="player-card hidden" id="playerPreview">
         <h4>Live Auction</h4>
         <div class="player-info">
-          <span>CLUB - POSITION - PRICE</span>
-          <span>PLAYER CARD 2025</span>
+          <span id="previewName">-</span>
+          <span id="previewPrice">₹0</span>
+        </div>
+        <div class="player-info">
+          <span id="previewClub">-</span>
+          <span id="previewPosition">-</span>
         </div>
         <div class="bid-info">
-          <span>Current Bid:</span>k
-          <span>₹0</span>
+          <span>Current Bid:</span>
+          <span id="currentBid">₹0</span>
         </div>
         <div class="bid-info">
           <span>Leading Bidder:</span>
-          <span>-</span>
+          <span id="leadingBidder">-</span>
         </div>
       </div>
     </div>
+
+    <div class="section">
+      <h3 class="section-title"><i class="fas fa-users"></i> Participants</h3>
+      <div id="participantsContainer" class="participants-container"></div>
+    </div>
   </div>
+
+  <!-- Audio Elements -->
+  <audio id="firstCallAudio" src="audio/first-call.mp3"></audio>
+  <audio id="secondCallAudio" src="audio/second-call.mp3"></audio>
+  <audio id="finalCallAudio" src="audio/final-call.mp3"></audio>
+
+  <!-- Participant Modal -->
+  <div class="modal" id="participantModal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2 id="modalParticipantName">Participant</h2>
+      <div class="modal-body">
+        <h4>Won Players</h4>
+        <div id="wonPlayersList" class="won-players-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
-
