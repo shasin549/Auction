@@ -10,12 +10,16 @@
   <div class="container">
     <header>
       <h1>Auctioneer Panel</h1>
-      <p id="connection-status">Disconnected</p>
+      <div class="connection-status">
+        <span class="status-icon"></span>
+        <span id="connection-status">Disconnected</span>
+      </div>
     </header>
 
     <main>
       <!-- Room Creation Section -->
-      <div id="roomCreation">
+      <div id="roomCreation" class="glass-panel">
+        <h2>Create Auction Room</h2>
         <div class="form-group">
           <label for="roomName">Room Name</label>
           <input type="text" id="roomName" placeholder="e.g., PremierLeague2025" required>
@@ -26,42 +30,60 @@
             <option value="5">₹5</option>
             <option value="10" selected>₹10</option>
             <option value="25">₹25</option>
+            <option value="50">₹50</option>
           </select>
         </div>
         <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
       </div>
 
       <!-- Room Info Section (hidden initially) -->
-      <div id="roomInfo" class="hidden">
+      <div id="roomInfo" class="glass-panel hidden">
         <h2>Room Information</h2>
-        <p><strong>Room ID:</strong> <span id="roomIdDisplay"></span></p>
-        <p><strong>Invite Link:</strong> <a href="#" id="inviteLink"></a></p>
-        <p><strong>Participants:</strong> <span id="participantCount">0</span></p>
+        <div class="info-grid">
+          <div>
+            <p><strong>Room ID:</strong></p>
+            <p id="roomIdDisplay" class="info-value"></p>
+          </div>
+          <div>
+            <p><strong>Participants:</strong></p>
+            <p id="participantCount" class="info-value">0</p>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="inviteLink">Invite Link</label>
+          <input type="text" id="inviteLink" readonly>
+          <button id="copyLinkBtn" class="btn btn-secondary">Copy</button>
+        </div>
 
-        <div class="participants-list">
+        <div class="participants-list glass-panel">
           <h3>Participants</h3>
           <div id="participantsContainer"></div>
         </div>
       </div>
 
-      <!-- Player Form Section (hidden initially) -->
-      <div id="playerForm" class="hidden">
-        <h2>Player Details</h2>
-        <div class="form-group">
-          <label for="playerName">Player Name</label>
-          <input type="text" id="playerName" required>
+      <!-- Player Form Section -->
+      <div id="playerForm" class="glass-panel hidden">
+        <h2>Add New Player</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="playerName">Player Name</label>
+            <input type="text" id="playerName" required>
+          </div>
+          <div class="form-group">
+            <label for="playerClub">Club</label>
+            <input type="text" id="playerClub" required>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="playerClub">Club</label>
-          <input type="text" id="playerClub" required>
-        </div>
-        <div class="form-group">
-          <label for="playerPosition">Position</label>
-          <input type="text" id="playerPosition" required>
-        </div>
-        <div class="form-group">
-          <label for="startingPrice">Starting Price (₹)</label>
-          <input type="number" id="startingPrice" min="1" required>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="playerPosition">Position</label>
+            <input type="text" id="playerPosition" required>
+          </div>
+          <div class="form-group">
+            <label for="startingPrice">Starting Price (₹)</label>
+            <input type="number" id="startingPrice" min="1" required>
+          </div>
         </div>
         <div class="button-group">
           <button id="startAuctionBtn" class="btn btn-success">Start Bidding</button>
@@ -72,9 +94,8 @@
 
       <!-- Player Preview Section -->
       <div id="playerPreview" class="hidden">
-        <h2>Current Player</h2>
         <div class="player-card-glass">
-          <span class="version-badge">Version 3 of 3</span>
+          <span class="version-badge">Live Auction</span>
           <h2 class="player-name" id="previewName">-</h2>
           <div class="player-detail">
             <span class="player-detail-label">CLUB</span>
@@ -92,8 +113,14 @@
         </div>
 
         <div class="bid-status-glass">
-          <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
-          <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
+          <div class="bid-info">
+            <span>Current Bid:</span>
+            <span id="currentBid" class="bid-value">₹0</span>
+          </div>
+          <div class="bid-info">
+            <span>Leading Bidder:</span>
+            <span id="leadingBidder" class="bid-value">-</span>
+          </div>
         </div>
       </div>
     </main>
@@ -101,7 +128,7 @@
 
   <!-- Participant Wins Modal -->
   <div id="participantModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-content glass-panel">
       <span class="close-btn">&times;</span>
       <h2 id="modalParticipantName"></h2>
       <div class="modal-body">
