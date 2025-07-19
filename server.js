@@ -45,7 +45,7 @@ app.use(helmet({
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://auction-zfku.onrender.com', 'https://your-production-domain.com']
+    ? ['https://auction-zfku.onrender.com']
     : ['http://localhost:3000', 'http://localhost:8080'],
   credentials: true
 }));
@@ -86,7 +86,7 @@ app.get('/api/room/:id', async (req, res) => {
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
-      ? ['https://auction-zfku.onrender.com', 'https://your-production-domain.com']
+      ? ['https://auction-zfku.onrender.com']
       : ['http://localhost:3000', 'http://localhost:8080'],
     methods: ['GET', 'POST']
   },
@@ -98,7 +98,7 @@ const io = new Server(server, {
   pingTimeout: 5000
 });
 
-// Track active rooms
+// Track active rooms and participants
 const activeRooms = new Map();
 
 // ===== AUCTION EVENT HANDLERS ===== //
@@ -106,17 +106,21 @@ io.on('connection', (socket) => {
   console.log(`New connection: ${socket.id}`);
 
   // Join Room
-  socket.on('join-room', async ({ roomId, userName, role }) => {
+  socket.on('join-room', async ({ roomId, userName, role }, callback) => {
     try {
-      socket.join(roomId);
-      
-      // Update active rooms tracking
-      if (!activeRooms.has(roomId)) {
-        activeRooms.set(roomId, new Set());
-      }
-      activeRooms.get(roomId).add(socket.id);
+      // Verify room exists
+      const { data: room, error: roomError } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
 
-      const { error } = await supabase
+      if (roomError || !room) {
+        throw new Error('Room does not exist');
+      }
+
+      // Update participant in Supabase
+      const { error: upsertError } = await supabase
         .from('participants')
         .upsert({
           room_id: roomId,
@@ -127,43 +131,72 @@ io.on('connection', (socket) => {
           last_active: new Date()
         });
 
-      if (error) throw error;
+      if (upsertError) throw upsertError;
 
-      // Notify room participants
-      io.to(roomId).emit('participant-update', { 
-        user: { name: userName, role }, 
+      // Track active participants
+      if (!activeRooms.has(roomId)) {
+        activeRooms.set(roomId, new Set());
+      }
+      activeRooms.get(roomId).add(socket.id);
+      socket.join(roomId);
+
+      // Get current participants count
+      const { count } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', roomId)
+        .eq('is_online', true);
+
+      // Notify room
+      io.to(roomId).emit('participant-update', {
+        user: { name: userName, role },
         action: 'joined',
-        participants: Array.from(activeRooms.get(roomId)).length
+        participants: count || 0
       });
 
+      callback({ status: 'success' });
       console.log(`${userName} (${role}) joined room ${roomId}`);
+
     } catch (err) {
       console.error('Join room error:', err);
-      socket.emit('error', 'Failed to join room');
+      callback({ status: 'error', error: err.message });
+      socket.emit('error', `Failed to join room: ${err.message}`);
     }
   });
 
   // Start Auction
   socket.on('start-auction', async ({ roomId, playerId, playerName, playerClub, playerPosition, startingPrice }) => {
     try {
+      // Verify room and player
+      const { data: room, error: roomError } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (roomError || !room) throw new Error('Invalid room');
+
+      // Notify all participants
       io.to(roomId).emit('auction-started', { 
         playerId,
         playerName,
         playerClub,
         playerPosition,
-        startingPrice
+        startingPrice,
+        timestamp: new Date().toISOString()
       });
 
-      console.log(`Auction started in room ${roomId} for player ${playerName}`);
+      console.log(`Auction started in room ${roomId} for ${playerName}`);
     } catch (err) {
       console.error('Start auction error:', err);
-      socket.emit('error', 'Failed to start auction');
+      socket.emit('error', `Failed to start auction: ${err.message}`);
     }
   });
 
   // Place Bid
   socket.on('place-bid', async ({ roomId, playerId, bidderName, amount }) => {
     try {
+      // Verify player exists and get current bid
       const { data: player, error: playerError } = await supabase
         .from('players')
         .select('current_bid')
@@ -173,25 +206,30 @@ io.on('connection', (socket) => {
       if (playerError || !player) throw new Error('Player not found');
       if (amount <= player.current_bid) throw new Error('Bid too low');
 
+      // Record bid in Supabase
       const { error: bidError } = await supabase
         .from('bids')
         .insert([{
           player_id: playerId,
           bidder_name: bidderName,
           amount,
-          room_id: roomId
+          room_id: roomId,
+          timestamp: new Date().toISOString()
         }]);
 
       if (bidError) throw bidError;
 
+      // Update player with new bid
       await supabase
         .from('players')
         .update({ 
-          current_bid: amount, 
-          leading_bidder: bidderName 
+          current_bid: amount,
+          leading_bidder: bidderName,
+          updated_at: new Date().toISOString()
         })
         .eq('id', playerId);
 
+      // Notify all participants
       io.to(roomId).emit('bid-update', { 
         playerId, 
         amount, 
@@ -214,7 +252,6 @@ io.on('connection', (socket) => {
         message,
         timestamp: new Date().toISOString()
       });
-
       console.log(`Final call (${callCount}) in room ${roomId}: ${message}`);
     } catch (err) {
       console.error('Final call error:', err);
@@ -223,8 +260,31 @@ io.on('connection', (socket) => {
   });
 
   // End Auction
-  socket.on('auction-ended', async ({ roomId, playerName, winnerName, winningBid }) => {
+  socket.on('auction-ended', async ({ roomId, playerId, playerName, winnerName, winningBid }) => {
     try {
+      // Record winner in Supabase
+      if (winnerName !== 'No Winner') {
+        await supabase
+          .from('winners')
+          .insert([{
+            player_id: playerId,
+            winner_name: winnerName,
+            winning_bid: winningBid,
+            room_id: roomId,
+            awarded_at: new Date().toISOString()
+          }]);
+      }
+
+      // Update player status
+      await supabase
+        .from('players')
+        .update({ 
+          status: 'sold',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', playerId);
+
+      // Notify all participants
       io.to(roomId).emit('auction-ended', { 
         playerName, 
         winnerName, 
@@ -239,7 +299,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Disconnect
+  // Disconnect Handler
   socket.on('disconnect', async () => {
     try {
       // Find and remove from active rooms
@@ -247,22 +307,30 @@ io.on('connection', (socket) => {
         if (sockets.has(socket.id)) {
           sockets.delete(socket.id);
           
+          // Update participant status in Supabase
+          await supabase
+            .from('participants')
+            .update({ is_online: false })
+            .eq('socket_id', socket.id);
+
+          // Get updated count
+          const { count } = await supabase
+            .from('participants')
+            .select('*', { count: 'exact', head: true })
+            .eq('room_id', roomId)
+            .eq('is_online', true);
+
           // Notify remaining participants
           if (sockets.size > 0) {
             io.to(roomId).emit('participant-update', {
               action: 'left',
-              participants: sockets.size
+              participants: count || 0
             });
           } else {
             activeRooms.delete(roomId);
           }
         }
       }
-
-      await supabase
-        .from('participants')
-        .update({ is_online: false })
-        .eq('socket_id', socket.id);
 
       console.log(`Disconnected: ${socket.id}`);
     } catch (err) {
@@ -277,35 +345,22 @@ io.on('connection', (socket) => {
 });
 
 // ===== HEALTH CHECK & METRICS ===== //
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
-    uptime: process.uptime(),
-    activeRooms: activeRooms.size,
-    activeConnections: io.engine.clientsCount
-  });
-});
-
-app.get('/metrics', async (req, res) => {
+app.get('/health', async (req, res) => {
   try {
-    const { count: roomCount } = await supabase
+    const { count: activeRoomsCount } = await supabase
       .from('rooms')
-      .select('*', { count: 'exact', head: true });
-
-    const { count: participantCount } = await supabase
-      .from('participants')
       .select('*', { count: 'exact', head: true })
-      .eq('is_online', true);
+      .eq('status', 'active');
 
-    res.json({
-      activeRooms: activeRooms.size,
+    res.status(200).json({ 
+      status: 'healthy',
+      uptime: process.uptime(),
+      activeRooms: activeRoomsCount || 0,
       activeConnections: io.engine.clientsCount,
-      totalRooms: roomCount || 0,
-      activeParticipants: participantCount || 0
+      supabase: activeRoomsCount !== null ? 'connected' : 'disconnected'
     });
   } catch (err) {
-    console.error('Metrics error:', err);
-    res.status(500).json({ error: 'Failed to get metrics' });
+    res.status(500).json({ error: 'Health check failed' });
   }
 });
 
@@ -326,18 +381,12 @@ server.listen(PORT, '0.0.0.0', () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT received. Shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+['SIGTERM', 'SIGINT'].forEach(signal => {
+  process.on(signal, () => {
+    console.log(`${signal} received. Shutting down gracefully...`);
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
   });
 });
