@@ -12,12 +12,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // DOM Elements
+  const connectionStatus = document.querySelector('.status-text');
+  const statusDot = document.querySelector('.status-dot');
   const joinSection = document.getElementById("joinSection");
   const auctionSection = document.getElementById("auctionSection");
-  const connectionStatus = document.getElementById("connectionStatus");
   const joinBtn = document.getElementById("joinBtn");
   const placeBidBtn = document.getElementById("placeBidBtn");
+  const continueBtn = document.getElementById("continueBtn");
   const bidIncrementValue = document.getElementById("bidIncrementValue");
+  const connectionToast = document.getElementById("connectionToast");
 
   // Player Info
   const playerNameDisplay = document.getElementById("playerNameDisplay");
@@ -51,13 +54,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Connection Status
   socket.on('connect', () => {
-    connectionStatus.querySelector('.status-text').textContent = 'Connected';
-    connectionStatus.querySelector('.status-icon').style.backgroundColor = '#10B981';
+    connectionStatus.textContent = 'Connected';
+    connectionStatus.style.color = '#10B981';
+    statusDot.style.backgroundColor = '#10B981';
+    showToast('Connected to auction server', 'success');
   });
 
   socket.on('disconnect', () => {
-    connectionStatus.querySelector('.status-text').textContent = 'Disconnected';
-    connectionStatus.querySelector('.status-icon').style.backgroundColor = '#EF4444';
+    connectionStatus.textContent = 'Disconnected';
+    connectionStatus.style.color = '#EF4444';
+    statusDot.style.backgroundColor = '#EF4444';
+    showToast('Disconnected from server', 'error');
+  });
+
+  socket.on('connect_error', (err) => {
+    connectionStatus.textContent = 'Connection Error';
+    connectionStatus.style.color = '#F59E0B';
+    statusDot.style.backgroundColor = '#F59E0B';
+    showToast(`Connection error: ${err.message}`, 'warning');
   });
 
   // Join Room with Supabase
@@ -66,9 +80,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     roomId = document.getElementById("roomId").value.trim();
 
     if (!userName || !roomId) {
-      alert("Please enter your name and room ID");
+      showToast("Please enter your name and room ID", "error");
       return;
     }
+
+    joinBtn.disabled = true;
+    joinBtn.innerHTML = '<span class="spinner"></span> Joining...';
 
     try {
       // Check if room exists
@@ -121,24 +138,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Update UI
       joinSection.classList.add("hidden");
       auctionSection.classList.remove("hidden");
+      joinBtn.disabled = false;
+      joinBtn.innerHTML = '<i class="fas fa-door-open"></i> Join Room';
+      showToast(`Joined room ${roomId} successfully`, 'success');
 
     } catch (err) {
-      alert(err.message || "Failed to join room");
+      showToast(err.message || "Failed to join room", "error");
       console.error(err);
+      joinBtn.disabled = false;
+      joinBtn.innerHTML = '<i class="fas fa-door-open"></i> Join Room';
     }
   });
 
   // Place Bid with Supabase
   placeBidBtn.addEventListener("click", async () => {
     if (!currentPlayerId) {
-      alert("No active auction to bid on");
+      showToast("No active auction to bid on", "error");
       return;
     }
 
     if (hasBid) {
-      alert("Wait for another bid before placing again");
+      showToast("Wait for another bid before placing again", "warning");
       return;
     }
+
+    placeBidBtn.disabled = true;
+    placeBidBtn.innerHTML = '<span class="spinner"></span> Placing Bid...';
 
     try {
       // Get current highest bid
@@ -176,13 +201,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       hasBid = true;
       placeBidBtn.disabled = true;
+      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Bid Placed!';
+      showToast(`Bid placed: ₹${newBid}`, "success");
 
     } catch (err) {
-      alert("Failed to place bid");
+      showToast("Failed to place bid", "error");
       console.error(err);
       hasBid = false;
       placeBidBtn.disabled = false;
+      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Place Bid';
     }
+  });
+
+  // Continue Bidding Button
+  continueBtn.addEventListener("click", () => {
+    winnerSection.classList.add("hidden");
+    auctionSection.classList.remove("hidden");
   });
 
   // Socket Events
@@ -201,7 +235,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentPlayerId = player.id;
       hasBid = false;
       placeBidBtn.disabled = false;
+      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Place Bid';
       winnerSection.classList.add("hidden");
+      auctionSection.classList.remove("hidden");
     } catch (err) {
       console.error("Error updating player display:", err);
     }
@@ -214,6 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (leadingBidder !== userName) {
       hasBid = false;
       placeBidBtn.disabled = false;
+      placeBidBtn.innerHTML = '<i class="fas fa-hand-holding-usd"></i> Place Bid';
     }
   });
 
@@ -222,6 +259,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     winnerNameDisplay.textContent = winnerName;
     winningBidDisplay.textContent = winningBid;
     winnerSection.classList.remove("hidden");
+    auctionSection.classList.add("hidden");
     placeBidBtn.disabled = true;
     currentPlayerId = null;
   });
@@ -250,14 +288,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   function showCallPopup(message, type) {
     const popup = document.createElement('div');
     popup.className = `call-popup ${type}`;
-    popup.textContent = message;
-    document.body.appendChild(popup);
+    popup.innerHTML = `
+      <i class="fas fa-bell"></i>
+      <span>${message}</span>
+    `;
+    document.getElementById('callPopupContainer').appendChild(popup);
 
     setTimeout(() => popup.classList.add('show'), 10);
 
     setTimeout(() => {
       popup.classList.remove('show');
       setTimeout(() => popup.remove(), 500);
+    }, 3000);
+  }
+
+  function showToast(message, type = 'info') {
+    connectionToast.textContent = message;
+    connectionToast.className = `toast toast-${type}`;
+    connectionToast.classList.remove('hidden');
+    
+    setTimeout(() => {
+      connectionToast.classList.add('hidden');
     }, 3000);
   }
 
