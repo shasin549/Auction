@@ -1,39 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fantasy Player Auction</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Card Auction</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Fantasy Player Auction</h1>
-            <p>Select your role to begin the bidding</p>
-        </header>
+  <div class="container">
+    <header>
+      <h1>Player Card Auction</h1>
+      <p>Select your role to continue</p>
+    </header>
 
-        <main class="role-selector">
-            <button id="auctioneerBtn" class="btn btn-primary">
-                <span class="icon">👨‍⚖️</span>
-                Auctioneer Panel
-            </button>
-            <button id="bidderBtn" class="btn btn-success">
-                <span class="icon">👥</span>
-                Bidder Panel
-            </button>
-        </main>
+    <main class="role-selector">
+      <div class="form-group">
+        <button id="auctioneerBtn" class="btn btn-primary">I'm an Auctioneer</button>
+      </div>
+      <div class="form-group">
+        <button id="bidderBtn" class="btn btn-success">I'm a Bidder</button>
+      </div>
+    </main>
+  </div>
 
-        <footer>
-            <div>Server: <span id="serverUrl">auction-zfku.onrender.com</span></div>
-            <div id="serverStatus" class="disconnected">Connecting...</div>
-        </footer>
-    </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("auctioneerBtn").addEventListener("click", () => {
+        window.location.href = "auctioneer.html";
+      });
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="script.js"></script>
+      document.getElementById("bidderBtn").addEventListener("click", () => {
+        window.location.href = "bidder.html";
+      });
+    });
+  </script>
 </body>
 </html>
