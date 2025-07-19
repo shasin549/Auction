@@ -1,13 +1,13 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Initialize Supabase with proper error handling
+  // Initialize Supabase
   const supabaseUrl = 'https://flwqvepusbjmgoovqvmi.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM';
-  
   const supabase = createClient(supabaseUrl, supabaseKey, {
-    db: { schema: 'public' }
+    db: { schema: 'public' },
+    auth: { persistSession: false }
   });
 
-  // Initialize Socket.IO with robust configuration
+  // Initialize Socket.IO
   const socket = io('https://auction-zfku.onrender.com', {
     reconnection: true,
     reconnectionAttempts: 5,
@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statusDot = document.querySelector('.status-dot');
   const createRoomBtn = document.getElementById("createRoomBtn");
   const roomNameInput = document.getElementById("roomName");
-  const bidIncrementInput = document.getElementById("bidIncrement");
   const roomInfo = document.getElementById("roomInfo");
   const roomIdDisplay = document.getElementById("roomIdDisplay");
   const inviteLink = document.getElementById("inviteLink");
@@ -40,6 +39,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   let callCount = 0;
 
   // Connection status handling
+  function updateConnectionStatus(text, color) {
+    connectionStatus.textContent = text;
+    connectionStatus.style.color = color;
+    statusDot.style.backgroundColor = color;
+  }
+
   socket.on('connect', () => {
     updateConnectionStatus("Connected", "#10B981");
     createRoomBtn.disabled = false;
@@ -55,16 +60,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Socket error:", err);
   });
 
-  function updateConnectionStatus(text, color) {
-    connectionStatus.textContent = text;
-    connectionStatus.style.color = color;
-    statusDot.style.backgroundColor = color;
-  }
-
-  // Create Auction Room
+  // Create Auction Room (Fixed for your schema)
   createRoomBtn.addEventListener("click", async () => {
     const roomName = roomNameInput.value.trim();
-    const bidIncrement = parseInt(bidIncrementInput.value);
 
     if (!roomName) {
       showToast("Please enter a room name", "error");
@@ -74,24 +72,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     setButtonLoading(createRoomBtn, true);
 
     try {
-      // 1. Create room in Supabase
+      // Create room with just name (other columns don't exist)
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
-        .insert([{ 
-          name: roomName,
-          bid_increment: bidIncrement || 10,
-          status: 'active'
-        }])
-        .select();
+        .insert([{ name: roomName }])
+        .select()
+        .single();
 
-      if (roomError || !roomData || roomData.length === 0) {
+      if (roomError || !roomData) {
         throw roomError || new Error("Failed to create room");
       }
 
-      roomId = roomData[0].id;
+      roomId = roomData.id;
       console.log("Room created with ID:", roomId);
 
-      // 2. Join as auctioneer in Supabase
+      // Join as auctioneer in Supabase
       const { error: joinError } = await supabase
         .from('participants')
         .insert([{
@@ -104,24 +99,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (joinError) throw joinError;
 
-      // 3. Update UI
+      // Update UI
       roomIdDisplay.textContent = roomId;
       inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
       inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
 
-      // 4. Join socket room with acknowledgment
+      // Join socket room
       socket.emit("join-room", {
         roomId,
         userName: "Auctioneer",
         role: "auctioneer"
       }, (response) => {
-        if (response.error) {
-          throw new Error(response.error);
-        }
-        console.log("Joined room:", response);
+        if (response.error) throw new Error(response.error);
       });
 
-      // 5. Show UI updates
+      // Show UI updates
       roomInfo.classList.remove("hidden");
       playerForm.classList.remove("hidden");
       showToast("Room created successfully!", "success");
@@ -185,7 +177,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       updatePlayerPreview(currentPlayer);
       document.getElementById("playerPreview").classList.remove("hidden");
       finalCallBtn.classList.remove("hidden");
-      
+
       socket.emit("start-auction", {
         ...currentPlayer,
         roomId
@@ -204,7 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   finalCallBtn.addEventListener("click", async () => {
     callCount++;
     const message = getCallMessage(callCount);
-    
+
     try {
       await supabase
         .from('players')
