@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const modalParticipantName = document.getElementById("modalParticipantName");
   const wonPlayersList = document.getElementById("wonPlayersList");
   const closeModalBtn = document.querySelector(".close-btn");
+  const copyLinkBtn = document.getElementById("copyLinkBtn");
 
   // Player form elements
   const playerNameInput = document.getElementById("playerName");
@@ -57,15 +58,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Connection handling
   socket.on('connect', () => {
+    const statusIcon = document.querySelector('.connection-status .status-icon');
     connectionStatus.textContent = "Connected";
     connectionStatus.style.color = "#10B981";
+    if (statusIcon) {
+      statusIcon.style.backgroundColor = "#10B981";
+    }
     createRoomBtn.disabled = false;
     console.log("Connected to server");
   });
 
   socket.on('disconnect', () => {
+    const statusIcon = document.querySelector('.connection-status .status-icon');
     connectionStatus.textContent = "Disconnected";
     connectionStatus.style.color = "#EF4444";
+    if (statusIcon) {
+      statusIcon.style.backgroundColor = "#EF4444";
+    }
     createRoomBtn.disabled = true;
     console.log("Disconnected from server");
   });
@@ -82,12 +91,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const bidIncrement = parseInt(bidIncrementInput.value);
 
     if (!roomName) {
-      alert("Please enter a room name");
+      showToast("Please enter a room name", "error");
       return;
     }
 
     createRoomBtn.disabled = true;
-    createRoomBtn.textContent = "Creating...";
+    createRoomBtn.innerHTML = '<span class="spinner"></span> Creating...';
     createRoomBtn.classList.add("btn-processing");
 
     try {
@@ -100,11 +109,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           status: 'active'
         }])
         .select();
-      
+
       if (roomError) throw roomError;
 
       roomId = roomData[0].id;
-      
+
       // Join room as auctioneer in Supabase
       const { error: joinError } = await supabase
         .from('participants')
@@ -120,21 +129,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Update UI
       roomIdDisplay.textContent = roomId;
-      inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
-      inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
+      inviteLink.value = `${window.location.origin}/bidder.html?room=${roomId}`;
       
       roomInfo.classList.remove("hidden");
       playerForm.classList.remove("hidden");
       createRoomBtn.textContent = "Room Created";
       createRoomBtn.classList.remove("btn-processing");
-
-      // Setup invite link copy functionality
-      inviteLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigator.clipboard.writeText(inviteLink.textContent)
-          .then(() => alert("Invite link copied to clipboard!"))
-          .catch(() => alert("Failed to copy link"));
-      });
 
       // Join socket room
       socket.emit("join-room", {
@@ -143,10 +143,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         role: "auctioneer"
       });
 
+      showToast("Room created successfully!", "success");
+
     } catch (err) {
       handleError("Failed to create room");
       console.error(err);
     }
+  });
+
+  // Copy Link Functionality
+  copyLinkBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(inviteLink.value)
+      .then(() => {
+        copyLinkBtn.textContent = "Copied!";
+        setTimeout(() => {
+          copyLinkBtn.textContent = "Copy";
+        }, 2000);
+        showToast("Invite link copied to clipboard", "success");
+      })
+      .catch(() => {
+        showToast("Failed to copy link", "error");
+      });
   });
 
   // Start Auction with Supabase
@@ -157,11 +174,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const startingPrice = parseInt(startingPriceInput.value);
 
     if (!playerName || !playerClub || !playerPosition || isNaN(startingPrice)) {
-      alert("Please fill all player fields correctly");
+      showToast("Please fill all player fields correctly", "error");
       return;
     }
 
     try {
+      startAuctionBtn.disabled = true;
+      startAuctionBtn.innerHTML = '<span class="spinner"></span> Starting...';
+
       // Create player in Supabase
       const { data: playerData, error: playerError } = await supabase
         .from('players')
@@ -171,10 +191,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           club: playerClub,
           position: playerPosition,
           starting_price: startingPrice,
-          status: 'auctioning'
+          status: 'auctioning',
+          current_bid: startingPrice
         }])
         .select();
-      
+
       if (playerError) throw playerError;
 
       currentAuctionId = playerData[0].id;
@@ -185,11 +206,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         startingPrice,
         playerId: playerData[0].id
       };
-      
+
       // Update UI
       updatePlayerPreview(currentPlayer);
       playerPreview.classList.remove("hidden");
-      startAuctionBtn.disabled = true;
+      startAuctionBtn.disabled = false;
+      startAuctionBtn.textContent = "Start Bidding";
       finalCallBtn.classList.remove("hidden");
       finalCallBtn.disabled = false;
 
@@ -199,8 +221,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         roomId
       });
 
+      showToast("Auction started successfully!", "success");
+
     } catch (err) {
-      alert("Failed to start auction");
+      showToast("Failed to start auction", "error");
       console.error(err);
       resetAuctionState();
     }
@@ -209,7 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Final Call Handler with Supabase
   finalCallBtn.addEventListener("click", async () => {
     if (!roomId || !currentAuctionId) {
-      alert("Please create a room and start an auction first");
+      showToast("Please create a room and start an auction first", "error");
       return;
     }
 
@@ -219,10 +243,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       callCount++;
       const message = getCallMessage(callCount);
-      
+
       // Update call count in Supabase
       const { error } = await supabase
-        .from('auctions')
+        .from('players')
         .update({ call_count: callCount })
         .eq('id', currentAuctionId);
 
@@ -234,6 +258,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         callCount,
         message 
       });
+
+      playCallSound(callCount);
 
       if (callCount === 3) {
         // End auction after final call
@@ -283,6 +309,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Update UI
             finalCallBtn.disabled = true;
             nextPlayerBtn.classList.remove("hidden");
+            showToast(`Auction ended! Winner: ${winnerName}`, "success");
           }
         }, 3000);
       }
@@ -291,7 +318,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       finalCallBtn.textContent = message;
 
     } catch (err) {
-      alert("Failed to process final call");
+      showToast("Failed to process final call", "error");
       console.error(err);
       finalCallBtn.disabled = false;
       finalCallBtn.textContent = "Final Call!";
@@ -324,6 +351,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       participantCount.textContent = count;
       await updateParticipantsList();
+      showToast(`${data.user.name} joined the room`, "info");
     } catch (err) {
       console.error("Error updating participants:", err);
     }
@@ -342,6 +370,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       participantCount.textContent = count;
       await updateParticipantsList();
+      showToast(`${data.user.name} left the room`, "info");
     } catch (err) {
       console.error("Error updating participants:", err);
     }
@@ -351,6 +380,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentBidDisplay.textContent = data.currentBid;
     leadingBidderDisplay.textContent = data.leadingBidder;
     callCount = 0; // Reset call count on new bid
+    finalCallBtn.textContent = "Final Call!";
+    showToast(`New bid: ₹${data.currentBid} by ${data.leadingBidder}`, "info");
   });
 
   socket.on("call-update", ({ callCount: count, message }) => {
@@ -380,10 +411,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Helper functions
-  function generateRoomId() {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  }
-
   function updatePlayerPreview(player) {
     previewName.textContent = player.playerName.toUpperCase();
     previewClub.textContent = player.playerClub;
@@ -413,12 +440,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       participants.forEach(participant => {
         const participantElement = document.createElement('div');
         participantElement.className = 'participant-item';
-        
+
         const winCount = participant.wins ? participant.wins.length : 0;
-        
+
         participantElement.innerHTML = `
           <span>${participant.name}</span>
-          <span>${winCount} wins</span>
+          <span class="badge">${winCount} wins</span>
         `;
 
         participantElement.addEventListener('click', () => {
@@ -459,12 +486,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           wonPlayersList.appendChild(wonPlayerElement);
         });
       } else {
-        wonPlayersList.innerHTML = '<p>No players won yet</p>';
+        wonPlayersList.innerHTML = '<p class="no-wins">No players won yet</p>';
       }
 
       participantModal.classList.add('show');
     } catch (err) {
-      alert("Failed to get participant wins");
+      showToast("Failed to get participant wins", "error");
       console.error(err);
     }
   }
@@ -479,13 +506,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function resetAuctionState() {
     startAuctionBtn.disabled = false;
+    startAuctionBtn.textContent = "Start Bidding";
     finalCallBtn.classList.add("hidden");
     finalCallBtn.disabled = true;
     callCount = 0;
   }
 
   function handleError(message) {
-    alert(message);
+    showToast(message, "error");
     createRoomBtn.disabled = false;
     createRoomBtn.textContent = "Create Room";
     createRoomBtn.classList.remove("btn-processing");
@@ -508,9 +536,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   function playCallSound(type) {
     try {
       let audioElement;
-      if (type === 'first') audioElement = firstCallAudio;
-      else if (type === 'second') audioElement = secondCallAudio;
-      else if (type === 'final') audioElement = finalCallAudio;
+      if (type === 'first' || type === 1) audioElement = firstCallAudio;
+      else if (type === 'second' || type === 2) audioElement = secondCallAudio;
+      else if (type === 'final' || type === 3) audioElement = finalCallAudio;
 
       if (audioElement) {
         audioElement.currentTime = 0;
@@ -529,4 +557,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       default: return "Going once...";
     }
   }
+
+  function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('show');
+    }, 10);
+
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // Handle page refresh or close
+  window.addEventListener('beforeunload', async () => {
+    try {
+      await supabase
+        .from('participants')
+        .update({ is_online: false })
+        .eq('socket_id', socket.id);
+    } catch (err) {
+      console.error("Error updating participant status:", err);
+    }
+  });
 });
