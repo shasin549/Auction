@@ -11,9 +11,9 @@
 <body>
   <div class="panel-container">
     <h1><i class="fas fa-gavel"></i> Auctioneer Panel</h1>
-    <div class="status">
+    <div class="connection-status">
       <div class="status-dot"></div>
-      <span>Disconnected</span>
+      <span id="connection-status">Disconnected</span>
     </div>
 
     <div class="section">
@@ -46,7 +46,12 @@
         </div>
         <div class="player-info">
           <span>Invite Link:</span>
-          <a href="#" id="inviteLink" style="color: var(--primary);">-</a>
+          <div class="invite-link-container">
+            <a href="#" id="inviteLink" target="_blank" style="color: var(--primary);">-</a>
+            <button class="btn btn-secondary" id="copyLinkBtn">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -55,17 +60,20 @@
       <h3 class="section-title"><i class="fas fa-user-plus"></i> Add Player</h3>
       <div class="form-group">
         <label>Player Name</label>
-        <input type="text" placeholder="Player Name" id="playerName">
+        <input type="text" placeholder="Player Name" id="playerName" required>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <input type="text" placeholder="Club" id="playerClub">
+          <label>Club</label>
+          <input type="text" placeholder="Club" id="playerClub" required>
         </div>
         <div class="form-group">
-          <input type="text" placeholder="Position" id="playerPosition">
+          <label>Position</label>
+          <input type="text" placeholder="Position" id="playerPosition" required>
         </div>
         <div class="form-group">
-          <input type="number" placeholder="Starting Price" id="startingPrice">
+          <label>Starting Price</label>
+          <input type="number" placeholder="Starting Price" id="startingPrice" min="1" required>
         </div>
       </div>
       <button class="btn btn-primary" id="startAuctionBtn">Start Auction</button>
@@ -76,7 +84,7 @@
         <button class="btn btn-danger hidden" id="finalCallBtn">Final Call!</button>
         <button class="btn btn-secondary hidden" id="nextPlayerBtn">Next Player</button>
       </div>
-      
+
       <div class="player-card hidden" id="playerPreview">
         <h4>Live Auction</h4>
         <div class="player-info">
