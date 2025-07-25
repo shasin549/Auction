@@ -8,40 +8,38 @@
 </head>
 <body>
   <div class="container">
-    <h1>Auctioneer Control Panel</h1><div class="section">
-  <label for="roomName">Room Name:</label>
-  <input type="text" id="roomName" placeholder="Enter room name" />
+    <h1>Auctioneer Panel</h1><div class="section">
+  <input type="text" id="roomName" placeholder="Enter Room Name" />
   <button id="createRoomBtn">Create Room</button>
 </div>
 
 <div id="roomInfo" class="hidden section">
   <p><strong>Room ID:</strong> <span id="roomIdDisplay"></span></p>
-  <p><strong>Invite Link:</strong> <a href="#" target="_blank" id="inviteLink"></a> <button id="copyLinkBtn">Copy Link</button></p>
+  <p><strong>Invite Link:</strong> <a id="inviteLink" href="#" target="_blank"></a></p>
   <p><strong>Participants:</strong> <span id="participantCount">0</span></p>
 </div>
 
 <form id="playerForm" class="hidden section">
-  <h2>New Player</h2>
   <input type="text" id="playerName" placeholder="Player Name" required />
   <input type="text" id="playerClub" placeholder="Club" required />
   <input type="text" id="playerPosition" placeholder="Position" required />
   <input type="number" id="startingPrice" placeholder="Starting Price" required />
-  <button type="button" id="startAuctionBtn">Start Auction</button>
+  <button type="button" id="startAuctionBtn">Start Bidding</button>
 </form>
 
-<div id="playerPreview" class="glass-card hidden">
-  <h2 id="previewName">Player</h2>
+<div id="playerPreview" class="hidden glass-card">
+  <h2 id="previewName"></h2>
   <p><strong>Club:</strong> <span id="previewClub"></span></p>
   <p><strong>Position:</strong> <span id="previewPosition"></span></p>
-  <p><strong>Base Price:</strong> <span id="previewPrice"></span></p>
-  <p><strong>Current Bid:</strong> <span id="currentBid">₹0</span></p>
+  <p><strong>Starting Price:</strong> ₹<span id="previewPrice"></span></p>
+  <p><strong>Current Bid:</strong> ₹<span id="currentBid">0</span></p>
   <p><strong>Leading Bidder:</strong> <span id="leadingBidder">-</span></p>
 </div>
 
 <div class="section">
-  <button id="finalCallBtn" class="hidden">Final Call!</button>
+  <button id="finalCallBtn" class="hidden">Final Call</button>
   <button id="nextPlayerBtn" class="hidden">Next Player</button>
 </div>
 
-  </div>  <!-- Scripts -->  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>  <script src="/socket.io/socket.io.js"></script>  <script src="supabaseClient.js"></script>  <script src="auctioneer.js"></script></body>
+  </div>  <!-- Scripts in correct order -->  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>  <script src="supabaseClient.js"></script>  <script src="/socket.io/socket.io.js"></script>  <script src="auctioneer.js"></script></body>
 </html>
