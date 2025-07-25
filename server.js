@@ -1,4 +1,14 @@
-// server.js (Fully updated and debugged) import express from 'express'; import { createServer } from 'http'; import { Server } from 'socket.io'; import path from 'path'; import { fileURLToPath } from 'url'; import helmet from 'helmet'; import cors from 'cors'; import morgan from 'morgan'; import dotenv from 'dotenv'; import { createClient } from '@supabase/supabase-js';
+// server.js (Fully updated and debugged) 
+import express from 'express'; 
+import { createServer } from 'http'; 
+import { Server } from 'socket.io'; 
+import path from 'path'; 
+import { fileURLToPath } from 'url'; 
+import helmet from 'helmet'; 
+import cors from 'cors'; 
+import morgan from 'morgan'; 
+import dotenv from 'dotenv'; 
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
