@@ -1,21 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  // Initialize Supabase
-  const supabaseUrl = 'https://flwqvepusbjmgoovqvmi.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM';
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  // ✅ Supabase setup
+  const supabase = createClient(
+    'https://flwqvepusbjmgoovqvmi.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM'
+  );
 
-  // Initialize Socket.IO
-  const socket = io('https://auction-zfku.onrender.com', {
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    timeout: 20000,
-    transports: ['websocket']
-  });
+  // ✅ Socket connection
+  const socket = io();
 
-  // DOM Elements
+  // Elements
   const connectionStatus = document.getElementById("connection-status");
-  const statusDot = document.querySelector('.status-dot');
+  const statusDot = document.querySelector(".status-dot");
   const createRoomBtn = document.getElementById("createRoomBtn");
   const roomNameInput = document.getElementById("roomName");
   const roomInfo = document.getElementById("roomInfo");
@@ -27,17 +22,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   const startAuctionBtn = document.getElementById("startAuctionBtn");
   const finalCallBtn = document.getElementById("finalCallBtn");
   const nextPlayerBtn = document.getElementById("nextPlayerBtn");
-  const participantsContainer = document.getElementById("participantsContainer");
+  const playerPreview = document.getElementById("playerPreview");
 
-  // State variables
+  // State
   let roomId = "";
   let currentPlayer = null;
   let currentAuctionId = null;
   let callCount = 0;
 
-  // Connection status handling
+  // Connection status
   socket.on('connect', () => {
     updateConnectionStatus("Connected", "#10B981");
+    console.log("✅ Socket connected:", socket.id);
     createRoomBtn.disabled = false;
   });
 
@@ -52,83 +48,70 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusDot.style.backgroundColor = color;
   }
 
-  // Create Auction Room
   createRoomBtn.addEventListener("click", async () => {
     const roomName = roomNameInput.value.trim();
+    if (!roomName) return showToast("Enter room name", "error");
 
-    if (!roomName) {
-      showToast("Please enter a room name", "error");
+    if (!socket.connected || !socket.id) {
+      showToast("Not connected to server", "error");
       return;
     }
 
     setButtonLoading(createRoomBtn, true);
 
     try {
-      // 1. Create room in Supabase (simplified for your schema)
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
         .insert([{ name: roomName }])
         .select();
 
-      if (roomError || !roomData || roomData.length === 0) {
-        throw roomError || new Error("Failed to create room");
+      if (roomError || !roomData?.length) {
+        console.error("Room insert failed:", roomError);
+        showToast("Room creation failed", "error");
+        return;
       }
 
       roomId = roomData[0].id;
-      console.log("Room created with ID:", roomId);
+      console.log("✅ Room created:", roomId);
 
-      // 2. Join as auctioneer in Supabase
-      const { error: joinError } = await supabase
-        .from('participants')
-        .insert([{
-          room_id: roomId,
-          socket_id: socket.id,
-          name: "Auctioneer",
-          role: "auctioneer",
-          is_online: true
-        }]);
+      await supabase.from('participants').insert([{
+        room_id: roomId,
+        socket_id: socket.id,
+        name: "Auctioneer",
+        role: "auctioneer",
+        is_online: true
+      }]);
 
-      if (joinError) throw joinError;
-
-      // 3. Update UI
-      roomIdDisplay.textContent = roomId;
-      inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
-      inviteLink.textContent = `${window.location.origin}/bidder.html?room=${roomId}`;
-
-      // 4. Join socket room
       socket.emit("join-room", {
         roomId,
         userName: "Auctioneer",
         role: "auctioneer"
       });
 
-      // 5. Show UI updates
+      roomIdDisplay.textContent = roomId;
+      inviteLink.href = `${window.location.origin}/bidder.html?room=${roomId}`;
+      inviteLink.textContent = inviteLink.href;
       roomInfo.classList.remove("hidden");
       playerForm.classList.remove("hidden");
-      showToast("Room created successfully!", "success");
+
+      showToast("Room created!", "success");
 
     } catch (err) {
-      console.error("Room creation failed:", err);
-      showToast(`Failed to create room: ${err.message}`, "error");
+      console.error("Error creating room:", err.message);
+      showToast("Error creating room", "error");
     } finally {
       setButtonLoading(createRoomBtn, false, "Create Room");
     }
   });
 
-  // Copy Invite Link
   copyLinkBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(inviteLink.href)
-      .then(() => {
-        showToast("Invite link copied!", "success");
-        copyLinkBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        setTimeout(() => {
-          copyLinkBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
-        }, 2000);
-      })
-      .catch(() => showToast("Failed to copy link", "error"));
+    navigator.clipboard.writeText(inviteLink.href).then(() => {
+      showToast("Link copied!", "success");
+    }).catch(() => {
+      showToast("Failed to copy", "error");
+    });
   });
 
-  // Start Auction
   startAuctionBtn.addEventListener("click", async () => {
     const playerName = document.getElementById("playerName").value.trim();
     const playerClub = document.getElementById("playerClub").value.trim();
@@ -136,14 +119,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const startingPrice = parseInt(document.getElementById("startingPrice").value);
 
     if (!playerName || !playerClub || !playerPosition || isNaN(startingPrice)) {
-      showToast("Please fill all fields with valid values", "error");
-      return;
+      return showToast("Fill all fields", "error");
     }
 
-    setButtonLoading(startAuctionBtn, true);
+    setButtonLoading(startAuctionBtn, true, "Starting...");
 
     try {
-      const { data: playerData, error } = await supabase
+      const { data, error } = await supabase
         .from('players')
         .insert([{
           room_id: roomId,
@@ -154,148 +136,130 @@ document.addEventListener("DOMContentLoaded", async () => {
         }])
         .select();
 
-      if (error || !playerData) throw error || new Error("Failed to create player");
+      if (error || !data?.length) throw error;
 
-      currentAuctionId = playerData[0].id;
-      currentPlayer = { 
-        playerName, 
-        playerClub, 
-        playerPosition, 
-        startingPrice,
-        playerId: playerData[0].id
-      };
+      const playerId = data[0].id;
+      currentAuctionId = playerId;
+      currentPlayer = { playerName, playerClub, playerPosition, startingPrice, playerId };
 
       updatePlayerPreview(currentPlayer);
-      document.getElementById("playerPreview").classList.remove("hidden");
+      playerPreview.classList.remove("hidden");
       finalCallBtn.classList.remove("hidden");
 
       socket.emit("start-auction", {
-        ...currentPlayer,
-        roomId
+        roomId,
+        ...currentPlayer
       });
 
       showToast("Auction started!", "success");
     } catch (err) {
-      console.error("Start auction failed:", err);
-      showToast(`Failed to start auction: ${err.message}`, "error");
+      console.error("Auction start error:", err.message);
+      showToast("Start failed", "error");
     } finally {
       setButtonLoading(startAuctionBtn, false, "Start Auction");
     }
   });
 
-  // Final Call Handler
-  finalCallBtn.addEventListener("click", async () => {
+  finalCallBtn.addEventListener("click", () => {
     callCount++;
-    const message = getCallMessage(callCount);
+    const message = callCount === 1 ? "First Call!" :
+                    callCount === 2 ? "Second Call!" :
+                    callCount === 3 ? "Final Call!" : "Calling...";
+    finalCallBtn.textContent = message;
 
-    try {
-      socket.emit("final-call", { 
-        roomId,
-        callCount,
-        message 
-      });
+    socket.emit("final-call", {
+      roomId,
+      callCount,
+      message
+    });
 
-      finalCallBtn.textContent = message;
-
-      if (callCount === 3) {
-        setTimeout(async () => {
-          await endAuction();
-        }, 3000);
-      }
-    } catch (err) {
-      console.error("Final call failed:", err);
-      showToast("Failed to process final call", "error");
+    if (callCount === 3) {
+      setTimeout(endAuction, 3000);
     }
   });
 
-  // Helper Functions
-  function validatePlayerInput(name, club, position, price) {
-    if (!name || !club || !position || isNaN(price) || price <= 0) {
-      showToast("Please fill all fields with valid values", "error");
-      return false;
-    }
-    return true;
-  }
-
   async function endAuction() {
     try {
-      const { data: bidData, error: bidError } = await supabase
+      const { data, error } = await supabase
         .from('bids')
         .select('bidder_name, amount')
         .eq('player_id', currentAuctionId)
         .order('amount', { ascending: false })
         .limit(1);
 
-      if (bidError) throw bidError;
+      const winnerName = data?.[0]?.bidder_name || "No Winner";
+      const winningBid = data?.[0]?.amount || 0;
 
-      const winnerName = bidData.length > 0 ? bidData[0].bidder_name : 'No Winner';
-      const winningBid = bidData.length > 0 ? bidData[0].amount : 0;
-
-      if (winnerName !== 'No Winner') {
-        await supabase
-          .from('winners')
-          .insert([{
-            player_id: currentAuctionId,
-            winner_name: winnerName,
-            winning_bid: winningBid,
-            room_id: roomId
-          }]);
+      if (winnerName !== "No Winner") {
+        await supabase.from('winners').insert([{
+          player_id: currentAuctionId,
+          room_id: roomId,
+          winner_name: winnerName,
+          winning_bid: winningBid,
+          awarded_at: new Date().toISOString()
+        }]);
       }
 
       socket.emit("auction-ended", {
         roomId,
+        playerId: currentAuctionId,
         playerName: currentPlayer.playerName,
         winnerName,
         winningBid
       });
 
+      showToast(`Winner: ${winnerName} ₹${winningBid}`, "success");
       nextPlayerBtn.classList.remove("hidden");
-      showToast(`Auction ended! Winner: ${winnerName}`, "success");
+
     } catch (err) {
-      console.error("End auction failed:", err);
-      showToast("Failed to end auction", "error");
+      console.error("End auction error:", err.message);
+      showToast("Auction end failed", "error");
     }
   }
+
+  nextPlayerBtn.addEventListener("click", () => {
+    document.getElementById("playerName").value = "";
+    document.getElementById("playerClub").value = "";
+    document.getElementById("playerPosition").value = "";
+    document.getElementById("startingPrice").value = "";
+
+    playerPreview.classList.add("hidden");
+    finalCallBtn.classList.add("hidden");
+    nextPlayerBtn.classList.add("hidden");
+    finalCallBtn.textContent = "Final Call!";
+
+    callCount = 0;
+    currentAuctionId = null;
+    currentPlayer = null;
+  });
 
   function updatePlayerPreview(player) {
     document.getElementById("previewName").textContent = player.playerName.toUpperCase();
     document.getElementById("previewClub").textContent = player.playerClub;
     document.getElementById("previewPosition").textContent = player.playerPosition;
-    document.getElementById("previewPrice").textContent = `₹${player.startingPrice}M`;
-    document.getElementById("currentBid").textContent = player.startingPrice;
+    document.getElementById("previewPrice").textContent = `₹${player.startingPrice}`;
+    document.getElementById("currentBid").textContent = `₹${player.startingPrice}`;
     document.getElementById("leadingBidder").textContent = "-";
   }
 
-  function setButtonLoading(button, isLoading, originalText = "Create Room") {
-    button.disabled = isLoading;
-    button.innerHTML = isLoading 
-      ? '<span class="spinner"></span> Processing...' 
-      : originalText;
+  function setButtonLoading(button, loading, text = "Loading...") {
+    button.disabled = loading;
+    button.innerHTML = loading ? `<span class="spinner"></span> ${text}` : text;
   }
 
-  function getCallMessage(count) {
-    switch(count) {
-      case 1: return "First Call!";
-      case 2: return "Second Call!";
-      case 3: return "Final Call!";
-      default: return "Going once...";
-    }
-  }
-
-  function showToast(message, type) {
-    const toast = document.createElement('div');
+  function showToast(message, type = "info") {
+    const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
     document.body.appendChild(toast);
-
-    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => toast.classList.add("show"), 10);
     setTimeout(() => {
-      toast.classList.remove('show');
+      toast.classList.remove("show");
       setTimeout(() => toast.remove(), 300);
     }, 3000);
   }
 
-  // Socket event listeners
+  // Real-time updates
   socket.on("participant-joined", updateParticipants);
   socket.on("participant-left", updateParticipants);
   socket.on("bid-placed", handleNewBid);
@@ -312,14 +276,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function handleNewBid({ currentBid, leadingBidder }) {
-    document.getElementById("currentBid").textContent = currentBid;
+    document.getElementById("currentBid").textContent = `₹${currentBid}`;
     document.getElementById("leadingBidder").textContent = leadingBidder;
     callCount = 0;
     finalCallBtn.textContent = "Final Call!";
     showToast(`New bid: ₹${currentBid} by ${leadingBidder}`, "info");
   }
 
-  // Cleanup on page exit
   window.addEventListener('beforeunload', async () => {
     try {
       await supabase
@@ -327,7 +290,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .update({ is_online: false })
         .eq('socket_id', socket.id);
     } catch (err) {
-      console.error("Cleanup error:", err);
+      console.error("Unload cleanup failed:", err.message);
     }
   });
 });
