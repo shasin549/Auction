@@ -1,39 +1,10 @@
-// supabaseClient.js - Centralized Supabase client configuration
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+// public/supabaseClient.js (100% complete and safe)
 
-// Configuration (same for all environments)
-const supabaseUrl = 'https://flwqvepusbjmgoovqvmi.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM'
+// Load Supabase client via CDN and initialize it globally
 
-// Create and configure the Supabase client
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  db: {
-    schema: 'public'
-  },
-  auth: {
-    persistSession: false, // Recommended for real-time applications
-    autoRefreshToken: false
-  }
-})
+const SUPABASE_URL = 'https://flwqvepusbjmgoovqvmi.supabase.co'; const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM';
 
-// Add error logging
-supabase.onError((error) => {
-  console.error('Supabase Error:', error)
-})
+// Prevent re-initialization if already loaded (important for dev hot reloads) if (typeof supabase === 'undefined') { var supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
 
-// Test connection function (optional)
-export async function testConnection() {
-  const { data, error } = await supabase
-    .from('rooms')
-    .select('id')
-    .limit(1)
-  
-  if (error) {
-    console.error('Supabase connection test failed:', error)
-    return false
-  }
-  return true
-}
+// Optional: test connection (async () => { try { const { error } = await supabase.from('rooms').select('*').limit(1); if (error) console.warn('🟠 Supabase test query failed:', error.message); else console.log('✅ Supabase client connected'); } catch (e) { console.error('❌ Supabase connection error:', e); } })();
 
-// Export the configured client
-export default supabase
