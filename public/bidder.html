@@ -11,18 +11,28 @@
         <h1>Bidder Dashboard</h1>
         <nav>
             <a href="index.html">Home</a>
-            <span id="user-info-bidder" style="display: none;">
-                Welcome, <span id="usernameDisplayBidder"></span>! <button id="logoutBtnBidder" class="nav-button">Logout</button>
+            <span id="user-info-bidder">
+                Logged in as: <span id="bidderNameDisplay">Guest Bidder</span> <button id="changeBidderBtn" class="nav-button">Change User</button>
             </span>
         </nav>
     </header>
 
     <main class="bidder-main">
-        <section id="join-room-section" class="card">
+        <section id="bidder-setup-section" class="card">
+            <h2>Enter Your Details to Bid</h2>
+            <form id="bidderSetupForm">
+                <label for="bidderDisplayName">Your Display Name:</label>
+                <input type="text" id="bidderDisplayName" placeholder="e.g., FootballFan123" required><br>
+                <button type="submit" class="button-primary">Continue as Bidder</button>
+            </form>
+            <p id="bidderSetupMessage" class="message"></p>
+        </section>
+
+        <section id="join-room-section" class="card" style="display: none;">
             <h2>Join an Auction Room</h2>
             <form id="joinRoomForm">
                 <label for="roomCodeInput">Enter Room Code:</label>
-                <input type="text" id="roomCodeInput" placeholder="e.g., ABC123" required><br>
+                <input type="text" id="roomCodeInput" placeholder="e.g., ABC123" required maxlength="6" pattern="[A-Z0-9]{6}"><br>
                 <button type="submit" class="button-primary">Join Room</button>
             </form>
             <p id="joinRoomMessage" class="message"></p>
@@ -53,8 +63,8 @@
             </div>
         </section>
 
-        <section id="won-players-section" class="card">
-            <h2>Your Won Players</h2>
+        <section id="won-players-section" class="card" style="display: none;">
+            <h2>Your Won Players (<span id="wonPlayersDisplayName"></span>)</h2>
             <ul id="wonPlayersList">
                 <li>No players won yet.</li>
             </ul>
