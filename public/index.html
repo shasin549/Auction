@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Auction House</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Auction App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <header>
-        <h1>Football Player Auction</h1>
-        <nav>
-            <span>Welcome!</span>
-        </nav>
-    </header>
-
-    <main class="index-main">
-        <section class="action-buttons">
+<body class="index-body">
+    <div class="main-container">
+        <h1 class="main-heading">Welcome to the Auction App</h1>
+        <p class="sub-heading">Choose your role to get started</p>
+        <div class="button-container">
             <button id="auctioneerBtn" class="large-modern-button auctioneer-color">
                 <span class="button-icon">👑</span>
                 <h2>Auctioneer</h2>
@@ -26,13 +22,8 @@
                 <h2>Bidder</h2>
                 <p>Join an auction and bid on players</p>
             </button>
-        </section>
-    </main>
-
-    <footer>
-        <p>&copy; 2025 Football Auction. All rights reserved.</p>
-    </footer>
-
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabaseClient.js"></script>
     <script src="script.js"></script>
