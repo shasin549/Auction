@@ -1,44 +1,50 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bidder Panel</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="modal.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Details & Bidding - Online Auction</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Bidder Panel</h1><div id="joinSection" class="section">
-  <input type="text" id="roomId" placeholder="Enter Room ID" />
-  <input type="text" id="bidderName" placeholder="Your Name" />
-  <button id="joinRoomBtn">Join Room</button>
-</div>
+    <header>
+        <h1>Auction Details</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="auctioneer.html">Create Auction</a>
+            <a href="bidder.html">View / Bid Auctions</a>
+            <span id="user-info-bidder" style="display: none;">
+                Welcome, <span id="usernameDisplayBidder"></span>! <button id="logoutBtnBidder" class="nav-button">Logout</button>
+            </span>
+        </nav>
+    </header>
 
-<div id="auctionSection" class="hidden section">
-  <div id="playerCard" class="glass-card">
-    <h2 id="playerName">Waiting...</h2>
-    <p><strong>Club:</strong> <span id="playerClub">-</span></p>
-    <p><strong>Position:</strong> <span id="playerPosition">-</span></p>
-    <p><strong>Starting Price:</strong> ₹<span id="playerPrice">0</span></p>
-    <p><strong>Current Bid:</strong> ₹<span id="liveBid">0</span></p>
-    <p><strong>Leading Bidder:</strong> <span id="liveLeader">-</span></p>
-  </div>
+    <main>
+        <section id="auction-details">
+            <h2 id="auction-title">Loading Auction...</h2>
+            <div class="auction-detail-card">
+                <img id="auction-image" src="" alt="Auction Item" style="max-width: 400px; display: none;">
+                <p><strong>Description:</strong> <span id="auction-description"></span></p>
+                <p><strong>Seller:</strong> <span id="auction-seller"></span></p>
+                <p><strong>Current Price:</strong> <span id="auction-current-price" class="price"></span></p>
+                <p><strong>Ends In:</strong> <span id="auction-time-left" class="time-left"></span></p>
+                <button id="placeBidBtn" class="button-primary">Place Bid</button>
+                <input type="number" id="bidAmountInput" placeholder="Enter your bid" step="0.01" min="0.01" style="margin-left: 10px; padding: 8px;">
+                <p id="bid-message" style="color: red; margin-top: 10px;"></p>
+            </div>
 
-  <div class="section">
-    <input type="number" id="bidAmount" placeholder="Enter your bid" />
-    <button id="placeBidBtn">Place Bid</button>
-  </div>
+            <h3 style="margin-top: 30px;">Bid History</h3>
+            <ul id="bid-history-list">
+                </ul>
+        </section>
+    </main>
 
-  <div id="callInfo" class="hidden">
-    <p id="callMessage">Final Call Info</p>
-  </div>
+    <footer>
+        <p>&copy; 2025 Online Auction. All rights reserved.</p>
+    </footer>
 
-  <div id="winnerAnnouncement" class="hidden">
-    <h3>🏆 Auction Result</h3>
-    <p><strong>Winner:</strong> <span id="winnerName">-</span></p>
-    <p><strong>Winning Bid:</strong> ₹<span id="winningBid">0</span></p>
-  </div>
-</div>
-
-  </div>  <!-- Scripts in correct order -->  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>  <script src="supabaseClient.js"></script>  <script src="/socket.io/socket.io.js"></script>  <script src="bidder.js"></script></body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabaseClient.js"></script>
+    <script src="bidder.js"></script>
+</body>
 </html>
