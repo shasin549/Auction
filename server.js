@@ -1,50 +1,60 @@
-// server.js 
-import express from 'express'; 
-import { createServer } from 'http'; 
-import { Server } from 'socket.io'; 
-import dotenv from 'dotenv'; 
-import { createClient } from '@supabase/supabase-js'; 
-import path from 'path'; 
-import helmet from 'helmet'; 
-import cors from 'cors'; 
-import morgan from 'morgan'; 
-import { fileURLToPath } from 'url';
+const express = require('express');
+const path = require('path');
+const dotenv = require('dotenv');
+const { createClient } = require('@supabase/supabase-js');
+const { WebSocketServer } = require('ws'); 
 
+// Load environment variables from .env file
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url); const __dirname = path.dirname(__filename);
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const app = express(); const server = createServer(app); const io = new Server(server);
+// Initialize Supabase Client for server-side if needed (optional for this setup, mostly client-side)
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-const PORT = process.env.PORT || 3000; const SUPABASE_URL = process.env.SUPABASE_URL; const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+// Middleware to parse JSON bodies
+app.use(express.json());
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware app.use(cors()); app.use(helmet()); app.use(morgan('dev')); app.use(express.static(path.join(__dirname, 'public')));
-
-// Socket.IO const roomParticipants = {};
-
-io.on('connection', (socket) => { console.log('🔌 A user connected');
-
-socket.on('create-room', ({ roomId, roomName }) => { socket.join(roomId); roomParticipants[roomId] = roomParticipants[roomId] || new Set(); roomParticipants[roomId].add(socket.id); io.to(roomId).emit('participant-count', roomParticipants[roomId].size); });
-
-socket.on('join-room', ({ roomId, bidderName }) => { socket.join(roomId); roomParticipants[roomId] = roomParticipants[roomId] || new Set(); roomParticipants[roomId].add(socket.id); io.to(roomId).emit('participant-count', roomParticipants[roomId].size); });
-
-socket.on('start-auction', (data) => { io.to(data.roomId).emit('start-auction', data.player); });
-
-socket.on('place-bid', async ({ roomId, playerId, amount, bidder }) => { io.to(roomId).emit('new-bid', { amount, bidder });
-
-const { error } = await supabase.from('bid').insert([
-  { player_id: playerId, bidder_name: bidder, amount } 
-]);
-
-if (error) console.error('❌ Error inserting bid:', error.message);
-
+// Basic API Route Example (most Supabase interactions will be client-side)
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Server is healthy!' });
 });
 
-socket.on('auction-ended', ({ roomId, winner, amount }) => { io.to(roomId).emit('auction-ended', { winner, amount }); });
+// Start the Express server
+const server = app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Serving static files from: ${path.join(__dirname, 'public')}`);
+});
 
-socket.on('disconnecting', () => { for (const roomId of socket.rooms) { if (roomParticipants[roomId]) { roomParticipants[roomId].delete(socket.id); io.to(roomId).emit('participant-count', roomParticipants[roomId].size); } } }); });
+// --- WebSocket Server (Optional: If you need custom real-time beyond Supabase Realtime) ---
+const wss = new WebSocketServer({ server });
 
-server.listen(PORT, () => { console.log(🚀 Server running on http://localhost:${PORT}); });
+wss.on('connection', ws => {
+    console.log('Client connected via WebSocket');
+    ws.on('message', message => {
+        console.log(`Received: ${message}`);
+        ws.send(`You said: ${message}`);
+    });
 
+    ws.on('close', () => {
+        console.log('Client disconnected via WebSocket');
+    });
+
+    ws.on('error', error => {
+        console.error('WebSocket error:', error);
+    });
+});
+
+function broadcastToClients(message) {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
+}
+
+module.exports = app;
