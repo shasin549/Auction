@@ -1,7 +1,7 @@
 {
-  "name": "auction-website",
+  "name": "football-player-auction",
   "version": "1.0.0",
-  "description": "An online auction website using Node.js, Express, Supabase, HTML, CSS, and JavaScript.",
+  "description": "A real-time football player auction web application.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,19 +9,22 @@
   },
   "keywords": [
     "auction",
+    "football",
     "nodejs",
     "express",
     "supabase",
     "html",
     "css",
-    "javascript"
+    "javascript",
+    "realtime",
+    "websocket"
   ],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.44.2",
+    "canvas-confetti": "^1.9.3",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "ws": "^8.18.0"
+    "express": "^4.19.2"
   }
 }
