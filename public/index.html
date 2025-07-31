@@ -1,30 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Player Card Auction</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Auction House</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modal.css">
 </head>
 <body>
-  <div class="container">
-    <header class="index-header">
-      <h1><i class="fas fa-gavel"></i> Player Card Auction</h1>
-      <p>Select your role to begin</p>
+    <header>
+        <h1>Welcome to the Online Auction</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="auctioneer.html">Create Auction</a>
+            <a href="bidder.html">View / Bid Auctions</a>
+            <span id="auth-links">
+                <button id="loginBtn" class="nav-button">Login</button>
+                <button id="signupBtn" class="nav-button">Sign Up</button>
+            </span>
+            <span id="user-info" style="display: none;">
+                Welcome, <span id="usernameDisplay"></span>! <button id="logoutBtn" class="nav-button">Logout</button>
+            </span>
+        </nav>
     </header>
 
-    <main class="role-selector">
-      <button id="auctioneerBtn" class="btn btn-primary">
-        <i class="fas fa-gavel"></i> I'm an Auctioneer
-      </button>
-      <button id="bidderBtn" class="btn btn-secondary">
-        <i class="fas fa-hand-paper"></i> I'm a Bidder
-      </button>
-    </main>
-  </div>
+    <main>
+        <section id="login-signup-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2 id="modal-title">Login</h2>
+                <form id="auth-form">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required><br>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required><br>
+                    <button type="submit" id="authSubmitBtn">Login</button>
+                </form>
+                <p id="auth-message" style="color: red;"></p>
+                <p><a href="#" id="toggleAuthMode">Need an account? Sign Up</a></p>
+            </div>
+        </section>
 
-  <script src="script.js"></script>
+        <section id="live-auctions">
+            <h2>Live Auctions</h2>
+            <div id="auction-list" class="auction-grid">
+                </div>
+            <p id="no-auctions-message" style="text-align: center; display: none;">No active auctions available.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Online Auction. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabaseClient.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
