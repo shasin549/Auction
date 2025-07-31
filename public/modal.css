@@ -1,284 +1,74 @@
-/* ================ MODAL STYLES ================ */
+/* Modal (background) */
 .modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(4px);
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
-.modal.show {
-  opacity: 1;
-  visibility: visible;
-}
-
+/* Modal Content/Box */
 .modal-content {
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow: hidden;
-  transform: translateY(20px);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: relative;
+    text-align: center;
 }
 
-.modal.show .modal-content {
-  transform: translateY(0);
+/* The Close Button */
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
 }
 
-.modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }
 
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0;
+#modal-title {
+    color: #007bff;
+    margin-bottom: 20px;
 }
 
-.modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-  max-height: calc(80vh - 120px);
+#auth-form label {
+    text-align: left;
+    margin-left: 10%;
+    width: 80%;
 }
 
-.modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+#auth-form input {
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #64748b;
-  transition: color 0.2s ease;
-  padding: 0.25rem;
-  line-height: 1;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#authSubmitBtn {
+    margin-top: 15px;
+    width: 80%;
 }
 
-.close-btn:hover {
-  color: #1e293b;
-  background-color: #f1f5f9;
+#toggleAuthMode {
+    margin-top: 10px;
+    display: block;
+    color: #007bff;
+    text-decoration: none;
 }
-
-/* Modal Sizes */
-.modal-sm {
-  max-width: 400px;
-}
-
-.modal-lg {
-  max-width: 800px;
-}
-
-.modal-xl {
-  max-width: 1140px;
-}
-
-/* Modal Variants */
-.modal-primary .modal-header {
-  background-color: #6366f1;
-  color: white;
-  border-bottom: none;
-}
-
-.modal-primary .modal-title {
-  color: white;
-}
-
-.modal-primary .close-btn {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.modal-primary .close-btn:hover {
-  color: white;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Animation Classes */
-.modal-fade-in {
-  animation: modalFadeIn 0.3s ease-out;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Scrollbar Styling */
-.modal-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Won Players List Styles */
-.won-players-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.won-player-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-}
-
-.won-player-item:hover {
-  background-color: #f1f5f9;
-}
-
-.won-player-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.won-player-name {
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.won-player-details {
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.won-player-price {
-  font-weight: 600;
-  color: #10b981;
-}
-
-.no-wins {
-  text-align: center;
-  padding: 1.5rem;
-  color: #64748b;
-  font-style: italic;
-}
-
-/* Responsive Modals */
-@media (max-width: 640px) {
-  .modal-content {
-    width: 95%;
-    max-width: none;
-    border-radius: 12px 12px 0 0;
-    position: fixed;
-    bottom: 0;
-    max-height: 85vh;
-  }
-  
-  .modal.show .modal-content {
-    animation: slideUp 0.3s ease-out;
-  }
-  
-  @keyframes slideUp {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
-  }
-  
-  .modal-header,
-  .modal-body,
-  .modal-footer {
-    padding: 1.25rem;
-  }
-}
-
-/* Confirmation Modal Styles */
-.confirm-modal .modal-body {
-  text-align: center;
-  padding: 2rem 1.5rem;
-}
-
-.confirm-modal .modal-icon {
-  font-size: 3rem;
-  color: #ef4444;
-  margin-bottom: 1rem;
-}
-
-.confirm-modal .modal-message {
-  font-size: 1.125rem;
-  margin-bottom: 1.5rem;
-  color: #334155;
-}
-
-/* Loading Modal Styles */
-.loading-modal .modal-content {
-  max-width: 300px;
-  text-align: center;
-}
-
-.loading-modal .modal-body {
-  padding: 2rem;
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #e2e8f0;
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1.5rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-message {
-  font-weight: 500;
-  color: #334155;
+#toggleAuthMode:hover {
+    text-decoration: underline;
 }
