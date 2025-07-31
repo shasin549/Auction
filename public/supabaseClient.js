@@ -4,43 +4,74 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Helper function to get current user
-export async function getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
+/**
+ * Generates a simple UUID for anonymous user tracking.
+ * In a real application, consider a more robust ID system or proper auth.
+ */
+function generateUuid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
 
-// Helper function to get user's participant profile (display_name)
-export async function getParticipantProfile(userId) {
-    if (!userId) return null;
-    const { data, error } = await supabase
-        .from('participants')
-        .select('display_name')
-        .eq('id', userId)
-        .single();
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found (expected for new users)
-        console.error('Error fetching participant profile:', error.message);
-        return null;
+/**
+ * Gets or creates a unique client ID for the current browser session.
+ * This ID is used for presence and to identify an anonymous "participant".
+ */
+export function getOrCreateClientId() {
+    let clientId = localStorage.getItem('anon_client_id');
+    if (!clientId) {
+        clientId = generateUuid();
+        localStorage.setItem('anon_client_id', clientId);
     }
-    return data; // { display_name: "User Name" } or null
+    return clientId;
 }
 
-// Function to ensure a participant profile exists for the user
-export async function ensureParticipantProfile(user) {
-    if (!user) return;
 
-    const profile = await getParticipantProfile(user.id);
-    if (!profile) {
-        // Create a default profile if it doesn't exist
-        const defaultDisplayName = user.email.split('@')[0] || 'Anonymous';
-        const { error } = await supabase
-            .from('participants')
-            .insert({ id: user.id, display_name: defaultDisplayName });
-        if (error) {
-            console.error('Error creating participant profile:', error.message);
-        } else {
-            console.log('Participant profile created.');
-        }
+/**
+ * Calls the Supabase RPC to set the 'app.manage_token' session variable.
+ * This is crucial for RLS policies that rely on the manage_token.
+ * @param {string} token - The manage token for the room.
+ */
+export async function setSupabaseManageToken(token) {
+    if (!token) {
+        // Clear the token if provided null/undefined to prevent unauthorized actions
+        console.warn("Clearing Supabase manage token.");
+        const { data, error } = await supabase.rpc('set_manage_token', { token_val: null });
+        if (error) console.error("Error clearing manage token RPC:", error.message);
+        return;
     }
+    const { data, error } = await supabase.rpc('set_manage_token', { token_val: token });
+    if (error) {
+        console.error("Error setting manage token RPC:", error.message);
+        // It's critical to handle this error, as subsequent RLS-protected actions will fail
+        throw new Error("Failed to set manage token for session.");
+    }
+}
+
+/**
+ * Manages the participant's display name, typically stored in localStorage.
+ * @param {string} key - 'auctioneer_display_name' or 'bidder_display_name'
+ * @returns {string|null} The stored display name.
+ */
+export function getStoredDisplayName(key) {
+    return localStorage.getItem(key);
+}
+
+/**
+ * Sets the participant's display name in localStorage.
+ * @param {string} key - 'auctioneer_display_name' or 'bidder_display_name'
+ * @param {string} name - The display name to store.
+ */
+export function setStoredDisplayName(key, name) {
+    localStorage.setItem(key, name);
+}
+
+/**
+ * Removes the participant's display name from localStorage.
+ * @param {string} key - 'auctioneer_display_name' or 'bidder_display_name'
+ */
+export function clearStoredDisplayName(key) {
+    localStorage.removeItem(key);
 }
