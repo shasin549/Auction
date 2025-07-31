@@ -1,15 +1,22 @@
-import { supabase, getCurrentUser, getParticipantProfile, ensureParticipantProfile } from './supabaseClient.js';
+import { supabase, getOrCreateClientId, getStoredDisplayName, setStoredDisplayName, clearStoredDisplayName } from './supabaseClient.js';
 
 // --- Global Variables ---
-let bidderUser = null;
+let bidderDisplayName = null;
+let bidderClientId = null; // Client-generated ID for presence
 let currentRoomId = null;
 let currentAuction = null; // Stores details of the player currently being auctioned
 let roomChannel = null; // Supabase Realtime Channel for the room
-let lastBidderId = null; // Tracks the last person to bid on the current auction
+let participantPresence = null; // Supabase Realtime Presence for participants
+let lastBidderDisplayName = null; // Tracks the last person to bid on the current auction by their display name
 
 // --- UI Elements ---
-const logoutBtn = document.getElementById('logoutBtnBidder');
-const usernameDisplay = document.getElementById('usernameDisplayBidder');
+const bidderNameDisplay = document.getElementById('bidderNameDisplay');
+const changeBidderBtn = document.getElementById('changeBidderBtn');
+
+const bidderSetupSection = document.getElementById('bidder-setup-section');
+const bidderSetupForm = document.getElementById('bidderSetupForm');
+const bidderDisplayNameInput = document.getElementById('bidderDisplayName');
+const bidderSetupMessage = document.getElementById('bidderSetupMessage');
 
 const joinRoomSection = document.getElementById('join-room-section');
 const joinRoomForm = document.getElementById('joinRoomForm');
@@ -29,75 +36,56 @@ const placeBidBtn = document.getElementById('placeBidBtn');
 const bidMessage = document.getElementById('bidMessage');
 const bidHistoryList = document.getElementById('bidHistoryList');
 
+const wonPlayersSection = document.getElementById('won-players-section');
+const wonPlayersDisplayName = document.getElementById('wonPlayersDisplayName');
 const wonPlayersList = document.getElementById('wonPlayersList');
+
 
 // --- Auth and Room Join Setup ---
 document.addEventListener('DOMContentLoaded', async () => {
-    bidderUser = await getCurrentUser();
-    if (!bidderUser) {
-        alert('You must be logged in to access the Bidder Dashboard.');
-        window.location.href = 'index.html'; // Redirect to home
+    bidderClientId = getOrCreateClientId(); // Get or create unique ID for this client
+    bidderDisplayName = getStoredDisplayName('bidder_display_name');
+
+    if (bidderDisplayName) {
+        bidderNameDisplay.textContent = bidderDisplayName;
+        wonPlayersDisplayName.textContent = bidderDisplayName;
+        bidderSetupSection.style.display = 'none';
+        joinRoomSection.style.display = 'block';
+        wonPlayersSection.style.display = 'block';
+        await setupClientPresence(); // Set up presence with display name
+        fetchWonPlayers(bidderDisplayName); // Fetch won players for this display name
+    } else {
+        bidderSetupSection.style.display = 'block';
+        joinRoomSection.style.display = 'none';
+        auctionDetailsSection.style.display = 'none';
+        wonPlayersSection.style.display = 'none';
+    }
+});
+
+changeBidderBtn.addEventListener('click', () => {
+    clearStoredDisplayName('bidder_display_name');
+    window.location.reload(); // Force a full reload to reset everything
+});
+
+bidderSetupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const displayName = bidderDisplayNameInput.value.trim();
+    if (!displayName) {
+        showMessage(bidderSetupMessage, 'Please enter your display name.', 'error');
         return;
     }
-    await ensureParticipantProfile(bidderUser);
-    await displayUserInfo();
-    fetchWonPlayers(); // Always show won players
+    bidderDisplayName = displayName;
+    setStoredDisplayName('bidder_display_name', bidderDisplayName);
+    bidderNameDisplay.textContent = bidderDisplayName;
+    wonPlayersDisplayName.textContent = bidderDisplayName;
 
-    // Check if user is already in a room (e.g., if page was refreshed)
-    const { data: participantProfile, error: profileError } = await supabase
-        .from('participants')
-        .select('current_room_id')
-        .eq('id', bidderUser.id)
-        .single();
-
-    if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching participant profile:', profileError.message);
-    }
-
-    if (participantProfile && participantProfile.current_room_id) {
-        // Verify room exists and is active/lobby
-        const { data: room, error: roomCheckError } = await supabase
-            .from('rooms')
-            .select('room_code, status')
-            .eq('id', participantProfile.current_room_id)
-            .single();
-
-        if (!roomCheckError && room && (room.status === 'lobby' || room.status === 'active')) {
-            currentRoomId = participantProfile.current_room_id;
-            roomCodeInput.value = room.room_code; // Pre-fill room code
-            await joinRoom(room.room_code); // Re-join the room
-            return;
-        } else if (roomCheckError || (room && room.status === 'ended')) {
-            // Room no longer valid, clear participant's room_id
-            await supabase.from('participants').update({ current_room_id: null }).eq('id', bidderUser.id);
-        }
-    }
-
+    showMessage(bidderSetupMessage, 'Display name set!', 'success');
+    bidderSetupSection.style.display = 'none';
     joinRoomSection.style.display = 'block';
-    auctionDetailsSection.style.display = 'none';
+    wonPlayersSection.style.display = 'block';
+    await setupClientPresence();
+    fetchWonPlayers(bidderDisplayName);
 });
-
-logoutBtn.addEventListener('click', async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error('Logout error:', error.message);
-    else {
-        // Clear participant's room_id on logout
-        await supabase.from('participants').update({ current_room_id: null }).eq('id', bidderUser.id);
-        if (roomChannel) roomChannel.unsubscribe();
-        console.log('Logged out successfully.');
-        window.location.href = 'index.html';
-    }
-});
-
-async function displayUserInfo() {
-    const profile = await getParticipantProfile(bidderUser.id);
-    if (profile && profile.display_name) {
-        usernameDisplay.textContent = profile.display_name;
-    } else {
-        usernameDisplay.textContent = bidderUser.email || 'Guest';
-    }
-    document.getElementById('user-info-bidder').style.display = 'inline-flex';
-}
 
 
 // --- Join Room Logic ---
@@ -112,6 +100,11 @@ joinRoomForm.addEventListener('submit', async (event) => {
 });
 
 async function joinRoom(roomCode) {
+    if (!bidderDisplayName) {
+        showMessage(joinRoomMessage, 'Please set your display name first.', 'error');
+        return;
+    }
+
     showMessage(joinRoomMessage, 'Joining room...', 'info');
     const { data: room, error } = await supabase
         .from('rooms')
@@ -126,17 +119,26 @@ async function joinRoom(roomCode) {
     }
 
     currentRoomId = room.id;
-    // Update participant's current_room_id
-    const { error: updateParticipantError } = await supabase
+    // Update participant's current_room_id for presence
+    const { data: existingParticipant, error: fetchError } = await supabase
         .from('participants')
-        .update({ current_room_id: currentRoomId })
-        .eq('id', bidderUser.id);
+        .select('id')
+        .eq('id', bidderClientId)
+        .single();
 
-    if (updateParticipantError) {
-        console.error('Error updating participant room:', updateParticipantError.message);
-        showMessage(joinRoomMessage, 'Failed to update your room status.', 'error');
-        currentRoomId = null; // Reset to prevent half-joined state
-        return;
+    if (fetchError && fetchError.code === 'PGRST116') { // No existing participant
+        const { error: insertError } = await supabase
+            .from('participants')
+            .insert({ id: bidderClientId, display_name: bidderDisplayName, current_room_id: currentRoomId });
+        if (insertError) console.error('Error inserting new participant for join:', insertError.message);
+    } else if (!fetchError) { // Existing participant
+        const { error: updateError } = await supabase
+            .from('participants')
+            .update({ display_name: bidderDisplayName, current_room_id: currentRoomId, last_online: new Date().toISOString() })
+            .eq('id', bidderClientId);
+        if (updateError) console.error('Error updating participant room_id for join:', updateError.message);
+    } else {
+        console.error('Error checking participant existence on join:', fetchError.message);
     }
 
     showMessage(joinRoomMessage, 'Successfully joined room!', 'success');
@@ -157,14 +159,16 @@ placeBidBtn.addEventListener('click', async () => {
         return;
     }
 
-    if (bidderUser.id === currentAuction.auctioneer_id) {
-        showMessage(bidMessage, 'You cannot bid on your own player.', 'error');
+    // Bidder cannot bid if they were the last bidder
+    if (lastBidderDisplayName === bidderDisplayName) {
+        showMessage(bidMessage, 'You are currently the top bidder. Wait for someone else to bid!', 'warning');
         return;
     }
 
-    if (lastBidderId === bidderUser.id) {
-        showMessage(bidMessage, 'You are currently the top bidder. Wait for someone else to bid!', 'warning');
-        return;
+    // Auctioneer cannot bid on their own auction
+    if (currentAuction.auctioneer_display_name === bidderDisplayName) {
+         showMessage(bidMessage, 'The auctioneer cannot bid on their own auction.', 'error');
+         return;
     }
 
     const bidAmount = parseFloat(bidAmountInput.value);
@@ -182,7 +186,7 @@ placeBidBtn.addEventListener('click', async () => {
         .from('bids')
         .insert({
             auction_id: currentAuction.id,
-            bidder_id: bidderUser.id,
+            bidder_display_name: bidderDisplayName, // Use bidder display name
             bid_amount: bidAmount
         });
 
@@ -192,13 +196,13 @@ placeBidBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Update player_auction's current_price and last_bidder_id
+    // Update player_auction's current_price and last_bidder_display_name
     const { error: auctionUpdateError } = await supabase
         .from('player_auctions')
         .update({
             current_price: bidAmount,
-            last_bidder_id: bidderUser.id,
-            winner_id: bidderUser.id, // Temporarily set winner, confirmed on "Sell Player"
+            last_bidder_display_name: bidderDisplayName, // Use bidder display name
+            winner_display_name: bidderDisplayName, // Temporarily set winner, confirmed on "Sell Player"
             winning_bid_amount: bidAmount
         })
         .eq('id', currentAuction.id)
@@ -214,13 +218,13 @@ placeBidBtn.addEventListener('click', async () => {
     showMessage(bidMessage, 'Bid placed successfully!', 'success');
     bidAmountInput.value = ''; // Clear input
     placeBidBtn.disabled = true; // Disable button immediately
-    lastBidderId = bidderUser.id; // Update client-side last bidder to self
+    lastBidderDisplayName = bidderDisplayName; // Update client-side last bidder to self
 
     // UI will update via real-time subscription
 });
 
 function updateBidButtonState(currentAuctionData) {
-    if (!currentAuctionData || currentAuctionData.status !== 'active' || !bidderUser) {
+    if (!currentAuctionData || currentAuctionData.status !== 'active' || !bidderDisplayName) {
         placeBidBtn.disabled = true;
         bidAmountInput.disabled = true;
         return;
@@ -232,11 +236,16 @@ function updateBidButtonState(currentAuctionData) {
     nextBidAmountDisplay.textContent = minNextBid.toFixed(2);
     bidAmountInput.min = minNextBid.toFixed(2);
 
-    if (currentAuctionData.last_bidder_id === bidderUser.id) {
+    if (currentAuctionData.last_bidder_display_name === bidderDisplayName) {
         placeBidBtn.disabled = true;
         bidAmountInput.disabled = true;
         showMessage(bidMessage, 'You are currently the top bidder. Wait for a counter bid!', 'info');
-    } else {
+    } else if (currentAuctionData.auctioneer_display_name === bidderDisplayName) {
+        placeBidBtn.disabled = true;
+        bidAmountInput.disabled = true;
+        showMessage(bidMessage, 'You are the auctioneer. You cannot bid on your own auction.', 'error');
+    }
+    else {
         placeBidBtn.disabled = false;
         bidAmountInput.disabled = false;
         bidMessage.textContent = ''; // Clear message if not top bidder
@@ -247,8 +256,11 @@ function updateBidButtonState(currentAuctionData) {
 
 // --- Realtime Subscriptions ---
 
-// Room status updates (e.g., room ended)
+// Supabase Realtime Channels
 function setupRoomRealtime(roomId) {
+    if (roomChannel) {
+        roomChannel.unsubscribe();
+    }
     roomChannel = supabase.channel(`room:${roomId}`);
     roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, payload => {
         if (payload.new.status === 'ended') {
@@ -257,8 +269,9 @@ function setupRoomRealtime(roomId) {
             joinRoomSection.style.display = 'block';
             auctionDetailsSection.style.display = 'none';
             if (roomChannel) roomChannel.unsubscribe();
-            // Clear participant's room_id
-            supabase.from('participants').update({ current_room_id: null }).eq('id', bidderUser.id).then(({error}) => {
+            if (participantPresence) participantPresence.unsubscribe(); // Stop presence tracking for this room
+            // Remove current room from participant's profile
+            supabase.from('participants').update({ current_room_id: null }).eq('id', bidderClientId).then(({error}) => {
                 if(error) console.error("Error clearing participant room_id on room end:", error.message);
             });
         }
@@ -277,28 +290,57 @@ function setupRoomRealtime(roomId) {
             notificationClass = 'success';
             finalCallAudio.play().catch(e => console.error("Audio error:", e));
             // Trigger confetti if this bidder won
-            if (currentAuction && currentAuction.winner_id === bidderUser.id) {
+            if (currentAuction && currentAuction.winner_display_name === bidderDisplayName) {
                 triggerConfetti();
-                fetchWonPlayers(); // Refresh won players list
+                fetchWonPlayers(bidderDisplayName); // Refresh won players list
             }
         }
         showMessage(bidMessage, notification.message, notificationClass); // Display as a bid message for consistency
     }).subscribe();
+}
 
-    // Presence (optional for bidder, but good for tracking if you leave/rejoin)
-    const participantPresence = supabase.channel(`room_presence:${roomId}`, {
-        config: { presence: { key: bidderUser.id } }
+// Presence (optional for bidder, but good for tracking if you leave/rejoin)
+async function setupClientPresence(roomId = null) {
+    if (participantPresence) {
+        await participantPresence.unsubscribe(); // Unsubscribe from previous presence channel
+    }
+
+    participantPresence = supabase.channel(`room_presence:${roomId}`, {
+        config: { presence: { key: bidderClientId } }
     });
 
     participantPresence.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
             const { error } = await participantPresence.track({
-                id: bidderUser.id,
-                display_name: usernameDisplay.textContent || bidderUser.email,
+                id: bidderClientId,
+                display_name: bidderDisplayName,
                 online_at: new Date().toISOString(),
-                room_id: currentRoomId
+                room_id: roomId // Send room_id for RLS and display
             });
             if (error) console.error('Error tracking presence:', error.message);
+            else {
+                // Update the current_room_id in the participants table (optional for this non-auth setup, primarily for tracking)
+                const { data: existingParticipant, error: fetchError } = await supabase
+                    .from('participants')
+                    .select('id')
+                    .eq('id', bidderClientId)
+                    .single();
+
+                if (fetchError && fetchError.code === 'PGRST116') { // No existing participant
+                    const { error: insertError } = await supabase
+                        .from('participants')
+                        .insert({ id: bidderClientId, display_name: bidderDisplayName, current_room_id: roomId });
+                    if (insertError) console.error('Error inserting new participant:', insertError.message);
+                } else if (!fetchError) { // Existing participant
+                    const { error: updateError } = await supabase
+                        .from('participants')
+                        .update({ display_name: bidderDisplayName, current_room_id: roomId, last_online: new Date().toISOString() })
+                        .eq('id', bidderClientId);
+                    if (updateError) console.error('Error updating participant room_id:', updateError.message);
+                } else {
+                    console.error('Error checking participant existence:', fetchError.message);
+                }
+            }
         }
     });
 }
@@ -313,13 +355,9 @@ function setupAuctionRealtime(roomId) {
                 // Update current auction details only if it's the current player being viewed
                 currentAuction = payload.new;
                 auctionCurrentPrice.textContent = parseFloat(currentAuction.current_price).toFixed(2);
-                lastBidderId = currentAuction.last_bidder_id; // Update last bidder
+                lastBidderDisplayName = currentAuction.last_bidder_display_name; // Update last bidder
+                auctionLastBidder.textContent = lastBidderDisplayName || 'N/A';
                 updateBidButtonState(currentAuction);
-
-                // Update last bidder display name
-                getParticipantName(currentAuction.last_bidder_id).then(name => {
-                    auctionLastBidder.textContent = name;
-                });
 
                 // Handle status changes (e.g., if sold or ended by auctioneer)
                 if (currentAuction.status === 'sold' || currentAuction.status === 'ended' || currentAuction.status === 'cancelled') {
@@ -376,17 +414,14 @@ async function fetchCurrentAuction(roomId) {
         auctionPlayerClub.textContent = auction.player_club_nationality || 'N/A';
         auctionPlayerStartPrice.textContent = parseFloat(auction.start_price).toFixed(2);
         auctionCurrentPrice.textContent = parseFloat(auction.current_price).toFixed(2);
-        lastBidderId = auction.last_bidder_id;
+        lastBidderDisplayName = auction.last_bidder_display_name;
+        auctionLastBidder.textContent = lastBidderDisplayName || 'N/A'; // Update last bidder display
         if (auction.image_url) {
             auctionPlayerImage.src = auction.image_url;
             auctionPlayerImage.style.display = 'block';
         } else {
             auctionPlayerImage.style.display = 'none';
         }
-
-        getParticipantName(auction.last_bidder_id).then(name => {
-            auctionLastBidder.textContent = name;
-        });
 
         updateBidButtonState(currentAuction);
         fetchBids(currentAuction.id);
@@ -420,24 +455,23 @@ async function fetchBids(auctionId) {
         return;
     }
 
-    for (const bid of bids) {
-        const bidderName = await getParticipantName(bid.bidder_id);
+    bids.forEach(bid => {
         const listItem = document.createElement('li');
-        listItem.textContent = `₹${parseFloat(bid.bid_amount).toFixed(2)} by ${bidderName} at ${new Date(bid.bid_time).toLocaleString()}`;
+        listItem.textContent = `₹${parseFloat(bid.bid_amount).toFixed(2)} by ${bid.bidder_display_name} at ${new Date(bid.bid_time).toLocaleString()}`;
         bidHistoryList.appendChild(listItem);
-    }
+    });
 }
 
-async function fetchWonPlayers() {
-    if (!bidderUser) {
-        wonPlayersList.innerHTML = '<li>Login to see your won players.</li>';
+async function fetchWonPlayers(displayName) {
+    if (!displayName) {
+        wonPlayersList.innerHTML = '<li>Set your display name to see your won players.</li>';
         return;
     }
 
     const { data: wonPlayers, error } = await supabase
         .from('won_players')
         .select('player_name, winning_bid, won_time')
-        .eq('bidder_id', bidderUser.id)
+        .eq('bidder_display_name', displayName) // Query by display name
         .order('won_time', { ascending: false });
 
     if (error) {
@@ -457,12 +491,6 @@ async function fetchWonPlayers() {
         li.innerHTML = `<span>${player.player_name}</span> <span class="player-won-details">₹${parseFloat(player.winning_bid).toFixed(2)}</span>`;
         wonPlayersList.appendChild(li);
     });
-}
-
-async function getParticipantName(userId) {
-    if (!userId) return 'N/A';
-    const profile = await getParticipantProfile(userId);
-    return (profile && profile.display_name) ? profile.display_name : 'Unknown Bidder';
 }
 
 // --- Utility Functions ---
