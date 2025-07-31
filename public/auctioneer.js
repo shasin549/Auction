@@ -1,73 +1,103 @@
-// auctioneer.js (100% fixed and working)
-document.addEventListener("DOMContentLoaded", async () => {
-  const supabase = createClient(
-    'https://flwqvepusbjmgoovqvmi.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsd3F2ZXB1c2JqbWdvb3Zxdm1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MDY3MzMsImV4cCI6MjA2ODQ4MjczM30.or5cIl99nUDZceOKlFMnu8PCzLuCvXT5TBJvKTPSUvM'
-  );
+import { supabase, getCurrentUser, getUserProfile } from './supabaseClient.js';
 
-const socket = io();
+document.addEventListener('DOMContentLoaded', async () => {
+    const auctionForm = document.getElementById('auctionForm');
+    const messageElement = document.getElementById('message');
 
-const createRoomBtn = document.getElementById("createRoomBtn"); const roomNameInput = document.getElementById("roomName"); const roomIdDisplay = document.getElementById("roomIdDisplay"); const inviteLink = document.getElementById("inviteLink"); const copyLinkBtn = document.getElementById("copyLinkBtn"); const roomInfo = document.getElementById("roomInfo"); const participantCount = document.getElementById("participantCount"); const playerForm = document.getElementById("playerForm"); const preview = { name: document.getElementById("previewName"), club: document.getElementById("previewClub"), position: document.getElementById("previewPosition"), price: document.getElementById("previewPrice"), bid: document.getElementById("currentBid"), bidder: document.getElementById("leadingBidder"), }; const finalCallBtn = document.getElementById("finalCallBtn"); const nextPlayerBtn = document.getElementById("nextPlayerBtn");
+    // --- Auth UI Elements ---
+    const logoutBtn = document.getElementById('logoutBtnAuctioneer');
+    const userInfo = document.getElementById('user-info-auctioneer');
+    const usernameDisplay = document.getElementById('usernameDisplayAuctioneer');
 
-let roomId = null; let currentPlayerId = null; let highestBid = 0; let highestBidder = "-";
+    async function checkAuthStatus() {
+        const user = await getCurrentUser();
+        if (user) {
+            userInfo.style.display = 'inline';
+            const profile = await getUserProfile(user.id);
+            if (profile && profile.name) {
+                usernameDisplay.textContent = profile.name;
+            } else {
+                usernameDisplay.textContent = user.email; // Fallback to email
+            }
+        } else {
+            alert('You must be logged in to create an auction.');
+            window.location.href = 'index.html';
+        }
+    }
+    checkAuthStatus();
 
-createRoomBtn.addEventListener("click", async () => { const roomName = roomNameInput.value.trim(); if (!roomName) return alert("Please enter a room name.");
+    logoutBtn.addEventListener('click', async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Logout error:', error.message);
+        } else {
+            console.log('Logged out successfully from auctioneer page.');
+            window.location.href = 'index.html'; // Redirect to home after logout
+        }
+    });
 
-const { data, error } = await supabase .from("rooms") .insert([{ name: roomName }]) .select() .single();
 
-if (error) { console.error("❌ Failed to create room:", error.message); alert("Room creation failed."); return; }
+    auctionForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-roomId = data.id; roomIdDisplay.textContent = roomId; inviteLink.textContent = ${location.origin}/bidder.html?room=${roomId}; inviteLink.href = ${location.origin}/bidder.html?room=${roomId}; roomInfo.classList.remove("hidden"); playerForm.classList.remove("hidden");
+        const user = await getCurrentUser();
+        if (!user) {
+            messageElement.textContent = 'Please log in to create an auction.';
+            messageElement.style.color = 'red';
+            return;
+        }
 
-socket.emit("create-room", { roomId, roomName }); });
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const startPrice = parseFloat(document.getElementById('startPrice').value);
+        const imageUrl = document.getElementById('imageUrl').value;
+        const endTime = document.getElementById('endTime').value; // This will be in local datetime format
 
-socket.on("participant-count", (count) => { participantCount.textContent = count; });
+        // Validate inputs
+        if (!title || !startPrice || !endTime) {
+            messageElement.textContent = 'Please fill in all required fields.';
+            messageElement.style.color = 'red';
+            return;
+        }
+        if (isNaN(startPrice) || startPrice <= 0) {
+            messageElement.textContent = 'Starting price must be a positive number.';
+            messageElement.style.color = 'red';
+            return;
+        }
 
-document.getElementById("startAuctionBtn").addEventListener("click", async () => { const name = document.getElementById("playerName").value.trim(); const club = document.getElementById("playerClub").value.trim(); const position = document.getElementById("playerPosition").value.trim(); const startingPrice = parseInt(document.getElementById("startingPrice").value);
+        // Convert local datetime to ISO string for Supabase (UTC recommended)
+        const endDateTime = new Date(endTime).toISOString();
 
-if (!name || !club || !position || isNaN(startingPrice)) { return alert("Please fill all player fields correctly."); }
+        messageElement.textContent = 'Creating auction...';
+        messageElement.style.color = 'blue';
 
-const { data, error } = await supabase .from("players") .insert([{ name, club, position, starting_price: startingPrice, room_id: roomId }]) .select() .single();
+        const { data, error } = await supabase
+            .from('auctions')
+            .insert([
+                {
+                    title: title,
+                    description: description,
+                    start_price: startPrice,
+                    current_price: startPrice, // Initial current price is the start price
+                    image_url: imageUrl || null,
+                    end_time: endDateTime,
+                    seller_id: user.id, // Associate auction with logged-in user
+                    status: 'active'
+                }
+            ]);
 
-if (error) { console.error("❌ Failed to add player:", error.message); return; }
-
-currentPlayerId = data.id; highestBid = startingPrice; highestBidder = "-";
-
-preview.name.textContent = name; preview.club.textContent = club; preview.position.textContent = position; preview.price.textContent = ₹${startingPrice}; preview.bid.textContent = ₹${startingPrice}; preview.bidder.textContent = "-";
-
-document.getElementById("playerPreview").classList.remove("hidden"); finalCallBtn.classList.remove("hidden"); nextPlayerBtn.classList.add("hidden");
-
-socket.emit("start-auction", { roomId, player: { id: currentPlayerId, name, club, position, starting_price: startingPrice, }, }); });
-
-socket.on("new-bid", ({ amount, bidder }) => { highestBid = amount; highestBidder = bidder; preview.bid.textContent = ₹${amount}; preview.bidder.textContent = bidder; });
-
-finalCallBtn.addEventListener("click", async () => { const audio = new Audio("audio/final-call.mp3"); audio.play();
-
-setTimeout(async () => { finalCallBtn.classList.add("hidden"); nextPlayerBtn.classList.remove("hidden");
-
-if (!currentPlayerId || !roomId || highestBid === 0) return;
-
-const { error } = await supabase.from("winners").insert([
-  {
-    player_id: currentPlayerId,
-    room_id: roomId,
-    winner_name: highestBidder,
-    winning_bid: highestBid,
-  },
-]);
-
-if (error) {
-  console.error("❌ Failed to save winner:", error.message);
-}
-
-socket.emit("auction-ended", {
-  roomId,
-  playerId: currentPlayerId,
-  winner: highestBidder,
-  amount: highestBid,
+        if (error) {
+            messageElement.textContent = `Error creating auction: ${error.message}`;
+            messageElement.style.color = 'red';
+            console.error('Error creating auction:', error);
+        } else {
+            messageElement.textContent = 'Auction created successfully!';
+            messageElement.style.color = 'green';
+            auctionForm.reset(); // Clear the form
+            console.log('Auction created:', data);
+            setTimeout(() => {
+                window.location.href = 'index.html'; // Go back to the main list
+            }, 1500);
+        }
+    });
 });
-
-}, 3000); });
-
-nextPlayerBtn.addEventListener("click", () => { document.getElementById("playerPreview").classList.add("hidden"); document.getElementById("playerForm").reset(); finalCallBtn.classList.add("hidden"); nextPlayerBtn.classList.add("hidden"); });
-
