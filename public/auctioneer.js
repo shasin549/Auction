@@ -1,17 +1,35 @@
-import { supabase, getCurrentUser, getParticipantProfile, ensureParticipantProfile } from './supabaseClient.js';
+import { supabase, setSupabaseManageToken, getStoredDisplayName, setStoredDisplayName, clearStoredDisplayName, getOrCreateClientId } from './supabaseClient.js';
 
 // --- Global Variables ---
+let auctioneerDisplayName = null;
+let auctioneerManageToken = null; // The secret token for managing the room
 let currentRoomId = null;
+let currentRoomCode = null;
 let currentAuctionId = null;
-let auctioneerUser = null;
 let roomChannel = null; // Supabase Realtime Channel for the room
 let participantPresence = null; // Supabase Realtime Presence for participants
 
 // --- UI Elements ---
-const logoutBtn = document.getElementById('logoutBtnAuctioneer');
-const usernameDisplay = document.getElementById('usernameDisplayAuctioneer');
+const auctioneerNameDisplay = document.getElementById('auctioneerNameDisplay');
+const changeAuctioneerBtn = document.getElementById('changeAuctioneerBtn');
+
+const auctioneerSetupSection = document.getElementById('auctioneer-setup-section');
+const auctioneerSetupForm = document.getElementById('auctioneerSetupForm');
+const newRoomSetup = document.getElementById('newRoomSetup');
+const createNewRoomBtn = document.getElementById('createNewRoomBtn');
+const newRoomMessage = document.getElementById('newRoomMessage');
+const joinExistingRoom = document.getElementById('joinExistingRoom');
+const existingRoomCodeInput = document.getElementById('existingRoomCode');
+const manageTokenInput = document.getElementById('manageTokenInput');
+const joinRoomAsAuctioneerBtn = document.getElementById('joinRoomAsAuctioneerBtn');
+const joinRoomMessage = document.getElementById('joinRoomMessage');
+const toggleRoomModeLink = document.getElementById('toggleRoomModeLink');
+
+const auctioneerDashboard = document.getElementById('auctioneer-dashboard');
 const roomCodeDisplay = document.getElementById('roomCodeDisplay');
 const copyRoomCodeBtn = document.getElementById('copyRoomCodeBtn');
+const manageTokenDisplay = document.getElementById('manageTokenDisplay');
+const copyManageTokenBtn = document.getElementById('copyManageTokenBtn');
 const roomStatusDisplay = document.getElementById('roomStatusDisplay');
 const startAuctionBtn = document.getElementById('startAuctionBtn');
 const endAuctionBtn = document.getElementById('endAuctionBtn');
@@ -34,92 +52,164 @@ const firstCallAudio = new Audio('audio/first-call.mp3');
 const secondCallAudio = new Audio('audio/second-call.mp3');
 const finalCallAudio = new Audio('audio/final-call.mp3');
 
-// --- Auth and Room Setup ---
+// --- Setup Flow ---
 document.addEventListener('DOMContentLoaded', async () => {
-    auctioneerUser = await getCurrentUser();
-    if (!auctioneerUser) {
-        alert('You must be logged in to access the Auctioneer Dashboard.');
-        window.location.href = 'index.html'; // Redirect to home
+    auctioneerDisplayName = getStoredDisplayName('auctioneer_display_name');
+    auctioneerManageToken = localStorage.getItem('auctioneer_manage_token'); // Get stored token
+
+    if (auctioneerDisplayName) {
+        auctioneerNameDisplay.textContent = auctioneerDisplayName;
+        if (auctioneerManageToken) {
+            // Try to re-establish connection to a room if token is present
+            // This is complex without knowing WHICH room. User will have to rejoin.
+            // For now, prompt them to join an existing room with their token.
+            auctioneerSetupSection.style.display = 'block';
+            newRoomSetup.style.display = 'none';
+            joinExistingRoom.style.display = 'block';
+            toggleRoomModeLink.textContent = 'Need a new room? Create one.';
+            manageTokenInput.value = auctioneerManageToken; // Pre-fill token
+        } else {
+            // Display name but no token - force create new room or join with token
+            auctioneerSetupSection.style.display = 'block';
+            newRoomSetup.style.display = 'block';
+            joinExistingRoom.style.display = 'none';
+            toggleRoomModeLink.textContent = 'Already have a room? Join existing.';
+        }
+    } else {
+        // No display name, fresh start
+        auctioneerSetupSection.style.display = 'block';
+        newRoomSetup.style.display = 'block';
+        joinExistingRoom.style.display = 'none';
+        toggleRoomModeLink.textContent = 'Already have a room? Join existing.';
+    }
+
+    // Set up presence for this client.
+    await setupClientPresence();
+});
+
+changeAuctioneerBtn.addEventListener('click', () => {
+    clearStoredDisplayName('auctioneer_display_name');
+    localStorage.removeItem('auctioneer_manage_token'); // Clear token
+    window.location.reload(); // Force a full reload to reset everything
+});
+
+// Toggle between 'Create New Room' and 'Join Existing Room' forms
+toggleRoomModeLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const isCreatingNew = newRoomSetup.style.display !== 'none';
+    newRoomSetup.style.display = isCreatingNew ? 'none' : 'block';
+    joinExistingRoom.style.display = isCreatingNew ? 'block' : 'none';
+    toggleRoomModeLink.textContent = isCreatingNew ? 'Need a new room? Create one.' : 'Already have a room? Join existing.';
+    newRoomMessage.textContent = '';
+    joinRoomMessage.textContent = '';
+    auctioneerSetupForm.reset();
+});
+
+
+// --- Room Creation / Joining ---
+createNewRoomBtn.addEventListener('click', async () => {
+    auctioneerDisplayName = document.getElementById('auctioneerDisplayName').value.trim();
+    if (!auctioneerDisplayName) {
+        showMessage(newRoomMessage, 'Please enter your display name.', 'error');
         return;
     }
-    await ensureParticipantProfile(auctioneerUser);
-    await displayUserInfo();
+    setStoredDisplayName('auctioneer_display_name', auctioneerDisplayName);
+    auctioneerNameDisplay.textContent = auctioneerDisplayName;
 
-    // Check if auctioneer already has an active room
-    const { data: existingRoom, error: roomError } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('auctioneer_id', auctioneerUser.id)
-        .in('status', ['lobby', 'active'])
-        .single();
+    showMessage(newRoomMessage, 'Creating new room...', 'info');
 
-    if (roomError && roomError.code !== 'PGRST116') { // PGRST116 means no rows found, which is fine
-        console.error('Error fetching existing room:', roomError.message);
-    }
-
-    if (existingRoom) {
-        currentRoomId = existingRoom.id;
-        roomCodeDisplay.textContent = existingRoom.room_code;
-        updateRoomUI(existingRoom.status);
-        console.log(`Rejoining existing room: ${existingRoom.room_code}`);
-    } else {
-        // Create a new room
-        await createNewRoom();
-    }
-
-    if (currentRoomId) {
-        setupRoomRealtime(currentRoomId);
-        fetchPlayersForRoom(currentRoomId);
-        setupPlayerAuctionUpdates(currentRoomId);
-        setupBidsUpdates(currentRoomId);
-        updateCurrentAuctionDisplay(); // Initial display check
-    }
-});
-
-logoutBtn.addEventListener('click', async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error('Logout error:', error.message);
-    else {
-        // Clear participant's room_id on logout
-        await supabase.from('participants').update({ current_room_id: null }).eq('id', auctioneerUser.id);
-        if (roomChannel) roomChannel.unsubscribe();
-        console.log('Logged out successfully.');
-        window.location.href = 'index.html';
-    }
-});
-
-async function displayUserInfo() {
-    const profile = await getParticipantProfile(auctioneerUser.id);
-    if (profile && profile.display_name) {
-        usernameDisplay.textContent = profile.display_name;
-    } else {
-        usernameDisplay.textContent = auctioneerUser.email || 'Guest';
-    }
-    document.getElementById('user-info-auctioneer').style.display = 'inline-flex';
-}
-
-async function createNewRoom() {
     // Generate a simple 6-character alphanumeric room code
     const newRoomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    // Generate a UUID for the manage token
+    const newManageToken = crypto.randomUUID();
 
     const { data: room, error } = await supabase
         .from('rooms')
-        .insert({ room_code: newRoomCode, auctioneer_id: auctioneerUser.id, status: 'lobby' })
+        .insert({ room_code: newRoomCode, auctioneer_display_name: auctioneerDisplayName, manage_token: newManageToken, status: 'lobby' })
         .select()
         .single();
 
     if (error) {
-        console.error('Error creating room:', error.message);
-        alert('Failed to create auction room. Please try again.');
+        showMessage(newRoomMessage, `Error creating room: ${error.message}`, 'error');
+        console.error('Error creating room:', error);
         return;
     }
 
     currentRoomId = room.id;
-    roomCodeDisplay.textContent = room.room_code;
-    updateRoomUI(room.status);
-    await supabase.from('participants').update({ current_room_id: currentRoomId }).eq('id', auctioneerUser.id);
-    console.log(`New room created: ${room.room_code}`);
+    currentRoomCode = room.room_code;
+    auctioneerManageToken = room.manage_token;
+    localStorage.setItem('auctioneer_manage_token', auctioneerManageToken); // Store token for future use
+
+    await setupAuctioneerSession(currentRoomId, auctioneerManageToken);
+    showMessage(newRoomMessage, 'Room created successfully!', 'success');
+    updateDashboardUI(room.status);
+    await setupClientPresence(currentRoomId);
+    fetchPlayersForRoom(currentRoomId);
+    setupPlayerAuctionUpdates(currentRoomId);
+    setupBidsUpdates(currentRoomId);
+    updateCurrentAuctionDisplay(); // Initial display check
+});
+
+joinRoomAsAuctioneerBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    auctioneerDisplayName = document.getElementById('auctioneerDisplayName').value.trim();
+    const roomCode = existingRoomCodeInput.value.trim().toUpperCase();
+    const manageToken = manageTokenInput.value.trim();
+
+    if (!auctioneerDisplayName || !roomCode || !manageToken) {
+        showMessage(joinRoomMessage, 'Please fill all fields.', 'error');
+        return;
+    }
+
+    setStoredDisplayName('auctioneer_display_name', auctioneerDisplayName);
+    auctioneerNameDisplay.textContent = auctioneerDisplayName;
+
+    showMessage(joinRoomMessage, 'Joining room...', 'info');
+
+    // First, verify the room code and manage token
+    const { data: room, error } = await supabase
+        .from('rooms')
+        .select('id, room_code, status')
+        .eq('room_code', roomCode)
+        .eq('manage_token', manageToken) // Verify token here
+        .single();
+
+    if (error || !room) {
+        showMessage(joinRoomMessage, 'Invalid Room Code or Manage Token.', 'error');
+        console.error('Room join error:', error?.message);
+        return;
+    }
+
+    currentRoomId = room.id;
+    currentRoomCode = room.room_code;
+    auctioneerManageToken = manageToken; // Use the provided token
+
+    await setupAuctioneerSession(currentRoomId, auctioneerManageToken);
+    showMessage(joinRoomMessage, 'Successfully joined room!', 'success');
+    updateDashboardUI(room.status);
+    await setupClientPresence(currentRoomId);
+    fetchPlayersForRoom(currentRoomId);
+    setupPlayerAuctionUpdates(currentRoomId);
+    setupBidsUpdates(currentRoomId);
+    updateCurrentAuctionDisplay(); // Initial display check
+});
+
+// Sets the manage_token in the Supabase session
+async function setupAuctioneerSession(roomId, token) {
+    try {
+        await setSupabaseManageToken(token);
+        auctioneerSetupSection.style.display = 'none';
+        auctioneerDashboard.style.display = 'grid';
+        roomCodeDisplay.textContent = currentRoomCode;
+        manageTokenDisplay.textContent = auctioneerManageToken;
+        console.log(`Auctioneer session set for room ${roomId} with token ${token}`);
+    } catch (e) {
+        console.error('Failed to set up auctioneer session:', e.message);
+        alert('Failed to set up auctioneer session. Please try again or check console for details.');
+        // Optionally, reset UI or log out
+    }
 }
+
 
 copyRoomCodeBtn.addEventListener('click', () => {
     const roomCode = roomCodeDisplay.textContent;
@@ -132,31 +222,62 @@ copyRoomCodeBtn.addEventListener('click', () => {
     }
 });
 
+copyManageTokenBtn.addEventListener('click', () => {
+    const manageToken = manageTokenDisplay.textContent;
+    if (manageToken && manageToken !== 'Loading...') {
+        navigator.clipboard.writeText(manageToken).then(() => {
+            alert('Manage Token copied to clipboard! Keep it safe!');
+        }).catch(err => {
+            console.error('Failed to copy manage token:', err);
+        });
+    }
+});
+
 startAuctionBtn.addEventListener('click', async () => {
     if (!currentRoomId) return;
-    const { error } = await supabase
-        .from('rooms')
-        .update({ status: 'active' })
-        .eq('id', currentRoomId);
-    if (error) console.error('Error starting auction:', error.message);
+    try {
+        await setSupabaseManageToken(auctioneerManageToken); // Set token before update
+        const { error } = await supabase
+            .from('rooms')
+            .update({ status: 'active' })
+            .eq('id', currentRoomId);
+        if (error) throw error;
+    } catch (error) {
+        console.error('Error starting auction:', error.message);
+        alert(`Failed to start auction: ${error.message}. Make sure your Manage Token is correct.`);
+    } finally {
+        await setSupabaseManageToken(null); // Clear token after action
+    }
 });
 
 endAuctionBtn.addEventListener('click', async () => {
     if (!currentRoomId) return;
     if (confirm('Are you sure you want to end this auction room? All active auctions will be cancelled.')) {
-        const { error } = await supabase
-            .from('rooms')
-            .update({ status: 'ended' })
-            .eq('id', currentRoomId);
-        if (error) console.error('Error ending room:', error.message);
-        else {
-            alert('Room ended. Redirecting to home.');
-            window.location.href = 'index.html';
+        try {
+            await setSupabaseManageToken(auctioneerManageToken); // Set token before update
+            const { error } = await supabase
+                .from('rooms')
+                .update({ status: 'ended' })
+                .eq('id', currentRoomId);
+            if (error) throw error;
+            alert('Room ended.');
+            // Clear current room data and reload setup section
+            currentRoomId = null;
+            currentRoomCode = null;
+            localStorage.removeItem('auctioneer_manage_token');
+            if (roomChannel) roomChannel.unsubscribe(); // Stop real-time updates for this room
+            if (participantPresence) participantPresence.unsubscribe(); // Stop presence tracking
+            window.location.reload(); // Simplest way to reset UI
+        } catch (error) {
+            console.error('Error ending room:', error.message);
+            alert(`Failed to end room: ${error.message}. Make sure your Manage Token is correct.`);
+        } finally {
+            await setSupabaseManageToken(null); // Clear token after action
         }
     }
 });
 
-function updateRoomUI(status) {
+function updateDashboardUI(status) {
     roomStatusDisplay.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     roomStatusDisplay.className = `status-badge status-${status}`;
     startAuctionBtn.style.display = (status === 'lobby' ? 'block' : 'none');
@@ -168,7 +289,7 @@ function updateRoomUI(status) {
 playerAuctionForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!currentRoomId) {
-        alert('Please create or join a room first.');
+        showMessage(formMessage, 'Please create or join a room first.', 'error');
         return;
     }
 
@@ -185,27 +306,30 @@ playerAuctionForm.addEventListener('submit', async (event) => {
 
     showMessage(formMessage, 'Adding player...', 'info');
 
-    const { error } = await supabase
-        .from('player_auctions')
-        .insert({
-            room_id: currentRoomId,
-            player_name: playerName,
-            player_club_nationality: playerClubNationality || null,
-            start_price: startPrice,
-            current_price: startPrice,
-            image_url: imageUrl || null,
-            auctioneer_id: auctioneerUser.id,
-            status: 'pending', // Awaiting auctioneer to start
-            current_bid_increment: bidIncrement
-        });
+    try {
+        await setSupabaseManageToken(auctioneerManageToken); // Set token before update
+        const { error } = await supabase
+            .from('player_auctions')
+            .insert({
+                room_id: currentRoomId,
+                player_name: playerName,
+                player_club_nationality: playerClubNationality || null,
+                start_price: startPrice,
+                current_price: startPrice,
+                image_url: imageUrl || null,
+                auctioneer_display_name: auctioneerDisplayName, // Use display name
+                status: 'pending', // Awaiting auctioneer to start
+                current_bid_increment: bidIncrement
+            });
 
-    if (error) {
-        showMessage(formMessage, `Error adding player: ${error.message}`, 'error');
-        console.error('Error adding player:', error);
-    } else {
+        if (error) throw error;
         showMessage(formMessage, 'Player added to queue successfully!', 'success');
         playerAuctionForm.reset();
-        // UI update for queue will be handled by realtime subscription
+    } catch (error) {
+        showMessage(formMessage, `Error adding player: ${error.message}`, 'error');
+        console.error('Error adding player:', error);
+    } finally {
+        await setSupabaseManageToken(null); // Clear token after action
     }
 });
 
@@ -215,11 +339,20 @@ activateAuctionBtn.addEventListener('click', async () => {
         showMessage(auctionStatusMessage, 'No player selected or in queue to activate.', 'error');
         return;
     }
-    const { error } = await supabase
-        .from('player_auctions')
-        .update({ status: 'active' })
-        .eq('id', currentAuctionId);
-    if (error) showMessage(auctionStatusMessage, `Error activating auction: ${error.message}`, 'error');
+    try {
+        await setSupabaseManageToken(auctioneerManageToken); // Set token before update
+        const { error } = await supabase
+            .from('player_auctions')
+            .update({ status: 'active' })
+            .eq('id', currentAuctionId);
+        if (error) throw error;
+        showMessage(auctionStatusMessage, 'Player activated! Bidding can now begin.', 'success');
+    } catch (error) {
+        showMessage(auctionStatusMessage, `Error activating auction: ${error.message}`, 'error');
+        console.error('Error activating auction:', error);
+    } finally {
+        await setSupabaseManageToken(null); // Clear token after action
+    }
 });
 
 let finalCallStage = 0; // 0: no call, 1: first, 2: second, 3: sold
@@ -233,6 +366,9 @@ finalCallBtn.addEventListener('click', async () => {
     let newStatus = '';
     let notificationMessage = '';
     let audioToPlay;
+    let winnerName = 'N/A';
+    let winningBidAmount = null;
+    let playerName = 'the player';
 
     if (finalCallStage === 1) {
         newStatus = 'first_call';
@@ -244,41 +380,42 @@ finalCallBtn.addEventListener('click', async () => {
         audioToPlay = secondCallAudio;
     } else if (finalCallStage === 3) {
         newStatus = 'sold';
-        // Fetch current auction data to get winner_id and winning_bid_amount
+        // Fetch current auction data to get winner_display_name and winning_bid_amount
         const { data: auction, error } = await supabase
             .from('player_auctions')
-            .select('winner_id, winning_bid_amount, player_name')
+            .select('winner_display_name, winning_bid_amount, player_name')
             .eq('id', currentAuctionId)
             .single();
 
-        if (error || !auction || !auction.winner_id) {
-            showMessage(auctionStatusMessage, 'Error: Could not determine winner for sale.', 'error');
+        if (error || !auction || !auction.winner_display_name) {
+            showMessage(auctionStatusMessage, 'Error: Could not determine winner for sale. Ensure there are bids.', 'error');
             finalCallStage = 0; // Reset stage
             return;
         }
 
-        const { data: winnerProfile, error: winnerProfileError } = await supabase
-            .from('participants')
-            .select('display_name')
-            .eq('id', auction.winner_id)
-            .single();
-
-        const winnerName = (winnerProfile && winnerProfile.display_name) ? winnerProfile.display_name : 'An unknown bidder';
-        notificationMessage = `Player ${auction.player_name} Sold to ${winnerName} for ₹${parseFloat(auction.winning_bid_amount).toFixed(2)}!`;
+        winnerName = auction.winner_display_name;
+        winningBidAmount = auction.winning_bid_amount;
+        playerName = auction.player_name;
+        notificationMessage = `Player ${playerName} Sold to ${winnerName} for ₹${parseFloat(winningBidAmount).toFixed(2)}!`;
         audioToPlay = finalCallAudio;
 
         // Also insert into won_players table
-        const { error: wonPlayerError } = await supabase
-            .from('won_players')
-            .insert({
-                bidder_id: auction.winner_id,
-                auction_id: currentAuctionId,
-                player_name: auction.player_name,
-                winning_bid: auction.winning_bid_amount,
-                won_time: new Date().toISOString()
-            });
-        if (wonPlayerError) {
-            console.error('Error recording won player:', wonPlayerError.message);
+        try {
+            // No need to set manage token for won_players as it's public write.
+            const { error: wonPlayerError } = await supabase
+                .from('won_players')
+                .insert({
+                    bidder_display_name: winnerName,
+                    auction_id: currentAuctionId,
+                    player_name: playerName,
+                    winning_bid: winningBidAmount,
+                    won_time: new Date().toISOString()
+                });
+            if (wonPlayerError) {
+                console.error('Error recording won player:', wonPlayerError.message);
+            }
+        } catch (e) {
+            console.error('Exception recording won player:', e.message);
         }
     } else {
         finalCallStage = 0; // Reset for next auction cycle
@@ -286,15 +423,15 @@ finalCallBtn.addEventListener('click', async () => {
     }
 
     // Update auction status in DB
-    const { error: updateError } = await supabase
-        .from('player_auctions')
-        .update({ status: newStatus, sold_at: (newStatus === 'sold' ? new Date().toISOString() : null) })
-        .eq('id', currentAuctionId);
+    try {
+        await setSupabaseManageToken(auctioneerManageToken); // Set token before update
+        const { error: updateError } = await supabase
+            .from('player_auctions')
+            .update({ status: newStatus, sold_at: (newStatus === 'sold' ? new Date().toISOString() : null) })
+            .eq('id', currentAuctionId);
 
-    if (updateError) {
-        showMessage(auctionStatusMessage, `Error updating status to ${newStatus}: ${updateError.message}`, 'error');
-        finalCallStage--; // Revert stage on error
-    } else {
+        if (updateError) throw updateError;
+
         showMessage(auctionStatusMessage, `Notification sent: ${notificationMessage}`, 'info');
         audioToPlay.play().catch(e => console.error("Error playing audio:", e));
         // Broadcast notification to all clients
@@ -307,20 +444,22 @@ finalCallBtn.addEventListener('click', async () => {
         if (newStatus === 'sold') {
             currentAuctionId = null; // Mark current auction as complete
             finalCallStage = 0; // Reset for next player
-            // Display button to load next player
             nextPlayerBtn.style.display = 'block';
             activateAuctionBtn.style.display = 'none';
             finalCallBtn.style.display = 'none';
             auctionStatusMessage.textContent = 'Player sold. Load next player or add a new one.';
             auctionStatusMessage.className = 'message success';
         }
+    } catch (error) {
+        showMessage(auctionStatusMessage, `Error updating status to ${newStatus}: ${error.message}`, 'error');
+        console.error('Auction status update error:', error);
+        finalCallStage--; // Revert stage on error
+    } finally {
+        await setSupabaseManageToken(null); // Clear token after action
     }
 });
 
 nextPlayerBtn.addEventListener('click', async () => {
-    // This will be triggered by a change in player_auctions status to 'pending'
-    // or when a new player is loaded.
-    // For now, let's just refresh the display based on queue.
     nextPlayerBtn.style.display = 'none'; // Hide until another player is sold
     await updateCurrentAuctionDisplay();
     await fetchPlayersForRoom(currentRoomId); // Refresh queue
@@ -329,18 +468,29 @@ nextPlayerBtn.addEventListener('click', async () => {
 
 // --- Realtime Subscriptions ---
 
-// Room status updates
+// Supabase Realtime Channels (requires manage_token to be set for RLS-protected actions)
 function setupRoomRealtime(roomId) {
+    if (roomChannel) {
+        roomChannel.unsubscribe(); // Unsubscribe from previous room if any
+    }
     roomChannel = supabase.channel(`room:${roomId}`);
 
     roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomId}` }, payload => {
         console.log('Room status updated:', payload.new.status);
-        updateRoomUI(payload.new.status);
+        updateDashboardUI(payload.new.status);
     }).subscribe();
+}
 
-    // Presence for Participants
+async function setupClientPresence(roomId = null) {
+    const clientId = getOrCreateClientId();
+    const displayName = auctioneerDisplayName || "Auctioneer"; // Fallback name for presence if not set yet
+
+    if (participantPresence) {
+        await participantPresence.unsubscribe(); // Unsubscribe from previous presence channel
+    }
+
     participantPresence = supabase.channel(`room_presence:${roomId}`, {
-        config: { presence: { key: auctioneerUser.id } }
+        config: { presence: { key: clientId } }
     });
 
     participantPresence.on('presence', { event: 'sync' }, () => {
@@ -360,19 +510,34 @@ function setupRoomRealtime(roomId) {
     participantPresence.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
             const { error } = await participantPresence.track({
-                id: auctioneerUser.id,
-                display_name: usernameDisplay.textContent || auctioneerUser.email,
+                id: clientId, // Use client-generated ID
+                display_name: displayName,
                 online_at: new Date().toISOString(),
-                room_id: currentRoomId
+                room_id: roomId // Send room_id for RLS and display
             });
             if (error) console.error('Error tracking presence:', error.message);
             else {
-                // Also update the current_room_id in the participants table
-                const { error: updateError } = await supabase
+                // Update the current_room_id in the participants table (optional for this non-auth setup, primarily for tracking)
+                const { data: existingParticipant, error: fetchError } = await supabase
                     .from('participants')
-                    .update({ current_room_id: currentRoomId })
-                    .eq('id', auctioneerUser.id);
-                if (updateError) console.error('Error updating participant room_id:', updateError.message);
+                    .select('id')
+                    .eq('id', clientId)
+                    .single();
+
+                if (fetchError && fetchError.code === 'PGRST116') { // No existing participant
+                    const { error: insertError } = await supabase
+                        .from('participants')
+                        .insert({ id: clientId, display_name: displayName, current_room_id: roomId });
+                    if (insertError) console.error('Error inserting new participant:', insertError.message);
+                } else if (!fetchError) { // Existing participant
+                    const { error: updateError } = await supabase
+                        .from('participants')
+                        .update({ display_name: displayName, current_room_id: roomId, last_online: new Date().toISOString() })
+                        .eq('id', clientId);
+                    if (updateError) console.error('Error updating participant room_id:', updateError.message);
+                } else {
+                    console.error('Error checking participant existence:', fetchError.message);
+                }
             }
         }
     });
@@ -387,26 +552,21 @@ async function updateParticipantsList() {
         participantsList.innerHTML = '<li>No participants online.</li>';
         return;
     }
-    const participantIds = participants.map(p => p.id);
-    const { data: participantProfiles, error } = await supabase
-        .from('participants')
-        .select('id, display_name')
-        .in('id', participantIds);
 
-    if (error) {
-        console.error('Error fetching participant profiles:', error.message);
+    // Filter participants to only those explicitly associated with the current room
+    const filteredParticipants = participants.filter(p => p.room_id === currentRoomId);
+
+    if (filteredParticipants.length === 0) {
+        participantsList.innerHTML = '<li>No participants in this room.</li>';
         return;
     }
 
-    const profileMap = new Map(participantProfiles.map(p => [p.id, p.display_name]));
-
-    participants.forEach(p => {
+    filteredParticipants.forEach(p => {
         const li = document.createElement('li');
-        const displayName = profileMap.get(p.id) || p.display_name || 'Anonymous';
         li.classList.add('online-participant');
-        li.textContent = displayName;
+        li.textContent = p.display_name || 'Anonymous'; // Use display_name from presence directly
 
-        // Fetch won players for this participant
+        // Fetch won players for this participant's display name
         const viewWonPlayersBtn = document.createElement('button');
         viewWonPlayersBtn.textContent = 'View Won Players';
         viewWonPlayersBtn.classList.add('button-small');
@@ -415,18 +575,18 @@ async function updateParticipantsList() {
             const { data: wonPlayers, error: wonPlayersError } = await supabase
                 .from('won_players')
                 .select('player_name, winning_bid')
-                .eq('bidder_id', p.id);
+                .eq('bidder_display_name', p.display_name); // Query by display name
 
             if (wonPlayersError) {
-                alert(`Error fetching won players for ${displayName}: ${wonPlayersError.message}`);
+                alert(`Error fetching won players for ${p.display_name}: ${wonPlayersError.message}`);
                 return;
             }
 
             if (wonPlayers.length === 0) {
-                alert(`${displayName} hasn't won any players yet.`);
+                alert(`${p.display_name} hasn't won any players yet.`);
             } else {
                 const playerList = wonPlayers.map(wp => `${wp.player_name} (₹${parseFloat(wp.winning_bid).toFixed(2)})`).join('\n');
-                alert(`${displayName} has won:\n${playerList}`);
+                alert(`${p.display_name} has won:\n${playerList}`);
             }
         });
         li.appendChild(viewWonPlayersBtn);
@@ -455,11 +615,8 @@ function setupBidsUpdates(roomId) {
         .channel(`bids_room_${roomId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bids', filter: `auction_id=in.(select id from player_auctions where room_id='${roomId}')` }, payload => {
             console.log('New bid in room received:', payload);
-            if (currentAuctionId && payload.new.auction_id === currentAuctionId) {
-                // Update the current auction's price on display if it was current_auction_id
-                // (this is handled by player_auctions update trigger indirectly)
-            }
-            fetchPlayersForRoom(roomId); // Ensure queue updates if current auction status changes
+            // The auction_id filter is only for the channel. We still need to check if it's the current auction
+            // updateCurrentAuctionDisplay handles updating current price indirectly via player_auctions update.
         })
         .subscribe();
 }
@@ -497,11 +654,6 @@ async function fetchPlayersForRoom(roomId) {
         });
     }
 
-    if (!activePlayer && pendingPlayers.length > 0) {
-        // Automatically set the first pending player as current if no active player
-        // Or wait for auctioneer to click "Activate"
-    }
-
     if (activePlayer) {
         currentAuctionId = activePlayer.id;
         updateCurrentAuctionDisplay(activePlayer);
@@ -536,18 +688,21 @@ async function activateQueuedPlayer(playerId) {
     }
 
     // Now, activate the selected player
-    const { error } = await supabase
-        .from('player_auctions')
-        .update({ status: 'active' })
-        .eq('id', playerId)
-        .eq('room_id', currentRoomId); // Ensure auctioneer owns this
+    try {
+        await setSupabaseManageToken(auctioneerManageToken); // Set token before update
+        const { error } = await supabase
+            .from('player_auctions')
+            .update({ status: 'active' })
+            .eq('id', playerId)
+            .eq('room_id', currentRoomId); // Ensure auctioneer owns this
 
-    if (error) {
+        if (error) throw error;
+        showMessage(auctionStatusMessage, 'Player activated! Bidding can now begin.', 'success');
+    } catch (error) {
         showMessage(auctionStatusMessage, `Error activating player: ${error.message}`, 'error');
         console.error('Error activating player:', error);
-    } else {
-        showMessage(auctionStatusMessage, 'Player activated! Bidding can now begin.', 'success');
-        // UI will update via realtime subscription
+    } finally {
+        await setSupabaseManageToken(null); // Clear token after action
     }
 }
 
@@ -577,8 +732,8 @@ async function updateCurrentAuctionDisplay(auction = null) {
         <p class="current-bid">Current Bid: ₹<strong>${parseFloat(player.current_price).toFixed(2)}</strong></p>
         <p>Bid Increment: ₹<strong>${parseFloat(player.current_bid_increment).toFixed(2)}</strong></p>
         <p>Status: <span class="status-badge status-${player.status}">${player.status.replace('_', ' ').toUpperCase()}</span></p>
-        <p>Last Bidder: <span id="currentLastBidder">${(player.last_bidder_id ? await getParticipantName(player.last_bidder_id) : 'N/A')}</span></p>
-        ${player.status === 'sold' && player.winner_id ? `<p><strong>WINNER:</strong> <span class="price">${await getParticipantName(player.winner_id)} for ₹${parseFloat(player.winning_bid_amount).toFixed(2)}!</span></p>` : ''}
+        <p>Last Bidder: <span id="currentLastBidder">${(player.last_bidder_display_name || 'N/A')}</span></p>
+        ${player.status === 'sold' && player.winner_display_name ? `<p><strong>WINNER:</strong> <span class="price">${player.winner_display_name} for ₹${parseFloat(player.winning_bid_amount).toFixed(2)}!</span></p>` : ''}
     `;
     currentAuctionDetails.querySelector('.placeholder-text')?.remove(); // Remove if exists
 
@@ -628,13 +783,6 @@ function displayNoActiveAuction() {
     auctionStatusMessage.textContent = '';
     auctionStatusMessage.className = 'message';
 }
-
-async function getParticipantName(userId) {
-    if (!userId) return 'N/A';
-    const profile = await getParticipantProfile(userId);
-    return (profile && profile.display_name) ? profile.display_name : 'Unknown Bidder';
-}
-
 
 // --- Utility Functions ---
 function showMessage(element, msg, type) {
