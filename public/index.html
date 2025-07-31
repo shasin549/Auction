@@ -5,19 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Football Auction House</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="modal.css">
 </head>
 <body>
     <header>
         <h1>Football Player Auction</h1>
         <nav>
-            <span id="auth-links">
-                <button id="loginBtn" class="nav-button">Login</button>
-                <button id="signupBtn" class="nav-button">Sign Up</button>
-            </span>
-            <span id="user-info" style="display: none;">
-                Welcome, <span id="usernameDisplay"></span>! <button id="logoutBtn" class="nav-button">Logout</button>
-            </span>
+            <span>Welcome!</span>
         </nav>
     </header>
 
@@ -39,22 +32,6 @@
     <footer>
         <p>&copy; 2025 Football Auction. All rights reserved.</p>
     </footer>
-
-    <section id="login-signup-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2 id="modal-title">Login</h2>
-            <form id="auth-form">
-                <label for="email">Email:</label>
-                <input type="email" id="email" required><br>
-                <label for="password">Password:</label>
-                <input type="password" id="password" required><br>
-                <button type="submit" id="authSubmitBtn">Login</button>
-            </form>
-            <p id="auth-message" style="color: red;"></p>
-            <p><a href="#" id="toggleAuthMode">Need an account? Sign Up</a></p>
-        </div>
-    </section>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabaseClient.js"></script>
