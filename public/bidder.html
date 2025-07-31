@@ -3,47 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auction Details & Bidding - Online Auction</title>
+    <title>Bidder Dashboard - Football Auction</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Auction Details</h1>
+        <h1>Bidder Dashboard</h1>
         <nav>
             <a href="index.html">Home</a>
-            <a href="auctioneer.html">Create Auction</a>
-            <a href="bidder.html">View / Bid Auctions</a>
             <span id="user-info-bidder" style="display: none;">
                 Welcome, <span id="usernameDisplayBidder"></span>! <button id="logoutBtnBidder" class="nav-button">Logout</button>
             </span>
         </nav>
     </header>
 
-    <main>
-        <section id="auction-details">
-            <h2 id="auction-title">Loading Auction...</h2>
-            <div class="auction-detail-card">
-                <img id="auction-image" src="" alt="Auction Item" style="max-width: 400px; display: none;">
-                <p><strong>Description:</strong> <span id="auction-description"></span></p>
-                <p><strong>Seller:</strong> <span id="auction-seller"></span></p>
-                <p><strong>Current Price:</strong> <span id="auction-current-price" class="price"></span></p>
-                <p><strong>Ends In:</strong> <span id="auction-time-left" class="time-left"></span></p>
-                <button id="placeBidBtn" class="button-primary">Place Bid</button>
-                <input type="number" id="bidAmountInput" placeholder="Enter your bid" step="0.01" min="0.01" style="margin-left: 10px; padding: 8px;">
-                <p id="bid-message" style="color: red; margin-top: 10px;"></p>
+    <main class="bidder-main">
+        <section id="join-room-section" class="card">
+            <h2>Join an Auction Room</h2>
+            <form id="joinRoomForm">
+                <label for="roomCodeInput">Enter Room Code:</label>
+                <input type="text" id="roomCodeInput" placeholder="e.g., ABC123" required><br>
+                <button type="submit" class="button-primary">Join Room</button>
+            </form>
+            <p id="joinRoomMessage" class="message"></p>
+        </section>
+
+        <section id="auction-details-section" style="display: none;">
+            <div class="current-auction-card card">
+                <h2>Current Player: <span id="auctionPlayerName"></span></h2>
+                <img id="auctionPlayerImage" src="" alt="Player Image" style="display: none;">
+                <p>Club/Nationality: <span id="auctionPlayerClub"></span></p>
+                <p>Starting Price: ₹<span id="auctionPlayerStartPrice"></span></p>
+                <p class="current-bid">Current Bid: ₹<span id="auctionCurrentPrice"></span></p>
+                <p>Last Bidder: <span id="auctionLastBidder">N/A</span></p>
+
+                <div class="bid-action-area">
+                    <label for="bidAmountInput">Your Bid (Min: ₹<span id="nextBidAmountDisplay"></span>):</label>
+                    <input type="number" id="bidAmountInput" placeholder="Enter bid" required step="any" min="0">
+                    <button id="placeBidBtn" class="button-primary">Place Bid</button>
+                    <p id="bidMessage" class="message"></p>
+                </div>
             </div>
 
-            <h3 style="margin-top: 30px;">Bid History</h3>
-            <ul id="bid-history-list">
+            <div class="bid-history-card card">
+                <h3>Bid History</h3>
+                <ul id="bidHistoryList">
+                    <li>No bids yet.</li>
                 </ul>
+            </div>
+        </section>
+
+        <section id="won-players-section" class="card">
+            <h2>Your Won Players</h2>
+            <ul id="wonPlayersList">
+                <li>No players won yet.</li>
+            </ul>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 Online Auction. All rights reserved.</p>
+        <p>&copy; 2025 Football Auction. All rights reserved.</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="supabaseClient.js"></script>
     <script src="bidder.js"></script>
 </body>
