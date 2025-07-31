@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Auction House</title>
+    <title>Football Auction House</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="modal.css">
 </head>
 <body>
     <header>
-        <h1>Welcome to the Online Auction</h1>
+        <h1>Football Player Auction</h1>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="auctioneer.html">Create Auction</a>
-            <a href="bidder.html">View / Bid Auctions</a>
             <span id="auth-links">
                 <button id="loginBtn" class="nav-button">Login</button>
                 <button id="signupBtn" class="nav-button">Sign Up</button>
@@ -24,34 +21,40 @@
         </nav>
     </header>
 
-    <main>
-        <section id="login-signup-modal" class="modal">
-            <div class="modal-content">
-                <span class="close-button">&times;</span>
-                <h2 id="modal-title">Login</h2>
-                <form id="auth-form">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" required><br>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" required><br>
-                    <button type="submit" id="authSubmitBtn">Login</button>
-                </form>
-                <p id="auth-message" style="color: red;"></p>
-                <p><a href="#" id="toggleAuthMode">Need an account? Sign Up</a></p>
-            </div>
-        </section>
-
-        <section id="live-auctions">
-            <h2>Live Auctions</h2>
-            <div id="auction-list" class="auction-grid">
-                </div>
-            <p id="no-auctions-message" style="text-align: center; display: none;">No active auctions available.</p>
+    <main class="index-main">
+        <section class="action-buttons">
+            <button id="auctioneerBtn" class="large-modern-button auctioneer-color">
+                <span class="button-icon">👑</span>
+                <h2>Auctioneer</h2>
+                <p>Host a live player auction</p>
+            </button>
+            <button id="bidderBtn" class="large-modern-button bidder-color">
+                <span class="button-icon">💰</span>
+                <h2>Bidder</h2>
+                <p>Join an auction and bid on players</p>
+            </button>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 Online Auction. All rights reserved.</p>
+        <p>&copy; 2025 Football Auction. All rights reserved.</p>
     </footer>
+
+    <section id="login-signup-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-title">Login</h2>
+            <form id="auth-form">
+                <label for="email">Email:</label>
+                <input type="email" id="email" required><br>
+                <label for="password">Password:</label>
+                <input type="password" id="password" required><br>
+                <button type="submit" id="authSubmitBtn">Login</button>
+            </form>
+            <p id="auth-message" style="color: red;"></p>
+            <p><a href="#" id="toggleAuthMode">Need an account? Sign Up</a></p>
+        </div>
+    </section>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabaseClient.js"></script>
