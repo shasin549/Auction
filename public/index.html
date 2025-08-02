@@ -150,13 +150,16 @@
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
 
     <!-- Combined and self-contained JavaScript -->
-    <script>
-        // Your web app's Firebase configuration
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, collection, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyAwioYa6AGdvHu2Zz2TS185Lt-6f-pnvns",
             authDomain: "efootball-auction-cee8e.firebaseapp.com",
@@ -166,13 +169,12 @@
             appId: "1:228372328370:web:e954dba1110bcd2f1c7eab",
             measurementId: "G-RGWK5LWY7N"
         };
-
-        const appId = firebaseConfig.projectId;
-
-        let app;
-        let db;
-        let auth;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
         let userId = null;
+        let isAuthReady = false;
 
         // Utility function to display toasts
         function showToast(message, type = 'info') {
@@ -221,62 +223,66 @@
         }
         
         // Asynchronous initialization function
-        async function initializeAppAndAuth() {
-            try {
-                console.log("Initializing Firebase app...");
-                if (!firebase.apps.length) {
-                    app = firebase.initializeApp(firebaseConfig);
-                    auth = app.auth();
-                    db = app.firestore();
-                    console.log("Firebase initialized successfully.");
-                } else {
-                    app = firebase.app();
-                    auth = app.auth();
-                    db = app.firestore();
-                    console.log("Firebase already initialized.");
-                }
-
-                if (!auth) {
-                    throw new Error("Firebase Auth service is not available.");
-                }
-
-                console.log("Authenticating anonymously...");
-                await auth.signInAnonymously();
-                userId = auth.currentUser.uid;
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                userId = user.uid;
+                isAuthReady = true;
                 console.log("User authenticated:", userId);
-
-                // Enable buttons once auth is complete
+            } else {
+                userId = crypto.randomUUID(); // Fallback for non-authenticated states
+                isAuthReady = true;
+                console.log("User not authenticated, using a temporary ID:", userId);
+            }
+        });
+        
+        async function initializeApp() {
+            try {
+                console.log("Initializing Firebase app and authenticating...");
                 const auctioneerBtn = document.getElementById('auctioneer-button');
                 const bidderBtn = document.getElementById('bidder-button');
-                if (auctioneerBtn) auctioneerBtn.disabled = false;
-                if (bidderBtn) bidderBtn.disabled = false;
+                if (auctioneerBtn) { auctioneerBtn.textContent = "Loading..."; }
+                if (bidderBtn) { bidderBtn.textContent = "Loading..."; }
+
+                await signInAnonymously(auth);
+
+                await new Promise(resolve => {
+                    const checkAuth = setInterval(() => {
+                        if (isAuthReady) {
+                            clearInterval(checkAuth);
+                            resolve();
+                        }
+                    }, 100);
+                });
+
+                console.log("Authentication complete. Buttons are now active.");
+                if (auctioneerBtn) { 
+                    auctioneerBtn.textContent = "I'm Auctioneer";
+                    auctioneerBtn.disabled = false;
+                }
+                if (bidderBtn) {
+                    bidderBtn.textContent = "I'm Bidder";
+                    bidderBtn.disabled = false;
+                }
 
             } catch (error) {
                 console.error("Initialization failed:", error);
-                showToast('Initialization failed. Please check the console for details.', 'error');
+                showToast('Initialization failed. Please check the browser console for details.', 'error');
             }
         }
 
         // Main script to initialize Firebase and handle events
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log("DOM Content Loaded. Starting initialization.");
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Content Loaded. Starting initialization process.");
+
+            initializeApp();
 
             const auctioneerBtn = document.getElementById('auctioneer-button');
             const bidderBtn = document.getElementById('bidder-button');
-            if (auctioneerBtn) auctioneerBtn.textContent = "Loading...";
-            if (bidderBtn) bidderBtn.textContent = "Loading...";
-
-            await initializeAppAndAuth();
-
-            if (auctioneerBtn) auctioneerBtn.textContent = "I'm Auctioneer";
-            if (bidderBtn) bidderBtn.textContent = "I'm Bidder";
-
-            console.log("Initialization complete. Attaching event listeners.");
 
             if (auctioneerBtn) {
                 auctioneerBtn.addEventListener('click', () => {
                     console.log("Auctioneer button clicked.");
-                    if (!userId) {
+                    if (!isAuthReady) {
                         showToast('Authentication is not ready. Please wait a moment.', 'warning');
                         return;
                     }
@@ -306,10 +312,10 @@
                                 try {
                                     if (!db) throw new Error("Firestore is not available.");
                                     
-                                    const roomsCollection = db.collection(`artifacts/${appId}/public/data/rooms`);
+                                    const roomsCollection = collection(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`);
                                     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                                     
-                                    await roomsCollection.doc(roomCode).set({
+                                    await setDoc(doc(roomsCollection, roomCode), {
                                         auctioneerId: userId,
                                         auctioneerName: auctioneerName,
                                         bidIncrement: bidIncrement,
@@ -335,7 +341,7 @@
             if (bidderBtn) {
                 bidderBtn.addEventListener('click', () => {
                     console.log("Bidder button clicked.");
-                    if (!userId) {
+                    if (!isAuthReady) {
                         showToast('Authentication is not ready. Please wait a moment.', 'warning');
                         return;
                     }
@@ -365,14 +371,16 @@
                                 try {
                                     if (!db) throw new Error("Firestore is not available.");
                                     
-                                    const roomDoc = await db.collection(`artifacts/${appId}/public/data/rooms`).doc(roomCode).get();
-                                    if (!roomDoc.exists) {
+                                    const roomRef = doc(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`, roomCode);
+                                    const roomDoc = await getDoc(roomRef);
+
+                                    if (!roomDoc.exists()) {
                                         showToast('Room not found. Please check the code.', 'error');
                                         return;
                                     }
                                     
-                                    await roomDoc.ref.update({
-                                        participants: firebase.firestore.FieldValue.arrayUnion({ id: userId, name: bidderName })
+                                    await updateDoc(roomRef, {
+                                        participants: arrayUnion({ id: userId, name: bidderName })
                                     });
 
                                     sessionStorage.setItem('roomCode', roomCode);
