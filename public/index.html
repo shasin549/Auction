@@ -130,10 +130,10 @@
             Join or create an auction room to start bidding on your favorite players.
         </p>
         <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-8">
-            <button id="auctioneer-button" class="action-btn">
+            <button id="auctioneer-button" class="action-btn" disabled>
                 I'm Auctioneer
             </button>
-            <button id="bidder-button" class="action-btn">
+            <button id="bidder-button" class="action-btn" disabled>
                 I'm Bidder
             </button>
         </div>
@@ -223,6 +223,7 @@
         // Asynchronous initialization function
         async function initializeAppAndAuth() {
             try {
+                console.log("Initializing Firebase app...");
                 if (!firebase.apps.length) {
                     app = firebase.initializeApp(firebaseConfig);
                     auth = app.auth();
@@ -239,9 +240,16 @@
                     throw new Error("Firebase Auth service is not available.");
                 }
 
+                console.log("Authenticating anonymously...");
                 await auth.signInAnonymously();
                 userId = auth.currentUser.uid;
                 console.log("User authenticated:", userId);
+
+                // Enable buttons once auth is complete
+                const auctioneerBtn = document.getElementById('auctioneer-button');
+                const bidderBtn = document.getElementById('bidder-button');
+                if (auctioneerBtn) auctioneerBtn.disabled = false;
+                if (bidderBtn) bidderBtn.disabled = false;
 
             } catch (error) {
                 console.error("Initialization failed:", error);
@@ -253,12 +261,17 @@
         document.addEventListener('DOMContentLoaded', async () => {
             console.log("DOM Content Loaded. Starting initialization.");
 
-            await initializeAppAndAuth();
-
-            console.log("Initialization complete. Attaching event listeners.");
-
             const auctioneerBtn = document.getElementById('auctioneer-button');
             const bidderBtn = document.getElementById('bidder-button');
+            if (auctioneerBtn) auctioneerBtn.textContent = "Loading...";
+            if (bidderBtn) bidderBtn.textContent = "Loading...";
+
+            await initializeAppAndAuth();
+
+            if (auctioneerBtn) auctioneerBtn.textContent = "I'm Auctioneer";
+            if (bidderBtn) bidderBtn.textContent = "I'm Bidder";
+
+            console.log("Initialization complete. Attaching event listeners.");
 
             if (auctioneerBtn) {
                 auctioneerBtn.addEventListener('click', () => {
