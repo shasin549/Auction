@@ -7,9 +7,23 @@ const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
+let app;
+let db;
+let auth;
+
+// Check if Firebase is already initialized
+if (!firebase.apps.length) {
+    app = firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    console.log("Firebase initialized.");
+} else {
+    // Re-use an existing Firebase app if it exists
+    app = firebase.app();
+    db = firebase.firestore();
+    auth = firebase.auth();
+    console.log("Firebase already initialized.");
+}
 
 let userId = null;
 let isAuthReady = false;
