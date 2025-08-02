@@ -3,81 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bidder Dashboard - Football Auction</title>
+    <title>Bidder Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <header>
-        <h1>Bidder Dashboard</h1>
-        <nav>
-            <a href="index.html">Home</a>
-            <span id="user-info-bidder">
-                Logged in as: <span id="bidderNameDisplay">Guest Bidder</span> <button id="changeBidderBtn" class="nav-button">Change User</button>
-            </span>
-        </nav>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen p-4">
+    <!-- Confetti canvas -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+    
+    <header class="flex justify-between items-center py-4 border-b border-gray-700">
+        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Bidder</h1>
+        <div class="flex items-center space-x-4">
+            <p id="room-code-display" class="text-xl font-bold bg-gray-800 p-2 rounded-lg"></p>
+            <p id="user-id-display" class="text-sm bg-gray-800 p-2 rounded-lg hidden"></p>
+        </div>
     </header>
 
-    <main class="bidder-main">
-        <section id="bidder-setup-section" class="card">
-            <h2>Enter Your Details to Bid</h2>
-            <form id="bidderSetupForm">
-                <label for="bidderDisplayName">Your Display Name:</label>
-                <input type="text" id="bidderDisplayName" placeholder="e.g., FootballFan123" required><br>
-                <button type="submit" class="button-primary">Continue as Bidder</button>
-            </form>
-            <p id="bidderSetupMessage" class="message"></p>
-        </section>
-
-        <section id="join-room-section" class="card" style="display: none;">
-            <h2>Join an Auction Room</h2>
-            <form id="joinRoomForm">
-                <label for="roomCodeInput">Enter Room Code:</label>
-                <input type="text" id="roomCodeInput" placeholder="e.g., ABC123" required maxlength="6" pattern="[A-Z0-9]{6}"><br>
-                <button type="submit" class="button-primary">Join Room</button>
-            </form>
-            <p id="joinRoomMessage" class="message"></p>
-        </section>
-
-        <section id="auction-details-section" style="display: none;">
-            <div class="current-auction-card card">
-                <h2>Current Player: <span id="auctionPlayerName"></span></h2>
-                <img id="auctionPlayerImage" src="" alt="Player Image" style="display: none;">
-                <p>Club/Nationality: <span id="auctionPlayerClub"></span></p>
-                <p>Starting Price: ₹<span id="auctionPlayerStartPrice"></span></p>
-                <p class="current-bid">Current Bid: ₹<span id="auctionCurrentPrice"></span></p>
-                <p>Last Bidder: <span id="auctionLastBidder">N/A</span></p>
-
-                <div class="bid-action-area">
-                    <label for="bidAmountInput">Your Bid (Min: ₹<span id="nextBidAmountDisplay"></span>):</label>
-                    <input type="number" id="bidAmountInput" placeholder="Enter bid" required step="any" min="0">
-                    <button id="placeBidBtn" class="button-primary">Place Bid</button>
-                    <p id="bidMessage" class="message"></p>
+    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+        <!-- Live Auction Card -->
+        <div class="lg:col-span-2 space-y-8">
+            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl space-y-6">
+                <h2 class="text-2xl font-bold mb-4">Live Auction</h2>
+                <div id="player-card-content" class="bg-gray-700 rounded-xl p-6 shadow-lg hidden">
+                    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                        <img id="player-image" src="https://placehold.co/120x120/4b5563/ffffff?text=Player" alt="Player Image" class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-emerald-400">
+                        <div class="text-left flex-grow">
+                            <h3 id="player-name-display" class="text-3xl font-bold text-emerald-400"></h3>
+                            <p id="player-club-display" class="text-lg text-gray-300"></p>
+                            <p id="player-position-display" class="text-md text-gray-400"></p>
+                        </div>
+                    </div>
+                    <div class="mt-6 border-t border-gray-600 pt-4">
+                        <p class="text-lg text-gray-400">Current Bid:</p>
+                        <p id="current-bid-display" class="text-4xl font-extrabold text-white mt-1">$0</p>
+                        <p id="top-bidder-display" class="text-md text-gray-400">Top Bidder: No bids yet</p>
+                    </div>
+                    <div class="mt-6 flex justify-center">
+                        <button id="place-bid-btn" class="action-btn w-full" disabled>Place Bid</button>
+                    </div>
                 </div>
-            </div>
+                <div id="no-auction-message" class="bg-gray-700 rounded-xl p-4 shadow-lg text-center animate-pulse">
+                    <p class="text-xl font-semibold">Waiting for the auctioneer to start the auction...</p>
+                </div>
+            </section>
+        </div>
 
-            <div class="bid-history-card card">
-                <h3>Bid History</h3>
-                <ul id="bidHistoryList">
-                    <li>No bids yet.</li>
+        <!-- Winning List -->
+        <div class="space-y-8">
+            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl h-96 overflow-y-auto">
+                <h2 class="text-2xl font-bold mb-4">My Winning List</h2>
+                <ul id="winning-list" class="space-y-3">
+                    <!-- Winning list will be populated here by JS -->
+                    <p id="no-wins-message" class="text-gray-400">You haven't won any players yet.</p>
                 </ul>
-            </div>
-        </section>
-
-        <section id="won-players-section" class="card" style="display: none;">
-            <h2>Your Won Players (<span id="wonPlayersDisplayName"></span>)</h2>
-            <ul id="wonPlayersList">
-                <li>No players won yet.</li>
-            </ul>
-        </section>
+            </section>
+        </div>
     </main>
 
-    <footer>
-        <p>&copy; 2025 Football Auction. All rights reserved.</p>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
     <script src="supabaseClient.js"></script>
+    <script src="script.js"></script>
     <script src="bidder.js"></script>
 </body>
 </html>
+
