@@ -3,29 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auction App</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Efootball Auction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modal.css">
 </head>
-<body class="index-body">
-    <div class="main-container">
-        <h1 class="main-heading">Welcome to the Auction App</h1>
-        <p class="sub-heading">Choose your role to get started</p>
-        <div class="button-container">
-            <button id="auctioneerBtn" class="large-modern-button auctioneer-color">
-                <span class="button-icon">👑</span>
-                <h2>Auctioneer</h2>
-                <p>Host a live player auction</p>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased flex items-center justify-center min-h-screen">
+    <!-- Main content container -->
+    <div class="text-center p-8 max-w-xl mx-auto space-y-8 animate-fade-in-down">
+        <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+            Efootball Auction
+        </h1>
+        <p class="text-lg text-gray-300">
+            Join or create an auction room to start bidding on your favorite players.
+        </p>
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-8">
+            <button id="auctioneer-button" class="action-btn">
+                I'm Auctioneer
             </button>
-            <button id="bidderBtn" class="large-modern-button bidder-color">
-                <span class="button-icon">💰</span>
-                <h2>Bidder</h2>
-                <p>Join an auction and bid on players</p>
+            <button id="bidder-button" class="action-btn">
+                I'm Bidder
             </button>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Modal for forms -->
+    <div id="modal" class="modal">
+        <div class="modal-content transform transition-all duration-300 ease-in-out scale-95 opacity-0">
+            <span class="close-btn text-gray-400 hover:text-white">&times;</span>
+            <div id="modal-form-content"></div>
+        </div>
+    </div>
+
     <script src="supabaseClient.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
