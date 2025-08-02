@@ -4,12 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Efootball Auction</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-auth.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-firestore.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="modal.css">
+    <!-- Firebase SDKs from CDN -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    
+    <!-- Embedded CSS for styling -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #1f2937, #111827, #1f2937, #111827);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .action-btn {
+            padding: 1rem 2rem;
+            border-radius: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            transition: all 0.3s ease-in-out;
+            transform: scale(1);
+            background-color: #3b82f6; /* bg-blue-500 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+        }
+
+        .action-btn:hover {
+            background-color: #2563eb; /* hover:bg-blue-600 */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05); /* hover:shadow-xl */
+        }
+
+        .action-btn:active {
+            background-color: #1d4ed8; /* active:bg-blue-700 */
+            transform: scale(0.95);
+        }
+
+        .action-btn:disabled {
+            background-color: #4b5563; /* bg-gray-600 */
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .card {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .animate-fade-in-down { animation: fadeInDown 0.5s ease-in-out forwards; }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-out-up { animation: fadeOutUp 0.5s ease-in-out forwards; }
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* Modal specific styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            position: relative;
+            background-color: #1f2937;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .modal-content.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: #fff;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans antialiased flex items-center justify-center min-h-screen">
     <!-- Main content container -->
@@ -32,16 +146,234 @@
 
     <!-- Modal for forms -->
     <div id="modal" class="modal">
-        <div class="modal-content transform transition-all duration-300 ease-in-out scale-95 opacity-0">
-            <span class="close-btn text-gray-400 hover:text-white">&times;</span>
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
             <div id="modal-form-content"></div>
         </div>
     </div>
 
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <script src="firebaseClient.js"></script>
-    <script src="script.js"></script>
+    <!-- Combined and self-contained JavaScript -->
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwioYa6AGdvHu2Zz2TS185Lt-6f-pnvns",
+            authDomain: "efootball-auction-cee8e.firebaseapp.com",
+            projectId: "efootball-auction-cee8e",
+            storageBucket: "efootball-auction-cee8e.firebasestorage.app",
+            messagingSenderId: "228372328370",
+            appId: "1:228372328370:web:e954dba1110bcd2f1c7eab",
+            measurementId: "G-RGWK5LWY7N"
+        };
+
+        const appId = firebaseConfig.projectId;
+
+        let app;
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Utility function to display toasts
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            const toast = document.createElement('div');
+            toast.className = 'p-4 rounded-xl shadow-lg text-white animate-fade-in-down';
+            
+            switch (type) {
+                case 'success': toast.classList.add('bg-emerald-500'); break;
+                case 'error': toast.classList.add('bg-red-500'); break;
+                case 'warning': toast.classList.add('bg-yellow-500'); break;
+                case 'info': default: toast.classList.add('bg-blue-500'); break;
+            }
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('animate-fade-in-down');
+                toast.classList.add('animate-fade-out-up');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 5000);
+        }
+
+        // Modal functions
+        function openModal(modalId, content, onOpen = () => {}) {
+            const modal = document.getElementById(modalId);
+            if (!modal) { console.error(`Modal with ID "${modalId}" not found.`); return; }
+            const modalContent = modal.querySelector('.modal-content');
+            const modalFormContent = modal.querySelector('#modal-form-content');
+            if (modalFormContent) modalFormContent.innerHTML = content;
+            modal.classList.add('active');
+            setTimeout(() => { modalContent.classList.add('active'); }, 10);
+            const closeBtn = modal.querySelector('.close-btn');
+            if (closeBtn) closeBtn.onclick = () => closeModal(modalId);
+            onOpen(modal);
+            window.onclick = (event) => { if (event.target === modal) closeModal(modalId); };
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.classList.remove('active');
+            setTimeout(() => { modal.classList.remove('active'); }, 300);
+        }
+
+        // Main script to initialize Firebase and handle events
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM Content Loaded. Attempting to initialize Firebase.");
+            
+            try {
+                if (!firebase.apps.length) {
+                    app = firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                    console.log("Firebase initialized successfully.");
+                } else {
+                    app = firebase.app();
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                    console.log("Firebase already initialized.");
+                }
+
+                if (!auth) {
+                    console.error("Firebase Auth is not available. Cannot proceed.");
+                    showToast('Firebase Auth is not available. Check your Firebase SDKs.', 'error');
+                    return;
+                }
+
+                await new Promise(resolve => {
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        if (user) {
+                            userId = user.uid;
+                            console.log("User authenticated:", userId);
+                        } else {
+                            userId = crypto.randomUUID();
+                            console.log("User not authenticated, using a temporary ID:", userId);
+                        }
+                        isAuthReady = true;
+                        unsubscribe(); // Stop listening after the first event
+                        resolve();
+                    });
+                });
+
+                console.log("Authentication state is ready. Attaching event listeners.");
+
+                const auctioneerBtn = document.getElementById('auctioneer-button');
+                const bidderBtn = document.getElementById('bidder-button');
+
+                if (auctioneerBtn) {
+                    auctioneerBtn.addEventListener('click', () => {
+                        console.log("Auctioneer button clicked.");
+                        const formHtml = `
+                            <h2 class="text-2xl font-bold text-center mb-4">Create Auction Room</h2>
+                            <form id="create-room-form" class="space-y-4">
+                                <div>
+                                    <label for="auctioneer-name" class="block text-sm font-medium text-gray-300">Your Name</label>
+                                    <input type="text" id="auctioneer-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <div>
+                                    <label for="bid-increment" class="block text-sm font-medium text-gray-300">Bid Increment</label>
+                                    <input type="number" id="bid-increment" required value="10" min="1" class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <button type="submit" class="w-full action-btn">Create Room</button>
+                            </form>
+                        `;
+                        openModal('modal', formHtml, (modalElement) => {
+                            const createRoomForm = modalElement.querySelector('#create-room-form');
+                            if (createRoomForm) {
+                                createRoomForm.addEventListener('submit', async (e) => {
+                                    e.preventDefault();
+                                    console.log("Create Room form submitted.");
+                                    const auctioneerName = document.getElementById('auctioneer-name').value;
+                                    const bidIncrement = parseInt(document.getElementById('bid-increment').value, 10);
+                                    
+                                    try {
+                                        const roomsCollection = db.collection(`artifacts/${appId}/public/data/rooms`);
+                                        const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                                        
+                                        await roomsCollection.doc(roomCode).set({
+                                            auctioneerId: userId,
+                                            auctioneerName: auctioneerName,
+                                            bidIncrement: bidIncrement,
+                                            participants: [{ id: userId, name: auctioneerName }],
+                                            status: 'waiting'
+                                        });
+                                        
+                                        sessionStorage.setItem('roomCode', roomCode);
+                                        sessionStorage.setItem('userName', auctioneerName);
+                                        
+                                        showToast('Room created successfully!', 'success');
+                                        window.location.href = 'auctioneer.html';
+                                    } catch (error) {
+                                        console.error("Error creating room:", error);
+                                        showToast('Failed to create room. Please check your Firestore rules and enabled services.', 'error');
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
+                if (bidderBtn) {
+                    bidderBtn.addEventListener('click', () => {
+                        console.log("Bidder button clicked.");
+                        const formHtml = `
+                            <h2 class="text-2xl font-bold text-center mb-4">Join Auction Room</h2>
+                            <form id="join-room-form" class="space-y-4">
+                                <div>
+                                    <label for="bidder-name" class="block text-sm font-medium text-gray-300">Your Name</label>
+                                    <input type="text" id="bidder-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <div>
+                                    <label for="room-code" class="block text-sm font-medium text-gray-300">Room Code</label>
+                                    <input type="text" id="room-code" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <button type="submit" class="w-full action-btn">Join Room</button>
+                            </form>
+                        `;
+                        openModal('modal', formHtml, (modalElement) => {
+                            const joinRoomForm = modalElement.querySelector('#join-room-form');
+                            if (joinRoomForm) {
+                                joinRoomForm.addEventListener('submit', async (e) => {
+                                    e.preventDefault();
+                                    console.log("Join Room form submitted.");
+                                    const bidderName = document.getElementById('bidder-name').value;
+                                    const roomCode = document.getElementById('room-code').value.toUpperCase();
+
+                                    try {
+                                        const roomDoc = await db.collection(`artifacts/${appId}/public/data/rooms`).doc(roomCode).get();
+                                        if (!roomDoc.exists) {
+                                            showToast('Room not found. Please check the code.', 'error');
+                                            return;
+                                        }
+                                        
+                                        await roomDoc.ref.update({
+                                            participants: firebase.firestore.FieldValue.arrayUnion({ id: userId, name: bidderName })
+                                        });
+
+                                        sessionStorage.setItem('roomCode', roomCode);
+                                        sessionStorage.setItem('userName', bidderName);
+
+                                        showToast('Joined room successfully!', 'success');
+                                        window.location.href = 'bidder.html';
+                                    } catch (error) {
+                                        console.error("Error joining room:", error);
+                                        showToast('Failed to join room. Please check your Firestore rules and enabled services.', 'error');
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+            } catch (e) {
+                console.error("An error occurred during script initialization:", e);
+                showToast('An unexpected error occurred. Please check the console for details.', 'error');
+            }
+        });
+    </script>
 </body>
 </html>
 
