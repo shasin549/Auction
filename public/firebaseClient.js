@@ -13,6 +13,7 @@ const firebaseConfig = {
 };
 
 // Global variable provided by the Canvas environment for app ID.
+// We use the Firebase project ID as a fallback, as it is a reliable unique ID.
 const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
 
 // Initialize Firebase
@@ -20,37 +21,35 @@ let app;
 let db;
 let auth;
 
-try {
-    // Check if Firebase is already initialized
-    if (!firebase.apps.length) {
+let userId = null;
+let isAuthReady = false;
+
+// Check if Firebase is already initialized
+if (!firebase.apps.length) {
+    try {
         app = firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
         console.log("Firebase initialized successfully.");
-    } else {
-        // Re-use an existing Firebase app if it exists
-        app = firebase.app();
-        db = firebase.firestore();
-        auth = firebase.auth();
-        console.log("Firebase already initialized.");
+    } catch (error) {
+        console.error("Firebase initialization failed:", error);
     }
-} catch (error) {
-    console.error("Firebase initialization failed:", error);
-    showToast('Firebase initialization failed. Check your configuration.', 'error');
+} else {
+    // Re-use an existing Firebase app if it exists
+    app = firebase.app();
+    db = firebase.firestore();
+    auth = firebase.auth();
+    console.log("Firebase already initialized.");
 }
-
-
-let userId = null;
-let isAuthReady = false;
 
 async function authenticate() {
     try {
-        // We will use anonymous sign-in for this simple application.
+        // We use anonymous sign-in for this simple application.
+        // It must be enabled in the Firebase console.
         await auth.signInAnonymously();
         console.log("Signed in anonymously.");
     } catch (error) {
         console.error("Firebase authentication failed:", error);
-        showToast('Firebase authentication failed. Please try again.', 'error');
     }
 }
 
@@ -68,5 +67,9 @@ auth.onAuthStateChanged(user => {
 });
 
 // Start the authentication process
-authenticate();
+if (auth) {
+    authenticate();
+} else {
+    console.error("Firebase Auth is not available. Cannot authenticate.");
+}
 
