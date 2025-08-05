@@ -3,113 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auctioneer Page</title>
+    <title>Create Auction Room</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-auth.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-firestore.js"></script>
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- Embedded CSS for styling -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(-45deg, #1f2937, #111827, #1f2937, #111827);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .action-btn {
+            padding: 1rem 2rem;
+            border-radius: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            transition: all 0.3s ease-in-out;
+            transform: scale(1);
+            background-color: #3b82f6; /* bg-blue-500 */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+        }
+
+        .action-btn:hover {
+            background-color: #2563eb; /* hover:bg-blue-600 */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05); /* hover:shadow-xl */
+        }
+
+        .action-btn:active {
+            background-color: #1d4ed8; /* active:bg-blue-700 */
+            transform: scale(0.95);
+        }
+
+        .action-btn:disabled {
+            background-color: #4b5563; /* bg-gray-600 */
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .card {
+            background-color: #1f2937;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .toast {
+            animation: fadeInOut 5s ease-in-out forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen p-4">
-    <header class="flex justify-between items-center py-4 border-b border-gray-700">
-        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Auctioneer</h1>
-        <div class="flex items-center space-x-4">
-            <p id="room-code-display" class="text-xl font-bold bg-gray-800 p-2 rounded-lg"></p>
-            <button id="copy-room-code-btn" class="text-sm px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition duration-200">Copy Code</button>
-        </div>
-    </header>
-
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        <!-- Player Management and Live Auction Card -->
-        <div class="lg:col-span-2 space-y-8">
-            <!-- Player Creation Form -->
-            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl">
-                <h2 class="text-2xl font-bold mb-4">Add a New Player</h2>
-                <form id="add-player-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="player-name" class="block text-sm font-medium text-gray-300">Player Name</label>
-                            <input type="text" id="player-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                        </div>
-                        <div>
-                            <label for="player-club" class="block text-sm font-medium text-gray-300">Club/Nationality</label>
-                            <input type="text" id="player-club" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="player-price" class="block text-sm font-medium text-gray-300">Starting Price</label>
-                            <input type="number" id="player-price" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                        </div>
-                        <div>
-                            <label for="player-position" class="block text-sm font-medium text-gray-300">Position</label>
-                            <input type="text" id="player-position" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full action-btn">Add Player</button>
-                </form>
-            </section>
-
-            <!-- Live Auction Area -->
-            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl space-y-6">
-                <h2 class="text-2xl font-bold mb-4">Live Auction</h2>
-                <div id="player-card" class="bg-gray-700 rounded-xl p-4 shadow-lg text-center animate-pulse hidden">
-                    <p class="text-xl font-semibold">No player currently on auction. Add one above!</p>
+<body class="bg-gray-900 text-gray-100 font-sans antialiased flex items-center justify-center min-h-screen p-4">
+    <!-- Main content container -->
+    <div class="max-w-xl w-full mx-auto space-y-8 animate-fade-in-down">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+            Create Auction Room
+        </h1>
+        <div class="card p-6">
+            <form id="create-room-form" class="space-y-4">
+                <div>
+                    <label for="auctioneer-name" class="block text-sm font-medium text-gray-300">Auctioneer Name</label>
+                    <input type="text" id="auctioneer-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
                 </div>
-                <div id="player-card-content" class="bg-gray-700 rounded-xl p-6 shadow-lg hidden">
-                    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-                        <img id="player-image" src="https://placehold.co/120x120/4b5563/ffffff?text=Player" alt="Player Image" class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-emerald-400">
-                        <div class="text-left flex-grow">
-                            <h3 id="player-name-display" class="text-3xl font-bold text-emerald-400"></h3>
-                            <p id="player-club-display" class="text-lg text-gray-300"></p>
-                            <p id="player-position-display" class="text-md text-gray-400"></p>
-                        </div>
-                    </div>
-                    <div class="mt-6 border-t border-gray-600 pt-4">
-                        <p class="text-lg text-gray-400">Current Bid:</p>
-                        <p id="current-bid-display" class="text-4xl font-extrabold text-white mt-1">$0</p>
-                        <p id="top-bidder-display" class="text-md text-gray-400">Top Bidder: No bids yet</p>
-                    </div>
-                    <div class="mt-6 flex justify-center space-x-4">
-                        <button id="final-call-btn" class="action-btn" data-call="0">First Call</button>
-                        <button id="next-player-btn" class="action-btn bg-emerald-600 hover:bg-emerald-500 transition-colors duration-200" style="display: none;">Next Player</button>
-                    </div>
+                <div>
+                    <label for="num-participants" class="block text-sm font-medium text-gray-300">Number of Participants</label>
+                    <input type="number" id="num-participants" required value="4" min="1" class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
                 </div>
-            </section>
-        </div>
-
-        <!-- Participants and Notifications -->
-        <div class="space-y-8">
-            <!-- Participants List -->
-            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl h-96 overflow-y-auto">
-                <h2 class="text-2xl font-bold mb-4">Participants (<span id="participants-count">0</span>)</h2>
-                <ul id="participants-list" class="space-y-3">
-                    <!-- Participant list will be populated here by JS -->
-                </ul>
-            </section>
-
-            <!-- Player Winning List -->
-            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl h-96 overflow-y-auto">
-                <h2 class="text-2xl font-bold mb-4">Players in Queue (<span id="queue-count">0</span>)</h2>
-                <ul id="player-queue-list" class="space-y-3">
-                    <!-- Player queue will be populated here -->
-                </ul>
-            </section>
-        </div>
-    </main>
-
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
-    <div id="modal-winning-list" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3 id="modal-winning-list-title" class="text-2xl font-bold mb-4"></h3>
-            <ul id="modal-winning-list-items" class="space-y-2"></ul>
+                <div>
+                    <label for="bid-increment" class="block text-sm font-medium text-gray-300">Bid Increment</label>
+                    <input type="number" id="bid-increment" required value="100" min="1" class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                </div>
+                <button type="submit" id="create-room-button" class="w-full action-btn">
+                    Create Room
+                </button>
+            </form>
         </div>
     </div>
     
-    <script src="firebaseClient.js"></script>
-    <script src="script.js"></script>
-    <script src="auctioneer.js"></script>
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwioYa6AGdvHu2Zz2TS185Lt-6f-pnvns",
+            authDomain: "efootball-auction-cee8e.firebaseapp.com",
+            projectId: "efootball-auction-cee8e",
+            storageBucket: "efootball-auction-cee8e.firebasestorage.app",
+            messagingSenderId: "228372328370",
+            appId: "1:228372328370:web:e954dba1110bcd2f1c7eab",
+            measurementId: "G-RGWK5LWY7N"
+        };
+        
+        let db;
+        let auth;
+        let userId = null;
+
+        // Utility function to display toasts
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            const toast = document.createElement('div');
+            toast.className = 'p-4 rounded-xl shadow-lg text-white';
+            toast.classList.add('toast');
+            
+            switch (type) {
+                case 'success': toast.classList.add('bg-emerald-500'); break;
+                case 'error': toast.classList.add('bg-red-500'); break;
+                case 'warning': toast.classList.add('bg-yellow-500'); break;
+                case 'info': default: toast.classList.add('bg-blue-500'); break;
+            }
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Main script to initialize Firebase and handle events
+        document.addEventListener('DOMContentLoaded', async () => {
+            const createRoomButton = document.getElementById('create-room-button');
+            const createRoomForm = document.getElementById('create-room-form');
+
+            try {
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Authenticate anonymously
+                await signInAnonymously(auth);
+                userId = auth.currentUser.uid;
+                
+                showToast("Initialization complete!", "success");
+
+            } catch (error) {
+                console.error("Initialization failed:", error);
+                showToast('Initialization failed. Please check the browser console for details.', 'error');
+                if (createRoomButton) createRoomButton.disabled = true;
+                return;
+            }
+            
+            if (createRoomForm) {
+                createRoomForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!userId) {
+                        showToast('Authentication not ready. Please wait.', 'warning');
+                        return;
+                    }
+                    if (createRoomButton) createRoomButton.disabled = true;
+
+                    const auctioneerName = document.getElementById('auctioneer-name').value;
+                    const numParticipants = parseInt(document.getElementById('num-participants').value, 10);
+                    const bidIncrement = parseInt(document.getElementById('bid-increment').value, 10);
+                    
+                    try {
+                        const roomsCollection = collection(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`);
+                        const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                        
+                        await setDoc(doc(roomsCollection, roomCode), {
+                            auctioneerId: userId,
+                            auctioneerName: auctioneerName,
+                            numParticipants: numParticipants,
+                            bidIncrement: bidIncrement,
+                            participants: [{ id: userId, name: auctioneerName }],
+                            status: 'waiting'
+                        });
+                        
+                        // Store the room code and username for the next page
+                        sessionStorage.setItem('roomCode', roomCode);
+                        sessionStorage.setItem('userName', auctioneerName);
+                        
+                        showToast('Room created successfully! Redirecting...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'live-auction.html';
+                        }, 1000); // Redirect after a short delay
+                    } catch (error) {
+                        console.error("Error creating room:", error);
+                        showToast(`Failed to create room: ${error.message}. Please check your Firebase settings.`, 'error');
+                        if (createRoomButton) createRoomButton.disabled = false;
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
 
