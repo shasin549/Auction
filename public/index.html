@@ -250,128 +250,129 @@
 
                 console.log("Authentication complete. Buttons are now active.");
 
+                // Attach event listeners after successful initialization
+                if (auctioneerBtn) {
+                    auctioneerBtn.addEventListener('click', () => {
+                        console.log("Auctioneer button clicked.");
+                        if (!userId) {
+                            showToast('Authentication is not ready. Please wait a moment.', 'warning');
+                            return;
+                        }
+                        const formHtml = `
+                            <h2 class="text-2xl font-bold text-center mb-4">Create Auction Room</h2>
+                            <form id="create-room-form" class="space-y-4">
+                                <div>
+                                    <label for="auctioneer-name" class="block text-sm font-medium text-gray-300">Your Name</label>
+                                    <input type="text" id="auctioneer-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <div>
+                                    <label for="bid-increment" class="block text-sm font-medium text-gray-300">Bid Increment</label>
+                                    <input type="number" id="bid-increment" required value="10" min="1" class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <button type="submit" class="w-full action-btn">Create Room</button>
+                            </form>
+                        `;
+                        openModal('modal', formHtml, (modalElement) => {
+                            const createRoomForm = modalElement.querySelector('#create-room-form');
+                            if (createRoomForm) {
+                                createRoomForm.addEventListener('submit', async (e) => {
+                                    e.preventDefault();
+                                    console.log("Create Room form submitted.");
+                                    const auctioneerName = document.getElementById('auctioneer-name').value;
+                                    const bidIncrement = parseInt(document.getElementById('bid-increment').value, 10);
+                                    
+                                    try {
+                                        if (!db) throw new Error("Firestore is not available.");
+                                        
+                                        const roomsCollection = collection(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`);
+                                        const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                                        
+                                        await setDoc(doc(roomsCollection, roomCode), {
+                                            auctioneerId: userId,
+                                            auctioneerName: auctioneerName,
+                                            bidIncrement: bidIncrement,
+                                            participants: [{ id: userId, name: auctioneerName }],
+                                            status: 'waiting'
+                                        });
+                                        
+                                        sessionStorage.setItem('roomCode', roomCode);
+                                        sessionStorage.setItem('userName', auctioneerName);
+                                        
+                                        showToast('Room created successfully!', 'success');
+                                        window.location.href = 'auctioneer.html';
+                                    } catch (error) {
+                                        console.error("Error creating room:", error);
+                                        showToast(`Failed to create room: ${error.message}. Please check your Firebase settings.`, 'error');
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
+                if (bidderBtn) {
+                    bidderBtn.addEventListener('click', () => {
+                        console.log("Bidder button clicked.");
+                        if (!userId) {
+                            showToast('Authentication is not ready. Please wait a moment.', 'warning');
+                            return;
+                        }
+                        const formHtml = `
+                            <h2 class="text-2xl font-bold text-center mb-4">Join Auction Room</h2>
+                            <form id="join-room-form" class="space-y-4">
+                                <div>
+                                    <label for="bidder-name" class="block text-sm font-medium text-gray-300">Your Name</label>
+                                    <input type="text" id="bidder-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <div>
+                                    <label for="room-code" class="block text-sm font-medium text-gray-300">Room Code</label>
+                                    <input type="text" id="room-code" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
+                                </div>
+                                <button type="submit" class="w-full action-btn">Join Room</button>
+                            </form>
+                        `;
+                        openModal('modal', formHtml, (modalElement) => {
+                            const joinRoomForm = modalElement.querySelector('#join-room-form');
+                            if (joinRoomForm) {
+                                joinRoomForm.addEventListener('submit', async (e) => {
+                                    e.preventDefault();
+                                    console.log("Join Room form submitted.");
+                                    const bidderName = document.getElementById('bidder-name').value;
+                                    const roomCode = document.getElementById('room-code').value.toUpperCase();
+
+                                    try {
+                                        if (!db) throw new Error("Firestore is not available.");
+                                        
+                                        const roomRef = doc(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`, roomCode);
+                                        const roomDoc = await getDoc(roomRef);
+
+                                        if (!roomDoc.exists()) {
+                                            showToast('Room not found. Please check the code.', 'error');
+                                            return;
+                                        }
+                                        
+                                        await updateDoc(roomRef, {
+                                            participants: arrayUnion({ id: userId, name: bidderName })
+                                        });
+
+                                        sessionStorage.setItem('roomCode', roomCode);
+                                        sessionStorage.setItem('userName', bidderName);
+
+                                        showToast('Joined room successfully!', 'success');
+                                        window.location.href = 'bidder.html';
+                                    } catch (error) {
+                                        console.error("Error joining room:", error);
+                                        showToast(`Failed to join room: ${error.message}. Please check your Firebase settings.`, 'error');
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
             } catch (error) {
                 console.error("Initialization failed:", error);
                 showToast('Initialization failed. Please check the browser console for details.', 'error');
-            }
-            
-            if (auctioneerBtn) {
-                auctioneerBtn.addEventListener('click', () => {
-                    console.log("Auctioneer button clicked.");
-                    if (!userId) {
-                        showToast('Authentication is not ready. Please wait a moment.', 'warning');
-                        return;
-                    }
-                    const formHtml = `
-                        <h2 class="text-2xl font-bold text-center mb-4">Create Auction Room</h2>
-                        <form id="create-room-form" class="space-y-4">
-                            <div>
-                                <label for="auctioneer-name" class="block text-sm font-medium text-gray-300">Your Name</label>
-                                <input type="text" id="auctioneer-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                            </div>
-                            <div>
-                                <label for="bid-increment" class="block text-sm font-medium text-gray-300">Bid Increment</label>
-                                <input type="number" id="bid-increment" required value="10" min="1" class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                            </div>
-                            <button type="submit" class="w-full action-btn">Create Room</button>
-                        </form>
-                    `;
-                    openModal('modal', formHtml, (modalElement) => {
-                        const createRoomForm = modalElement.querySelector('#create-room-form');
-                        if (createRoomForm) {
-                            createRoomForm.addEventListener('submit', async (e) => {
-                                e.preventDefault();
-                                console.log("Create Room form submitted.");
-                                const auctioneerName = document.getElementById('auctioneer-name').value;
-                                const bidIncrement = parseInt(document.getElementById('bid-increment').value, 10);
-                                
-                                try {
-                                    if (!db) throw new Error("Firestore is not available.");
-                                    
-                                    const roomsCollection = collection(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`);
-                                    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-                                    
-                                    await setDoc(doc(roomsCollection, roomCode), {
-                                        auctioneerId: userId,
-                                        auctioneerName: auctioneerName,
-                                        bidIncrement: bidIncrement,
-                                        participants: [{ id: userId, name: auctioneerName }],
-                                        status: 'waiting'
-                                    });
-                                    
-                                    sessionStorage.setItem('roomCode', roomCode);
-                                    sessionStorage.setItem('userName', auctioneerName);
-                                    
-                                    showToast('Room created successfully!', 'success');
-                                    window.location.href = 'auctioneer.html';
-                                } catch (error) {
-                                    console.error("Error creating room:", error);
-                                    showToast(`Failed to create room: ${error.message}. Please check your Firebase settings.`, 'error');
-                                }
-                            });
-                        }
-                    });
-                });
-            }
-
-            if (bidderBtn) {
-                bidderBtn.addEventListener('click', () => {
-                    console.log("Bidder button clicked.");
-                    if (!userId) {
-                        showToast('Authentication is not ready. Please wait a moment.', 'warning');
-                        return;
-                    }
-                    const formHtml = `
-                        <h2 class="text-2xl font-bold text-center mb-4">Join Auction Room</h2>
-                        <form id="join-room-form" class="space-y-4">
-                            <div>
-                                <label for="bidder-name" class="block text-sm font-medium text-gray-300">Your Name</label>
-                                <input type="text" id="bidder-name" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                            </div>
-                            <div>
-                                <label for="room-code" class="block text-sm font-medium text-gray-300">Room Code</label>
-                                <input type="text" id="room-code" required class="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 text-white">
-                            </div>
-                            <button type="submit" class="w-full action-btn">Join Room</button>
-                        </form>
-                    `;
-                    openModal('modal', formHtml, (modalElement) => {
-                        const joinRoomForm = modalElement.querySelector('#join-room-form');
-                        if (joinRoomForm) {
-                            joinRoomForm.addEventListener('submit', async (e) => {
-                                e.preventDefault();
-                                console.log("Join Room form submitted.");
-                                const bidderName = document.getElementById('bidder-name').value;
-                                const roomCode = document.getElementById('room-code').value.toUpperCase();
-
-                                try {
-                                    if (!db) throw new Error("Firestore is not available.");
-                                    
-                                    const roomRef = doc(db, `artifacts/${firebaseConfig.projectId}/public/data/rooms`, roomCode);
-                                    const roomDoc = await getDoc(roomRef);
-
-                                    if (!roomDoc.exists()) {
-                                        showToast('Room not found. Please check the code.', 'error');
-                                        return;
-                                    }
-                                    
-                                    await updateDoc(roomRef, {
-                                        participants: arrayUnion({ id: userId, name: bidderName })
-                                    });
-
-                                    sessionStorage.setItem('roomCode', roomCode);
-                                    sessionStorage.setItem('userName', bidderName);
-
-                                    showToast('Joined room successfully!', 'success');
-                                    window.location.href = 'bidder.html';
-                                } catch (error) {
-                                    console.error("Error joining room:", error);
-                                    showToast(`Failed to join room: ${error.message}. Please check your Firebase settings.`, 'error');
-                                }
-                            });
-                        }
-                    });
-                });
             }
         });
     </script>
