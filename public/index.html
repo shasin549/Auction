@@ -149,17 +149,13 @@
 
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
-
-    <!-- Combined and self-contained JavaScript -->
+    <!-- Combined and self-contained JavaScript with module imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, collection, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAwioYa6AGdvHu2Zz2TS185Lt-6f-pnvns",
             authDomain: "efootball-auction-cee8e.firebaseapp.com",
@@ -169,12 +165,11 @@
             appId: "1:228372328370:web:e954dba1110bcd2f1c7eab",
             measurementId: "G-RGWK5LWY7N"
         };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
         
+        let app;
+        let auth;
+        let db;
         let userId = null;
-        let isAuthReady = false;
 
         // Utility function to display toasts
         function showToast(message, type = 'info') {
@@ -222,39 +217,28 @@
             setTimeout(() => { modal.classList.remove('active'); }, 300);
         }
         
-        // Asynchronous initialization function
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                userId = user.uid;
-                isAuthReady = true;
-                console.log("User authenticated:", userId);
-            } else {
-                userId = crypto.randomUUID(); // Fallback for non-authenticated states
-                isAuthReady = true;
-                console.log("User not authenticated, using a temporary ID:", userId);
-            }
-        });
-        
-        async function initializeApp() {
+        // Main script to initialize Firebase and handle events
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM Content Loaded. Starting initialization process.");
+
+            const auctioneerBtn = document.getElementById('auctioneer-button');
+            const bidderBtn = document.getElementById('bidder-button');
+            if (auctioneerBtn) { auctioneerBtn.textContent = "Loading..."; }
+            if (bidderBtn) { bidderBtn.textContent = "Loading..."; }
+
             try {
-                console.log("Initializing Firebase app and authenticating...");
-                const auctioneerBtn = document.getElementById('auctioneer-button');
-                const bidderBtn = document.getElementById('bidder-button');
-                if (auctioneerBtn) { auctioneerBtn.textContent = "Loading..."; }
-                if (bidderBtn) { bidderBtn.textContent = "Loading..."; }
+                console.log("Initializing Firebase app...");
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("Firebase initialized successfully.");
 
+                console.log("Authenticating anonymously...");
                 await signInAnonymously(auth);
+                userId = auth.currentUser.uid;
+                console.log("User authenticated:", userId);
 
-                await new Promise(resolve => {
-                    const checkAuth = setInterval(() => {
-                        if (isAuthReady) {
-                            clearInterval(checkAuth);
-                            resolve();
-                        }
-                    }, 100);
-                });
-
-                console.log("Authentication complete. Buttons are now active.");
+                // Enable buttons once auth is complete
                 if (auctioneerBtn) { 
                     auctioneerBtn.textContent = "I'm Auctioneer";
                     auctioneerBtn.disabled = false;
@@ -264,25 +248,17 @@
                     bidderBtn.disabled = false;
                 }
 
+                console.log("Authentication complete. Buttons are now active.");
+
             } catch (error) {
                 console.error("Initialization failed:", error);
                 showToast('Initialization failed. Please check the browser console for details.', 'error');
             }
-        }
-
-        // Main script to initialize Firebase and handle events
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Content Loaded. Starting initialization process.");
-
-            initializeApp();
-
-            const auctioneerBtn = document.getElementById('auctioneer-button');
-            const bidderBtn = document.getElementById('bidder-button');
-
+            
             if (auctioneerBtn) {
                 auctioneerBtn.addEventListener('click', () => {
                     console.log("Auctioneer button clicked.");
-                    if (!isAuthReady) {
+                    if (!userId) {
                         showToast('Authentication is not ready. Please wait a moment.', 'warning');
                         return;
                     }
@@ -341,7 +317,7 @@
             if (bidderBtn) {
                 bidderBtn.addEventListener('click', () => {
                     console.log("Bidder button clicked.");
-                    if (!isAuthReady) {
+                    if (!userId) {
                         showToast('Authentication is not ready. Please wait a moment.', 'warning');
                         return;
                     }
