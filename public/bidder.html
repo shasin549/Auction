@@ -1,29 +1,51 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <title>Bidder</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bidder — Join Auction</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-    <h2>Join Auction</h2>
-    <input id="participantName" placeholder="Your Name">
-    <input id="roomCode" placeholder="Room Code">
-    <button id="joinRoom">Join Room</button>
+  <div class="container">
+    <header class="app-header">
+      <div class="app-title">E-Football Auction — Bidder</div>
+      <div class="app-sub">Enter room code and your name</div>
+    </header>
 
-    <div id="biddingPanel" style="display:none;">
-        <h4>Current Player</h4>
-        <div id="playerCard"></div>
-
-        <h4>Highest Bid: <span id="highestBid">0</span></h4>
-        <h4>Highest Bidder: <span id="highestBidder">None</span></h4>
-
-        <button id="placeBid">Place Bid</button>
-
-        <h4>My Winning Players</h4>
-        <ul id="myWins"></ul>
+    <div class="card">
+      <div class="form-row">
+        <input id="bidderName" type="text" placeholder="Your name"/>
+        <input id="roomCode" type="text" placeholder="Room code (or use invite link)"/>
+      </div>
+      <div class="center" style="margin-top:8px">
+        <button id="joinBtn" class="btn">Join Room</button>
+      </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="bidder.js"></script>
+    <section id="livePanel" style="display:none;margin-top:16px">
+      <div class="card">
+        <div id="playerBlock">
+          <!-- dynamic player card -->
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button id="placeBid" class="btn">Place Bid</button>
+        </div>
+
+        <div class="bid-history" id="bidHistory">
+          <h4 style="margin-top:12px">Bid History</h4>
+        </div>
+
+        <div style="margin-top:12px">
+          <h4>My Wins</h4>
+          <ul id="myWins"></ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="bidder.js"></script>
 </body>
 </html>
