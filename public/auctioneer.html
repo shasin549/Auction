@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Auctioneer Panel</title>
+<title>Auctioneer — E-Football</title>
 <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -16,7 +16,7 @@
       <div class="form-row">
         <input id="roomName" type="text" placeholder="Room name (e.g. Weekend Auction)"/>
         <input id="numParticipants" type="number" placeholder="Participants" class="small"/>
-        <input id="bidIncrement" type="number" placeholder="Increment" class="small"/>
+        <input id="bidIncrement" type="number" placeholder="Increment (e.g. 10)" class="small"/>
       </div>
       <div class="center" style="margin-top:8px">
         <button id="createRoom" class="btn">Create Room</button>
@@ -56,7 +56,7 @@
           <button id="finalCall" class="btn btn-ghost">Final Call</button>
         </div>
 
-        <div id="previewArea" class="preview" style="display:none">
+        <div id="previewArea" class="preview hidden">
           <div class="preview-image card" id="previewImageWrap" style="padding:0"></div>
           <div class="preview-info">
             <div id="previewName" style="font-weight:800"></div>
@@ -73,12 +73,6 @@
         </div>
       </div>
     </section>
-
-    <div class="sticky-bottom">
-      <div class="bid-button">
-        <!-- placeholder so layout stays balanced -->
-      </div>
-    </div>
   </div>
 
 <script src="/socket.io/socket.io.js"></script>
