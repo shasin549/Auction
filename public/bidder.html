@@ -1,74 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bidder Page</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-auth.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.3/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+    <title>Bidder</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen p-4">
-    <!-- Confetti canvas -->
-    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
-    
-    <header class="flex justify-between items-center py-4 border-b border-gray-700">
-        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Bidder</h1>
-        <div class="flex items-center space-x-4">
-            <p id="room-code-display" class="text-xl font-bold bg-gray-800 p-2 rounded-lg"></p>
-            <p id="user-id-display" class="text-sm bg-gray-800 p-2 rounded-lg hidden"></p>
-        </div>
-    </header>
+<body>
+    <h2>Join Auction</h2>
+    <input id="participantName" placeholder="Your Name">
+    <input id="roomCode" placeholder="Room Code">
+    <button id="joinRoom">Join Room</button>
 
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        <!-- Live Auction Card -->
-        <div class="lg:col-span-2 space-y-8">
-            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl space-y-6">
-                <h2 class="text-2xl font-bold mb-4">Live Auction</h2>
-                <div id="player-card-content" class="bg-gray-700 rounded-xl p-6 shadow-lg hidden">
-                    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
-                        <img id="player-image" src="https://placehold.co/120x120/4b5563/ffffff?text=Player" alt="Player Image" class="w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-emerald-400">
-                        <div class="text-left flex-grow">
-                            <h3 id="player-name-display" class="text-3xl font-bold text-emerald-400"></h3>
-                            <p id="player-club-display" class="text-lg text-gray-300"></p>
-                            <p id="player-position-display" class="text-md text-gray-400"></p>
-                        </div>
-                    </div>
-                    <div class="mt-6 border-t border-gray-600 pt-4">
-                        <p class="text-lg text-gray-400">Current Bid:</p>
-                        <p id="current-bid-display" class="text-4xl font-extrabold text-white mt-1">$0</p>
-                        <p id="top-bidder-display" class="text-md text-gray-400">Top Bidder: No bids yet</p>
-                    </div>
-                    <div class="mt-6 flex justify-center">
-                        <button id="place-bid-btn" class="action-btn w-full" disabled>Place Bid</button>
-                    </div>
-                </div>
-                <div id="no-auction-message" class="bg-gray-700 rounded-xl p-4 shadow-lg text-center animate-pulse">
-                    <p class="text-xl font-semibold">Waiting for the auctioneer to start the auction...</p>
-                </div>
-            </section>
-        </div>
+    <div id="biddingPanel" style="display:none;">
+        <h4>Current Player</h4>
+        <div id="playerCard"></div>
 
-        <!-- Winning List -->
-        <div class="space-y-8">
-            <section class="bg-gray-800 p-6 rounded-2xl shadow-xl h-96 overflow-y-auto">
-                <h2 class="text-2xl font-bold mb-4">My Winning List</h2>
-                <ul id="winning-list" class="space-y-3">
-                    <!-- Winning list will be populated here by JS -->
-                    <p id="no-wins-message" class="text-gray-400">You haven't won any players yet.</p>
-                </ul>
-            </section>
-        </div>
-    </main>
+        <h4>Highest Bid: <span id="highestBid">0</span></h4>
+        <h4>Highest Bidder: <span id="highestBidder">None</span></h4>
 
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
-    
-    <script src="firebaseClient.js"></script>
-    <script src="script.js"></script>
+        <button id="placeBid">Place Bid</button>
+
+        <h4>My Winning Players</h4>
+        <ul id="myWins"></ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script src="bidder.js"></script>
 </body>
 </html>
-
