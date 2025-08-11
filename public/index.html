@@ -1,12 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <title>eFootball Card Auction</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>E-Football Card Auction</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h1>EFOOTBALL CARD AUCTION</h1>
-    <button onclick="window.location='auctioneer.html'">I'm an Auctioneer</button>
-    <button onclick="window.location='bidder.html'">I'm a Bidder</button>
+  <div class="container">
+    <header class="app-header">
+      <div class="app-title">E-Football Card Auction</div>
+      <div class="app-sub">Create an auction or join as a bidder</div>
+    </header>
+
+    <div class="center" style="gap:12px;margin:18px 0">
+      <a class="btn" href="auctioneer.html">I'm an Auctioneer</a>
+      <a class="btn btn-ghost" href="bidder.html">I'm a Bidder</a>
+    </div>
+
+    <section style="margin-top:18px">
+      <h3 style="margin-bottom:10px">Live & Upcoming</h3>
+      <div class="grid">
+        <!-- sample cards; real cards come from backend/auctioneer uploads -->
+        <div class="card auction-card">
+          <div class="live-badge">Live</div>
+          <div class="auction-thumb"><img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800"/></div>
+          <div class="title">Greek God of Wine</div>
+          <div class="meta">Antique • Sculpture</div>
+          <div class="price-row"><div class="small-muted">Value</div><div class="huge">$900</div></div>
+        </div>
+
+        <div class="card auction-card">
+          <div class="auction-thumb"><img src="https://images.unsplash.com/photo-1529101091764-c3526daf38fe?q=80&w=800"/></div>
+          <div class="title">Laocoon and His Sons</div>
+          <div class="meta">Greek • Sculpture</div>
+          <div class="price-row"><div class="small-muted">Estimate</div><div class="huge">$700</div></div>
+        </div>
+      </div>
+    </section>
+
+    <footer style="margin-top:28px;color:var(--muted);font-size:13px;text-align:center">Made for auction demo</footer>
+  </div>
 </body>
 </html>
