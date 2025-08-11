@@ -1,49 +1,59 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Bidder — E-Football</title>
-<link rel="stylesheet" href="style.css"/>
-</head>
-<body>
-  <div class="container">
-    <header class="app-header">
-      <div class="app-title">E-Football Auction — Bidder</div>
-      <div class="app-sub">Enter room code and your name</div>
-    </header>
+const socket = io();
+let currentRoom = null;
 
-    <div class="card">
-      <div class="form-row">
-        <input id="bidderName" type="text" placeholder="Your name"/>
-        <input id="roomCode" type="text" placeholder="Room code (or use invite link)"/>
-      </div>
-      <div class="center" style="margin-top:8px">
-        <button id="joinBtn" class="btn">Join Room</button>
-      </div>
-    </div>
+// Elements
+const joinRoomBtn = document.getElementById("joinRoomBtn");
+const roomCodeInput = document.getElementById("roomCodeInput");
+const playerName = document.getElementById("playerName");
+const playerClub = document.getElementById("playerClub");
+const playerPosition = document.getElementById("playerPosition");
+const playerPrice = document.getElementById("playerPrice");
+const playerImage = document.getElementById("playerImage");
+const bidInput = document.getElementById("bidInput");
+const placeBidBtn = document.getElementById("placeBidBtn");
 
-    <section id="livePanel" style="display:none;margin-top:16px">
-      <div class="card">
-        <div id="playerBlock"></div>
+// Auto-join if invite link contains room
+const urlParams = new URLSearchParams(window.location.search);
+const roomFromLink = urlParams.get("room");
 
-        <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
-          <input id="manualBid" type="number" placeholder="Enter bid amount"/>
-          <button id="placeBid" class="btn">Place Bid</button>
-        </div>
+if (roomFromLink) {
+    currentRoom = roomFromLink;
+    joinRoom(roomFromLink);
+} else {
+    // Manual join
+    joinRoomBtn.addEventListener("click", () => {
+        const roomCode = roomCodeInput.value.trim();
+        if (roomCode) {
+            currentRoom = roomCode;
+            joinRoom(roomCode);
+        }
+    });
+}
 
-        <div class="bid-history" id="bidHistory">
-          <h4 style="margin-top:12px">Bid History</h4>
-        </div>
+// Join Room Function
+function joinRoom(roomCode) {
+    socket.emit("joinRoom", roomCode);
+}
 
-        <div style="margin-top:12px">
-          <h4>My Wins</h4>
-          <ul id="myWins"></ul>
-        </div>
-      </div>
-    </section>
-  </div>
+// Show Player Details When Updated
+socket.on("updatePlayer", (player) => {
+    playerName.textContent = player.name || "Unknown";
+    playerClub.textContent = player.club || "";
+    playerPosition.textContent = player.position || "";
+    playerPrice.textContent = player.price ? `₹${player.price}` : "";
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="bidder.js"></script>
-</body>
-</html>
+    if (player.image) {
+        playerImage.src = player.image;
+        playerImage.style.display = "block";
+    } else {
+        playerImage.style.display = "none";
+    }
+});
+
+// Place Bid
+placeBidBtn.addEventListener("click", () => {
+    const bidValue = parseInt(bidInput.value);
+    if (!isNaN(bidValue) && currentRoom) {
+        socket.emit("placeBid", { room: currentRoom, bid: bidValue });
+    }
+});
