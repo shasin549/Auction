@@ -1,17 +1,12 @@
 {
-  "name": "efootball-auction-app",
+  "name": "efootball-auction",
   "version": "1.0.0",
-  "description": "A real-time efootball card auction system.",
-  "main": "server.js",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.5"
+  },
   "scripts": {
     "start": "node server.js"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.44.2",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "firebase": "^10.12.3",
-    "firebase-admin": "^12.2.0"
   }
 }
-
