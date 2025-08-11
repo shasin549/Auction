@@ -1,58 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Auctioneer Panel</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Auctioneer Panel</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <h1>E-Football Card Auction - Auctioneer</h1>
+  <div class="container">
+    <header class="app-header">
+      <div class="app-title">E-Football Auction — Auctioneer</div>
+      <div class="app-sub" id="roomSub">Create room to start</div>
+    </header>
 
-  <div class="create-room">
-    <input type="text" id="roomName" placeholder="Auction Room Name" />
-    <input type="number" id="numParticipants" placeholder="Number of Participants" />
-    <input type="number" id="bidIncrement" placeholder="Bid Increment" />
-    <button id="createRoomBtn">Create Room</button>
-  </div>
-
-  <div id="auctionPanel" style="display:none;">
-    <h2 id="roomInfo"></h2>
-    <p>Invite Link: <span id="inviteLink"></span> <button id="shareBtn">Share</button></p>
-
-    <div class="player-form">
-      <input type="text" id="playerName" placeholder="Player Name" />
-      <input type="text" id="playerClub" placeholder="Club/Nationality" />
-      <input type="text" id="playerPosition" placeholder="Position" />
-      <input type="text" id="playerStyle" placeholder="Playing Style" />
-      <input type="number" id="playerValue" placeholder="Value" />
-      <input type="url" id="playerImage" placeholder="Image URL (optional)" />
-      <button id="uploadPlayerBtn">Upload Player</button>
-    </div>
-
-    <div id="playerPreview" class="card" style="display:none;">
-      <div id="playerImageContainer" style="display:none;">
-        <img id="previewImage" alt="Player Image" style="max-width:200px; border-radius:8px;" />
+    <section id="createSection" class="card">
+      <div class="form-row">
+        <input id="roomName" type="text" placeholder="Room name (e.g. Weekend Auction)"/>
+        <input id="numParticipants" type="number" placeholder="Participants" class="small"/>
+        <input id="bidIncrement" type="number" placeholder="Increment" class="small"/>
       </div>
-      <h3 id="previewName"></h3>
-      <p id="previewClub"></p>
-      <p id="previewPosition"></p>
-      <p id="previewStyle"></p>
-      <p id="previewValue"></p>
-    </div>
+      <div class="center" style="margin-top:8px">
+        <button id="createRoom" class="btn">Create Room</button>
+      </div>
+    </section>
 
-    <div class="controls">
-      <button id="startBiddingBtn">Start Bidding</button>
-      <button id="finalCallBtn">Final Call</button>
-    </div>
+    <section id="panel" style="display:none;margin-top:16px">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800" id="roomTitle"></div>
+            <div class="small-muted" id="inviteBlock">Invite: <span id="inviteLink"></span></div>
+          </div>
+          <div>
+            <button id="copyBtn" class="btn-ghost">Copy Link</button>
+          </div>
+        </div>
 
-    <div>
-      <h3>Participants</h3>
-      <ul id="participantsList"></ul>
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(0,0,0,0.04)"/>
+
+        <div class="form-row" style="margin-top:6px">
+          <input id="playerName" type="text" placeholder="Player name"/>
+          <input id="playerClub" type="text" placeholder="Club / Nationality"/>
+        </div>
+        <div class="form-row">
+          <input id="playerPosition" type="text" placeholder="Position"/>
+          <input id="playerStyle" type="text" placeholder="Playing style"/>
+        </div>
+        <div class="form-row">
+          <input id="playerValue" type="number" placeholder="Value (number)"/>
+          <input id="playerImage" type="url" placeholder="Image URL (optional)"/>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button id="uploadPlayer" class="btn">Upload Player</button>
+          <button id="startBidding" class="btn btn-ghost">Start Bidding</button>
+          <button id="finalCall" class="btn btn-ghost">Final Call</button>
+        </div>
+
+        <div id="previewArea" class="preview" style="display:none">
+          <div class="preview-image card" id="previewImageWrap" style="padding:0"></div>
+          <div class="preview-info">
+            <div id="previewName" style="font-weight:800"></div>
+            <div class="small-muted" id="previewClub"></div>
+            <div class="small-muted" id="previewPosition"></div>
+            <div class="small-muted" id="previewStyle"></div>
+            <div style="margin-top:8px;font-weight:700" id="previewValue"></div>
+          </div>
+        </div>
+
+        <div class="participants">
+          <h4 style="margin-top:12px">Participants</h4>
+          <ul id="participantsList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="sticky-bottom">
+      <div class="bid-button">
+        <!-- placeholder so layout stays balanced -->
+      </div>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="auctioneer.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="auctioneer.js"></script>
 </body>
 </html>
