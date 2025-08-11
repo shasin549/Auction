@@ -1,15 +1,14 @@
+// auctioneer.js
 const socket = io();
 let currentRoom = null;
 let currentPlayer = null;
 
-function $(id){return document.getElementById(id)}
+const $ = id => document.getElementById(id);
 
-// Create room
 $("createRoom").addEventListener("click", () => {
   const roomName = $("roomName").value || `Room`;
   const participants = $("numParticipants").value || 10;
   const increment = $("bidIncrement").value || 10;
-
   socket.emit("createRoom", { roomName, participants, increment });
 });
 
@@ -22,16 +21,14 @@ socket.on("roomCreated", ({ roomName, roomCode }) => {
   $("roomSub").textContent = `Room: ${roomName}`;
 });
 
-// copy link
 $("copyBtn").addEventListener("click", () => {
   const link = $("inviteLink").textContent;
   if (!link) return;
-  navigator.clipboard.writeText(link).then(()=>alert("Invite link copied"));
+  navigator.clipboard.writeText(link).then(()=>toast("Invite copied"));
 });
 
-// Upload player (optional image)
 $("uploadPlayer").addEventListener("click", () => {
-  if (!currentRoom) return alert("Create a room first");
+  if (!currentRoom) return toast("Create a room first");
   const player = {
     name: $("playerName").value.trim(),
     club: $("playerClub").value.trim(),
@@ -41,8 +38,7 @@ $("uploadPlayer").addEventListener("click", () => {
     image: $("playerImage").value.trim() || null
   };
   if (!player.name || !player.club || !player.position || !player.style || !player.value) {
-    alert("Please fill required fields (value must be a number)");
-    return;
+    return toast("Please fill required fields (value must be a number)");
   }
   currentPlayer = player;
   showPreview(player);
@@ -50,15 +46,15 @@ $("uploadPlayer").addEventListener("click", () => {
 });
 
 function showPreview(p){
-  $("previewArea").style.display = "flex";
+  $("previewArea").classList.remove("hidden");
   $("previewName").textContent = p.name;
   $("previewClub").textContent = p.club;
   $("previewPosition").textContent = p.position;
   $("previewStyle").textContent = p.style;
   $("previewValue").textContent = `Value: ${p.value}`;
 
-  const imgWrap = $("previewImageWrap");
-  imgWrap.innerHTML = "";
+  const wrap = $("previewImageWrap");
+  wrap.innerHTML = "";
   if (p.image) {
     const img = document.createElement("img");
     img.src = p.image;
@@ -66,27 +62,23 @@ function showPreview(p){
     img.style.width = "100%";
     img.style.height = "100%";
     img.style.objectFit = "cover";
-    imgWrap.appendChild(img);
+    wrap.appendChild(img);
   } else {
-    // show a small placeholder (no alert)
-    imgWrap.innerHTML = `<div style="padding:18px;text-align:center;color:var(--muted)">No image</div>`;
+    wrap.innerHTML = `<div style="padding:18px;text-align:center;color:var(--muted)">No image</div>`;
   }
 }
 
-// Start bidding
 $("startBidding").addEventListener("click", () => {
-  if (!currentRoom) return alert("Create room first");
-  if (!currentPlayer) return alert("Upload a player first");
+  if (!currentRoom) return toast("Create room first");
+  if (!currentPlayer) return toast("Upload a player first");
   socket.emit("startBidding", { roomCode: currentRoom });
 });
 
-// Final call
 $("finalCall").addEventListener("click", () => {
   if (!currentRoom) return;
   socket.emit("finalCall", { roomCode: currentRoom });
 });
 
-// update participants list
 socket.on("participantsUpdate", (participants) => {
   const ul = $("participantsList");
   ul.innerHTML = "";
@@ -101,23 +93,22 @@ socket.on("participantsUpdate", (participants) => {
   });
 });
 
-// show call updates, bids, sold
-socket.on("callUpdate", (payload) => {
-  // payload can be {msg, stage}
-  alert(payload.msg || payload);
-});
-
+socket.on("callUpdate", payload => toast(payload.msg || payload));
 socket.on("bidUpdate", ({ highestBid, highestBidder }) => {
-  // small toast
-  console.log("Bid", highestBid, highestBidder);
+  toast(`Bid ${highestBid} by ${highestBidder}`);
+});
+socket.on("playerSold", ({ player, winner, price }) => {
+  toast(`${player.name} sold to ${winner} for ${price}`);
+  // reset preview + form
+  currentPlayer = null;
+  $("previewArea").classList.add("hidden");
+  ["playerName","playerClub","playerPosition","playerStyle","playerValue","playerImage"].forEach(id=>$(id).value="");
 });
 
-// playerSold
-socket.on("playerSold", ({ player, winner, price }) => {
-  alert(`${player.name} SOLD to ${winner} for ${price}`);
-  // clear preview
-  currentPlayer = null;
-  $("previewArea").style.display = "none";
-  // clear form
-  $("playerName").value = $("playerClub").value = $("playerPosition").value = $("playerStyle").value = $("playerValue").value = $("playerImage").value = "";
-});
+function toast(text){
+  const t = document.createElement("div");
+  t.className = "toaster";
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2800);
+}
