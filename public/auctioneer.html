@@ -1,38 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Auctioneer</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Auctioneer Panel</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h2>Create Auction Room</h2>
-    <input id="roomName" placeholder="Room Name">
-    <input id="participants" placeholder="Number of Participants" type="number">
-    <input id="increment" placeholder="Bid Increment" type="number">
-    <button id="createRoom">Create Room</button>
+  <h1>E-Football Card Auction - Auctioneer</h1>
 
-    <div id="auctionPanel" style="display:none;">
-        <h3 id="roomTitle"></h3>
-        <p>Invite Link: <span id="inviteLink"></span></p>
-        
-        <h4>Upload Player</h4>
-        <input id="playerName" placeholder="Name">
-        <input id="playerClub" placeholder="Club/Nationality">
-        <input id="playerPosition" placeholder="Position">
-        <input id="playerStyle" placeholder="Playing Style">
-        <input id="playerValue" type="number" placeholder="Value">
-        <button id="uploadPlayer">Upload Player</button>
+  <div class="create-room">
+    <input type="text" id="roomName" placeholder="Auction Room Name" />
+    <input type="number" id="numParticipants" placeholder="Number of Participants" />
+    <input type="number" id="bidIncrement" placeholder="Bid Increment" />
+    <button id="createRoomBtn">Create Room</button>
+  </div>
 
-        <h4>Current Player</h4>
-        <div id="playerCard"></div>
+  <div id="auctionPanel" style="display:none;">
+    <h2 id="roomInfo"></h2>
+    <p>Invite Link: <span id="inviteLink"></span> <button id="shareBtn">Share</button></p>
 
-        <button id="finalCall">Final Call</button>
-
-        <h4>Participants</h4>
-        <ul id="participantsList"></ul>
+    <div class="player-form">
+      <input type="text" id="playerName" placeholder="Player Name" />
+      <input type="text" id="playerClub" placeholder="Club/Nationality" />
+      <input type="text" id="playerPosition" placeholder="Position" />
+      <input type="text" id="playerStyle" placeholder="Playing Style" />
+      <input type="number" id="playerValue" placeholder="Value" />
+      <input type="url" id="playerImage" placeholder="Image URL (optional)" />
+      <button id="uploadPlayerBtn">Upload Player</button>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="auctioneer.js"></script>
+    <div id="playerPreview" class="card" style="display:none;">
+      <div id="playerImageContainer" style="display:none;">
+        <img id="previewImage" alt="Player Image" style="max-width:200px; border-radius:8px;" />
+      </div>
+      <h3 id="previewName"></h3>
+      <p id="previewClub"></p>
+      <p id="previewPosition"></p>
+      <p id="previewStyle"></p>
+      <p id="previewValue"></p>
+    </div>
+
+    <div class="controls">
+      <button id="startBiddingBtn">Start Bidding</button>
+      <button id="finalCallBtn">Final Call</button>
+    </div>
+
+    <div>
+      <h3>Participants</h3>
+      <ul id="participantsList"></ul>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
