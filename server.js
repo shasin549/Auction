@@ -1,22 +1,97 @@
-const express = require('express');
-const path = require('path');
-const dotenv = require('dotenv');
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables from .env file
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = createServer(app);
+const io = new Server(server);
 
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fallback for all other requests to serve the main index.html
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+let rooms = {}; // Store auction data
+
+io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+
+    socket.on('createRoom', (data) => {
+        const { roomName, participants, increment } = data;
+        rooms[roomName] = {
+            auctioneer: socket.id,
+            participants: [],
+            increment,
+            player: null,
+            highestBid: 0,
+            highestBidder: null,
+            callStage: 0
+        };
+        socket.join(roomName);
+        socket.emit('roomCreated', { roomName });
+    });
+
+    socket.on('joinRoom', ({ roomCode, participantName }) => {
+        if (rooms[roomCode]) {
+            rooms[roomCode].participants.push({
+                id: socket.id,
+                name: participantName,
+                wins: []
+            });
+            socket.join(roomCode);
+            io.to(roomCode).emit('participantsUpdate', rooms[roomCode].participants);
+        }
+    });
+
+    socket.on('uploadPlayer', ({ roomCode, player }) => {
+        rooms[roomCode].player = player;
+        rooms[roomCode].highestBid = player.value;
+        rooms[roomCode].highestBidder = null;
+        io.to(roomCode).emit('playerUpdate', player);
+    });
+
+    socket.on('placeBid', ({ roomCode, bidderName }) => {
+        rooms[roomCode].highestBid += rooms[roomCode].increment;
+        rooms[roomCode].highestBidder = bidderName;
+        rooms[roomCode].callStage = 0;
+        io.to(roomCode).emit('bidUpdate', {
+            highestBid: rooms[roomCode].highestBid,
+            highestBidder: bidderName
+        });
+    });
+
+    socket.on('finalCall', ({ roomCode }) => {
+        let room = rooms[roomCode];
+        if (!room) return;
+
+        room.callStage++;
+        let callMessages = ["First Call!", "Second Call!", "Final Call!"];
+        
+        if (room.callStage < 3) {
+            io.to(roomCode).emit('callUpdate', callMessages[room.callStage - 1]);
+        } else {
+            if (room.highestBidder) {
+                io.to(roomCode).emit('playerSold', {
+                    player: room.player,
+                    winner: room.highestBidder,
+                    price: room.highestBid
+                });
+
+                let winnerData = room.participants.find(p => p.name === room.highestBidder);
+                if (winnerData) {
+                    winnerData.wins.push({
+                        ...room.player,
+                        soldPrice: room.highestBid
+                    });
+                }
+            }
+            room.callStage = 0;
+        }
+    });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+server.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
 });
-
