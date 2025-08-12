@@ -1,14 +1,12 @@
 {
-  "name": "auction-platform",
+  "name": "efootball-auction",
   "version": "1.0.0",
-  "description": "Realtime auction app without database",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "socket.io": "^4.7.1"
+    "socket.io": "^4.7.2"
   }
 }
