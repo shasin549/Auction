@@ -1,51 +1,38 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Bidder — Join Auction</title>
-<link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bidder Panel</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <header class="app-header">
-      <div class="app-title">E-Football Auction — Bidder</div>
-      <div class="app-sub">Enter room code and your name</div>
-    </header>
+  <h1>Bidder Panel</h1>
 
-    <div class="card">
-      <div class="form-row">
-        <input id="bidderName" type="text" placeholder="Your name"/>
-        <input id="roomCode" type="text" placeholder="Room code (or use invite link)"/>
-      </div>
-      <div class="center" style="margin-top:8px">
-        <button id="joinBtn" class="btn">Join Room</button>
-      </div>
-    </div>
-
-    <section id="livePanel" style="display:none;margin-top:16px">
-      <div class="card">
-        <div id="playerBlock">
-          <!-- dynamic player card -->
-        </div>
-
-        <div style="display:flex;gap:10px;margin-top:10px">
-          <button id="placeBid" class="btn">Place Bid</button>
-        </div>
-
-        <div class="bid-history" id="bidHistory">
-          <h4 style="margin-top:12px">Bid History</h4>
-        </div>
-
-        <div style="margin-top:12px">
-          <h4>My Wins</h4>
-          <ul id="myWins"></ul>
-        </div>
-      </div>
-    </section>
-
+  <div>
+    <label>Current Bid: </label><span id="currentBid">0</span>
+  </div>
+  <div>
+    <label>Current Winner: </label><span id="currentWinner">None</span>
   </div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="bidder.js"></script>
+  <div style="margin-top: 10px;">
+    <input type="text" id="username" placeholder="Your name" />
+  </div>
+  <div>
+    <input
+      type="number"
+      id="bidAmount"
+      placeholder="Enter your bid"
+      min="0"
+      step="10"
+    />
+    <button id="placeBidBtn">Place Bid</button>
+  </div>
+
+  <div id="message" style="color: red; margin-top: 10px;"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="bidder.js"></script>
 </body>
 </html>
