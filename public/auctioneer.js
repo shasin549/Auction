@@ -10,7 +10,6 @@ const bidHistoryEl = document.getElementById('bidHistory');
 
 const BID_INCREMENT = 10;
 
-// Initially hide Next Player button
 nextPlayerBtn.classList.add('hidden');
 
 function updateBidDisplay(data) {
