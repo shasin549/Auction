@@ -10,13 +10,15 @@ const bidHistoryEl = document.getElementById('bidHistory');
 
 const BID_INCREMENT = 10;
 
-nextPlayerBtn.style.display = 'none';
+// Initially hide Next Player button
+nextPlayerBtn.classList.add('hidden');
 
 function updateBidDisplay(data) {
   currentBidEl.textContent = data.currentBid;
   currentWinnerEl.textContent = data.currentWinner || 'None';
 
   const logEntry = document.createElement('div');
+  logEntry.classList.add('bid-entry');
   logEntry.textContent = `₹${data.currentBid} by ${data.currentWinner}`;
   bidHistoryEl.appendChild(logEntry);
   bidHistoryEl.scrollTop = bidHistoryEl.scrollHeight;
@@ -45,14 +47,14 @@ placeBidBtn.addEventListener('click', () => {
 
 finalCallBtn.addEventListener('click', () => {
   finalCallBtn.disabled = true;
-  nextPlayerBtn.style.display = 'inline-block';
+  nextPlayerBtn.classList.remove('hidden');
   placeBidBtn.disabled = true;
   newBidInput.disabled = true;
   alert('Final Call! No more bids will be accepted until next player.');
 });
 
 nextPlayerBtn.addEventListener('click', () => {
-  nextPlayerBtn.style.display = 'none';
+  nextPlayerBtn.classList.add('hidden');
   finalCallBtn.disabled = false;
   placeBidBtn.disabled = false;
   newBidInput.disabled = false;
@@ -80,5 +82,5 @@ socket.on('resetAuction', () => {
   finalCallBtn.disabled = false;
   placeBidBtn.disabled = false;
   newBidInput.disabled = false;
-  nextPlayerBtn.style.display = 'none';
+  nextPlayerBtn.classList.add('hidden');
 });
