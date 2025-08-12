@@ -3,49 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bidder</title>
+  <title>Bidder - eFootball Auction</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <header class="app-header">
-      <h1 class="app-title">Bidder</h1>
-    </header>
+  <main class="container">
+    <h1>Bidder Panel</h1>
 
-    <div class="card">
-      <div>
-        <label>Current Bid:</label>
-        <span id="currentBid" class="huge">0</span>
-      </div>
-      <div>
-        <label>Current Winner:</label>
-        <span id="currentWinner" class="small-muted">None</span>
-      </div>
+    <section id="join-room-section" class="card">
+      <h2>Join Auction Room</h2>
 
-      <div class="form-row" style="margin-top: 16px;">
-        <input
-          type="text"
-          id="username"
-          placeholder="Your name"
-          autocomplete="off"
-          class="input"
-        />
-      </div>
-      <div class="form-row">
-        <input
-          type="number"
-          id="bidAmount"
-          placeholder="Enter your bid"
-          min="0"
-          step="10"
-          class="input"
-        />
-        <button class="btn bid-button" id="placeBidBtn">Place Bid</button>
+      <label for="participantName">Your Name</label>
+      <input type="text" id="participantName" placeholder="Enter your name" />
+
+      <label for="roomCodeInput">Room Code</label>
+      <input type="text" id="roomCodeInput" placeholder="Enter room code" maxlength="6" />
+
+      <button id="joinRoomBtn" class="btn btn-primary">Join Room</button>
+    </section>
+
+    <section id="bidding-section" class="card" style="display:none;">
+      <h2>Room: <span id="roomNameDisplay"></span></h2>
+
+      <div id="playersList" class="scrollable card" style="max-height: 350px;"></div>
+
+      <div id="bidSection" style="margin-top: 1rem;">
+        <label for="bidAmount">Place Your Bid</label>
+        <input type="number" id="bidAmount" min="0" />
+        <button id="placeBidBtn" class="btn btn-success">Place Bid</button>
       </div>
 
-      <div id="message" class="small-muted" style="margin-top: 10px; min-height: 20px;"></div>
-    </div>
-  </div>
+      <section style="margin-top: 1.5rem;">
+        <h3>Your Winning Players</h3>
+        <div id="winningPlayersList" class="scrollable card"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="bidder.js"></script>
