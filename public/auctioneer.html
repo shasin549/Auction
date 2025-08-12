@@ -5,49 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Auctioneer Panel</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    #bidHistory {
-      height: 150px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      margin-top: 10px;
-      padding: 5px;
-      background: #fff;
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  </style>
 </head>
 <body>
-  <h1>Auctioneer Panel</h1>
+  <div class="container">
+    <header class="app-header">
+      <h1 class="app-title">Auctioneer Panel</h1>
+      <div class="app-sub">Manage your live auction here</div>
+    </header>
 
-  <div>
-    <label>Current Bid: </label><span id="currentBid">0</span>
-  </div>
-  <div>
-    <label>Current Winner: </label><span id="currentWinner">None</span>
-  </div>
+    <div class="card">
+      <div>
+        <label>Current Bid:</label>
+        <span id="currentBid" class="huge">0</span>
+      </div>
+      <div>
+        <label>Current Winner:</label>
+        <span id="currentWinner" class="small-muted">None</span>
+      </div>
 
-  <div style="margin-top: 10px;">
-    <input
-      type="number"
-      id="newBidAmount"
-      placeholder="Enter new bid amount"
-      min="0"
-      step="10"
-    />
-    <button id="placeBidBtn">Place Bid</button>
-  </div>
+      <div class="form-row" style="margin-top: 16px;">
+        <input
+          type="number"
+          id="newBidAmount"
+          placeholder="Enter new bid amount"
+          min="0"
+          step="10"
+        />
+        <button class="btn bid-button" id="placeBidBtn">Place Bid</button>
+      </div>
 
-  <div style="margin-top: 10px;">
-    <button id="finalCallBtn">Final Call</button>
-    <button id="nextPlayerBtn" style="display: none;">Next Player</button>
-  </div>
+      <div class="controls" style="margin-top: 10px;">
+        <button class="btn" id="finalCallBtn">Final Call</button>
+        <button class="btn btn-ghost hidden" id="nextPlayerBtn">Next Player</button>
+      </div>
 
-  <h3>Bid History</h3>
-  <div id="bidHistory"></div>
+      <h3>Bid History</h3>
+      <div class="bid-history" id="bidHistory"></div>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="auctioneer.js"></script>
