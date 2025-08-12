@@ -1,81 +1,55 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Auctioneer — E-Football</title>
-<link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auctioneer Panel</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #bidHistory {
+      height: 150px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      padding: 5px;
+      background: #fff;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header class="app-header">
-      <div class="app-title">E-Football Auction — Auctioneer</div>
-      <div class="app-sub" id="roomSub">Create room to start</div>
-    </header>
+  <h1>Auctioneer Panel</h1>
 
-    <section id="createSection" class="card">
-      <div class="form-row">
-        <input id="roomName" type="text" placeholder="Room name (e.g. Weekend Auction)"/>
-        <input id="numParticipants" type="number" placeholder="Participants" class="small"/>
-        <input id="bidIncrement" type="number" placeholder="Increment (e.g. 10)" class="small"/>
-      </div>
-      <div class="center" style="margin-top:8px">
-        <button id="createRoom" class="btn">Create Room</button>
-      </div>
-    </section>
-
-    <section id="panel" style="display:none;margin-top:16px">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:800" id="roomTitle"></div>
-            <div class="small-muted" id="inviteBlock">Invite: <span id="inviteLink"></span></div>
-          </div>
-          <div>
-            <button id="copyBtn" class="btn-ghost">Copy Link</button>
-          </div>
-        </div>
-
-        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(0,0,0,0.04)"/>
-
-        <div class="form-row" style="margin-top:6px">
-          <input id="playerName" type="text" placeholder="Player name"/>
-          <input id="playerClub" type="text" placeholder="Club / Nationality"/>
-        </div>
-        <div class="form-row">
-          <input id="playerPosition" type="text" placeholder="Position"/>
-          <input id="playerStyle" type="text" placeholder="Playing style"/>
-        </div>
-        <div class="form-row">
-          <input id="playerValue" type="number" placeholder="Value (number)"/>
-          <input id="playerImage" type="url" placeholder="Image URL (optional)"/>
-        </div>
-
-        <div style="display:flex;gap:10px;margin-top:10px">
-          <button id="uploadPlayer" class="btn">Upload Player</button>
-          <button id="startBidding" class="btn btn-ghost">Start Bidding</button>
-          <button id="finalCall" class="btn btn-ghost">Final Call</button>
-        </div>
-
-        <div id="previewArea" class="preview hidden">
-          <div class="preview-image card" id="previewImageWrap" style="padding:0"></div>
-          <div class="preview-info">
-            <div id="previewName" style="font-weight:800"></div>
-            <div class="small-muted" id="previewClub"></div>
-            <div class="small-muted" id="previewPosition"></div>
-            <div class="small-muted" id="previewStyle"></div>
-            <div style="margin-top:8px;font-weight:700" id="previewValue"></div>
-          </div>
-        </div>
-
-        <div class="participants">
-          <h4 style="margin-top:12px">Participants</h4>
-          <ul id="participantsList"></ul>
-        </div>
-      </div>
-    </section>
+  <div>
+    <label>Current Bid: </label><span id="currentBid">0</span>
+  </div>
+  <div>
+    <label>Current Winner: </label><span id="currentWinner">None</span>
   </div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="auctioneer.js"></script>
+  <div style="margin-top: 10px;">
+    <input
+      type="number"
+      id="newBidAmount"
+      placeholder="Enter new bid amount"
+      min="0"
+      step="10"
+    />
+    <button id="placeBidBtn">Place Bid</button>
+  </div>
+
+  <div style="margin-top: 10px;">
+    <button id="finalCallBtn">Final Call</button>
+    <button id="nextPlayerBtn" style="display: none;">Next Player</button>
+  </div>
+
+  <h3>Bid History</h3>
+  <div id="bidHistory"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
