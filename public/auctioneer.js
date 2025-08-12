@@ -249,4 +249,47 @@ socket.on("new-bid", ({ roomCode: r, bidderName, amount }) => {
     currentPlayer.highestBidder = bidderName;
     highestBidder = bidderName;
     updatePlayersList();
-  } else
+  } else{
+    showToast(`Bid must be at least ${currentPlayer.currentBid + bidIncrement}`, true);
+  }
+});
+
+function updateParticipantsList() {
+  if (participants.length === 0) {
+    participantsListDiv.innerHTML = "<p>No participants joined yet.</p>";
+    return;
+  }
+  participantsListDiv.innerHTML = "";
+  participants.forEach((p) => {
+    const pDiv = document.createElement("div");
+    pDiv.textContent = p;
+    pDiv.className = "card";
+    pDiv.style.cursor = "pointer";
+    pDiv.addEventListener("click", () => {
+      showParticipantWins(p);
+    });
+    participantsListDiv.appendChild(pDiv);
+  });
+}
+
+function showParticipantWins(participant) {
+  const wins = winningPlayersByParticipant[participant] || [];
+  if (wins.length === 0) {
+    participantWinsDiv.innerHTML = `<p>${participant} has not won any players yet.</p>`;
+    return;
+  }
+  participantWinsDiv.innerHTML = "";
+  wins.forEach((player) => {
+    const pDiv = document.createElement("div");
+    pDiv.className = "card";
+    pDiv.innerHTML = `
+      <strong>${player.name}</strong> (${player.club}) - ${player.position} - ${player.style}<br/>
+      Sold for: ${player.currentBid}
+    `;
+    participantWinsDiv.appendChild(pDiv);
+  });
+}
+
+function generateRoomCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
