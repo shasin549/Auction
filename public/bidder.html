@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bidder Panel</title>
+  <title>Bidder</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <header class="app-header">
-      <h1 class="app-title">Bidder Panel</h1>
-      <div class="app-sub">Place your bids live</div>
+      <h1 class="app-title">Bidder</h1>
     </header>
 
     <div class="card">
@@ -29,7 +28,7 @@
           id="username"
           placeholder="Your name"
           autocomplete="off"
-          required
+          class="input"
         />
       </div>
       <div class="form-row">
@@ -39,7 +38,7 @@
           placeholder="Enter your bid"
           min="0"
           step="10"
-          required
+          class="input"
         />
         <button class="btn bid-button" id="placeBidBtn">Place Bid</button>
       </div>
