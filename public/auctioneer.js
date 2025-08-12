@@ -1,37 +1,84 @@
 const socket = io();
 
-// Elements
-const createRoomBtn = document.getElementById("createRoomBtn");
-const inviteLinkContainer = document.getElementById("inviteLinkContainer");
-const inviteLinkInput = document.getElementById("inviteLink");
-const startBiddingBtn = document.getElementById("startBiddingBtn");
-const finalCallBtn = document.getElementById("finalCallBtn");
-const nextPlayerBtn = document.getElementById("nextPlayerBtn");
+const currentBidEl = document.getElementById('currentBid');
+const currentWinnerEl = document.getElementById('currentWinner');
+const newBidInput = document.getElementById('newBidAmount');
+const placeBidBtn = document.getElementById('placeBidBtn');
+const finalCallBtn = document.getElementById('finalCallBtn');
+const nextPlayerBtn = document.getElementById('nextPlayerBtn');
+const bidHistoryEl = document.getElementById('bidHistory');
 
-// Create Room
-createRoomBtn.addEventListener("click", () => {
-    socket.emit("createRoom");
+const BID_INCREMENT = 10;
+
+nextPlayerBtn.style.display = 'none';
+
+function updateBidDisplay(data) {
+  currentBidEl.textContent = data.currentBid;
+  currentWinnerEl.textContent = data.currentWinner || 'None';
+
+  const logEntry = document.createElement('div');
+  logEntry.textContent = `₹${data.currentBid} by ${data.currentWinner}`;
+  bidHistoryEl.appendChild(logEntry);
+  bidHistoryEl.scrollTop = bidHistoryEl.scrollHeight;
+}
+
+function clearBidHistory() {
+  bidHistoryEl.innerHTML = '';
+}
+
+placeBidBtn.addEventListener('click', () => {
+  const bidValue = Number(newBidInput.value);
+
+  if (isNaN(bidValue) || bidValue <= 0) {
+    alert('Please enter a valid positive bid amount.');
+    return;
+  }
+
+  if (bidValue % BID_INCREMENT !== 0) {
+    alert(`Bid amount must be a multiple of ${BID_INCREMENT}.`);
+    return;
+  }
+
+  socket.emit('placeBid', { amount: bidValue, user: 'Auctioneer' });
+  newBidInput.value = '';
 });
 
-socket.on("roomCreated", (roomCode) => {
-    const inviteLink = `${window.location.origin}/bidder.html?room=${roomCode}`;
-    inviteLinkContainer.style.display = "block";
-    inviteLinkInput.value = inviteLink;
+finalCallBtn.addEventListener('click', () => {
+  finalCallBtn.disabled = true;
+  nextPlayerBtn.style.display = 'inline-block';
+  placeBidBtn.disabled = true;
+  newBidInput.disabled = true;
+  alert('Final Call! No more bids will be accepted until next player.');
 });
 
-// Start Bidding
-startBiddingBtn.addEventListener("click", () => {
-    socket.emit("startBidding");
+nextPlayerBtn.addEventListener('click', () => {
+  nextPlayerBtn.style.display = 'none';
+  finalCallBtn.disabled = false;
+  placeBidBtn.disabled = false;
+  newBidInput.disabled = false;
+
+  clearBidHistory();
+  currentBidEl.textContent = '0';
+  currentWinnerEl.textContent = 'None';
+
+  socket.emit('nextPlayer');
 });
 
-// Final Call
-finalCallBtn.addEventListener("click", () => {
-    nextPlayerBtn.style.display = "inline-block";
-    socket.emit("finalCall");
+socket.on('bidUpdate', (data) => {
+  updateBidDisplay(data);
 });
 
-// Next Player
-nextPlayerBtn.addEventListener("click", () => {
-    socket.emit("nextPlayer");
-    nextPlayerBtn.style.display = "none";
+socket.on('bidRejected', (data) => {
+  alert(data.reason || 'Bid rejected by server.');
+});
+
+socket.on('resetAuction', () => {
+  clearBidHistory();
+  currentBidEl.textContent = '0';
+  currentWinnerEl.textContent = 'None';
+
+  finalCallBtn.disabled = false;
+  placeBidBtn.disabled = false;
+  newBidInput.disabled = false;
+  nextPlayerBtn.style.display = 'none';
 });
