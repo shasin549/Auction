@@ -21,36 +21,14 @@
     </div>
   </main>
 
-  <script src="index.js"></script>
-</body>
-</html>
+  <script>
+    document.getElementById("auctioneerBtn").addEventListener("click", () => {
+      window.location.href = "auctioneer.html";
+    });
 
-    <div class="center" style="gap:12px;margin:18px 0">
-      <a class="btn" href="auctioneer.html">I'm an Auctioneer</a>
-      <a class="btn btn-ghost" href="bidder.html">I'm a Bidder</a>
-    </div>
-
-    <section style="margin-top:18px">
-      <h3 style="margin-bottom:10px">Live & Upcoming (demo)</h3>
-      <div class="grid">
-        <div class="card auction-card">
-          <div class="live-badge">Live</div>
-          <div class="auction-thumb"><img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800"/></div>
-          <div class="title">Demo Player A</div>
-          <div class="meta">Club X • Forward</div>
-          <div class="price-row"><div class="small-muted">Current</div><div class="huge">500</div></div>
-        </div>
-
-        <div class="card auction-card">
-          <div class="auction-thumb"><img src="https://images.unsplash.com/photo-1529101091764-c3526daf38fe?q=80&w=800"/></div>
-          <div class="title">Demo Player B</div>
-          <div class="meta">Club Y • Midfielder</div>
-          <div class="price-row"><div class="small-muted">Estimate</div><div class="huge">300</div></div>
-        </div>
-      </div>
-    </section>
-
-    <footer style="margin-top:28px;color:var(--muted);font-size:13px;text-align:center">Made for auction demo</footer>
-  </div>
+    document.getElementById("bidderBtn").addEventListener("click", () => {
+      window.location.href = "bidder.html";
+    });
+  </script>
 </body>
 </html>
