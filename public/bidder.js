@@ -1,59 +1,50 @@
 const socket = io();
-let currentRoom = null;
 
-// Elements
-const joinRoomBtn = document.getElementById("joinRoomBtn");
-const roomCodeInput = document.getElementById("roomCodeInput");
-const playerName = document.getElementById("playerName");
-const playerClub = document.getElementById("playerClub");
-const playerPosition = document.getElementById("playerPosition");
-const playerPrice = document.getElementById("playerPrice");
-const playerImage = document.getElementById("playerImage");
-const bidInput = document.getElementById("bidInput");
-const placeBidBtn = document.getElementById("placeBidBtn");
+const currentBidEl = document.getElementById('currentBid');
+const currentWinnerEl = document.getElementById('currentWinner');
+const usernameInput = document.getElementById('username');
+const bidAmountInput = document.getElementById('bidAmount');
+const placeBidBtn = document.getElementById('placeBidBtn');
+const messageEl = document.getElementById('message');
 
-// Auto-join if invite link contains room
-const urlParams = new URLSearchParams(window.location.search);
-const roomFromLink = urlParams.get("room");
+const BID_INCREMENT = 10;
 
-if (roomFromLink) {
-    currentRoom = roomFromLink;
-    joinRoom(roomFromLink);
-} else {
-    // Manual join
-    joinRoomBtn.addEventListener("click", () => {
-        const roomCode = roomCodeInput.value.trim();
-        if (roomCode) {
-            currentRoom = roomCode;
-            joinRoom(roomCode);
-        }
-    });
-}
+placeBidBtn.addEventListener('click', () => {
+  const user = usernameInput.value.trim();
+  const amount = Number(bidAmountInput.value);
+  messageEl.textContent = '';
 
-// Join Room Function
-function joinRoom(roomCode) {
-    socket.emit("joinRoom", roomCode);
-}
+  if (!user) {
+    messageEl.textContent = 'Please enter your name.';
+    return;
+  }
 
-// Show Player Details When Updated
-socket.on("updatePlayer", (player) => {
-    playerName.textContent = player.name || "Unknown";
-    playerClub.textContent = player.club || "";
-    playerPosition.textContent = player.position || "";
-    playerPrice.textContent = player.price ? `₹${player.price}` : "";
+  if (isNaN(amount) || amount <= 0) {
+    messageEl.textContent = 'Enter a valid bid amount.';
+    return;
+  }
 
-    if (player.image) {
-        playerImage.src = player.image;
-        playerImage.style.display = "block";
-    } else {
-        playerImage.style.display = "none";
-    }
+  if (amount % BID_INCREMENT !== 0) {
+    messageEl.textContent = `Bid amount must be a multiple of ${BID_INCREMENT}.`;
+    return;
+  }
+
+  socket.emit('placeBid', { amount, user });
+  bidAmountInput.value = '';
 });
 
-// Place Bid
-placeBidBtn.addEventListener("click", () => {
-    const bidValue = parseInt(bidInput.value);
-    if (!isNaN(bidValue) && currentRoom) {
-        socket.emit("placeBid", { room: currentRoom, bid: bidValue });
-    }
+socket.on('bidUpdate', (data) => {
+  currentBidEl.textContent = data.currentBid;
+  currentWinnerEl.textContent = data.currentWinner || 'None';
+  messageEl.textContent = '';
+});
+
+socket.on('bidRejected', (data) => {
+  messageEl.textContent = data.reason || 'Bid rejected.';
+});
+
+socket.on('resetAuction', () => {
+  currentBidEl.textContent = '0';
+  currentWinnerEl.textContent = 'None';
+  messageEl.textContent = '';
 });
