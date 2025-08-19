@@ -5,96 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auctioneer</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div class="glass-card">
-    <h2>Auctioneer Panel</h2>
+  <div class="card">
+    <h2>Create Auction Room</h2>
+    <input type="text" id="roomName" placeholder="Enter Room Name">
+    <input type="number" id="numParticipants" placeholder="Number of Participants">
+    <input type="number" id="bidIncrement" placeholder="Bid Increment Value">
+    <button onclick="createRoom()">Create Room</button>
+    
+    <div id="auctionPanel" style="display:none;">
+      <h2>Auctioneer Panel</h2>
+      <label>Player Name</label>
+      <input type="text" id="playerName" placeholder="Enter player name">
 
-    <!-- Room creation form -->
-    <div id="room-setup">
-      <input type="text" id="roomName" placeholder="Enter Room Name">
-      <input type="number" id="participants" placeholder="No of Participants">
-      <input type="number" id="increment" placeholder="Bid Increment">
-      <button id="createRoom">Create Room</button>
+      <label>Club/Nationality</label>
+      <input type="text" id="playerClub" placeholder="Enter club/nationality">
+
+      <label>Position</label>
+      <input type="text" id="playerPosition" placeholder="Enter position">
+
+      <label>Playing Style</label>
+      <input type="text" id="playerStyle" placeholder="Enter playing style">
+
+      <label>Value</label>
+      <input type="number" id="playerValue" placeholder="Enter starting value">
+
+      <button onclick="previewPlayer()">Preview Player</button>
+      <button onclick="startBidding()">Start Bidding</button>
+      <button onclick="finalCall()">Final Call</button>
     </div>
-
-    <!-- Player form (hidden until room is created) -->
-    <div id="player-setup" style="display:none;">
-      <p id="inviteLink"></p>
-      <input type="text" id="playerName" placeholder="Player Name">
-      <input type="text" id="playerClub" placeholder="Club/Nationality">
-      <input type="text" id="playerPosition" placeholder="Position">
-      <input type="text" id="playerStyle" placeholder="Playing Style">
-      <input type="number" id="playerValue" placeholder="Player Value">
-      <button id="setPlayer">Set Player</button>
-      <button id="startBidding">Start Bidding</button>
-      <button id="finalCall">Final Call</button>
-    </div>
-
-    <!-- Live player preview -->
-    <div id="playerPreview"></div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const roomSetup = document.getElementById("room-setup");
-    const playerSetup = document.getElementById("player-setup");
-    const playerPreview = document.getElementById("playerPreview");
-    const inviteLink = document.getElementById("inviteLink");
-
-    let currentRoom = null;
-
-    // Create Room
-    document.getElementById("createRoom").addEventListener("click", () => {
-      const roomName = document.getElementById("roomName").value;
-      const participants = document.getElementById("participants").value;
-      const increment = document.getElementById("increment").value;
-
-      if (roomName && participants && increment) {
-        socket.emit("createRoom", { roomName, participants, increment });
-      }
-    });
-
-    // Room created response
-    socket.on("roomCreated", ({ roomName }) => {
-      currentRoom = roomName;
-      roomSetup.style.display = "none";
-      playerSetup.style.display = "block";
-      inviteLink.innerHTML = `Invite link: <b>${window.location.origin}/bidder.html?room=${roomName}</b>`;
-    });
-
-    // Set Player
-    document.getElementById("setPlayer").addEventListener("click", () => {
-      const player = {
-        name: document.getElementById("playerName").value,
-        club: document.getElementById("playerClub").value,
-        position: document.getElementById("playerPosition").value,
-        style: document.getElementById("playerStyle").value,
-        value: parseInt(document.getElementById("playerValue").value)
-      };
-      socket.emit("setPlayer", { roomName: currentRoom, player });
-    });
-
-    // Show player preview
-    socket.on("playerUpdate", (player) => {
-      playerPreview.innerHTML = `
-        <h3>${player.name}</h3>
-        <p>Club: ${player.club}</p>
-        <p>Position: ${player.position}</p>
-        <p>Style: ${player.style}</p>
-        <p>Value: ${player.value}</p>
-      `;
-    });
-
-    // Final call
-    document.getElementById("finalCall").addEventListener("click", () => {
-      socket.emit("finalCall", { roomName: currentRoom });
-    });
-
-    socket.on("finalCallMade", ({ winner }) => {
-      alert("Auction finished. Winning Bid: " + winner);
-    });
-  </script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
