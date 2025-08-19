@@ -1,14 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Auction Platform</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auction – Home</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="glass">
-    <h2>Welcome to Auction</h2>
-    <button onclick="window.location='auctioneer.html'">Auctioneer</button>
-    <button onclick="window.location='bidder.html'">Bidder</button>
+  <div class="container">
+    <div class="card" style="text-align:center;">
+      <h1>⚡ Live Player Auction</h1>
+      <p>Choose your role to begin.</p>
+      <div class="actions" style="justify-content:center; margin-top:10px;">
+        <button onclick="location.href='auctioneer.html'">Auctioneer</button>
+        <button class="secondary" onclick="location.href='bidder.html'">Bidder</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>
