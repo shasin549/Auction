@@ -1,41 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Auctioneer</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h2>Create Auction Room</h2>
-    <input type="text" id="roomName" placeholder="Enter Room Name">
-    <input type="number" id="numParticipants" placeholder="Number of Participants">
-    <input type="number" id="bidIncrement" placeholder="Bid Increment Value">
-    <button onclick="createRoom()">Create Room</button>
-    
-    <div id="auctionPanel" style="display:none;">
-      <h2>Auctioneer Panel</h2>
-      <label>Player Name</label>
-      <input type="text" id="playerName" placeholder="Enter player name">
+  <div class="container">
 
-      <label>Club/Nationality</label>
-      <input type="text" id="playerClub" placeholder="Enter club/nationality">
+    <!-- Setup -->
+    <div class="card" id="setupCard">
+      <h2>Create Auction Room</h2>
+      <div class="row">
+        <input class="input" id="roomName" placeholder="Room name" />
+        <input class="input" id="participants" type="number" placeholder="No. of participants" />
+      </div>
+      <div class="row">
+        <input class="input" id="increment" type="number" placeholder="Bid increment" />
+        <button id="createRoomBtn">Create Room</button>
+      </div>
 
-      <label>Position</label>
-      <input type="text" id="playerPosition" placeholder="Enter position">
-
-      <label>Playing Style</label>
-      <input type="text" id="playerStyle" placeholder="Enter playing style">
-
-      <label>Value</label>
-      <input type="number" id="playerValue" placeholder="Enter starting value">
-
-      <button onclick="previewPlayer()">Preview Player</button>
-      <button onclick="startBidding()">Start Bidding</button>
-      <button onclick="finalCall()">Final Call</button>
+      <div id="inviteWrap" style="display:none; margin-top:14px;">
+        <div class="badge">Room created · share invite</div>
+        <div class="invite" style="margin-top:10px;">
+          <input id="inviteLink" readonly />
+          <button class="copy" id="copyBtn">Copy</button>
+        </div>
+      </div>
     </div>
+
+    <!-- Auction panel -->
+    <div class="card" id="panelCard" style="display:none;">
+      <h2>Auctioneer Panel</h2>
+
+      <div class="row">
+        <input class="input" id="playerName" placeholder="Player name" />
+        <input class="input" id="playerClub" placeholder="Club / Nationality" />
+      </div>
+      <div class="row">
+        <input class="input" id="playerPosition" placeholder="Position" />
+        <input class="input" id="playerStyle" placeholder="Playing style" />
+      </div>
+      <div class="row">
+        <input class="input" id="playerValue" type="number" placeholder="Starting value" />
+        <button id="startBtn">Start Bidding</button>
+      </div>
+
+      <div class="list">
+        <h3 style="margin:0 0 8px 0;">Live Preview</h3>
+        <div id="preview">Waiting for player...</div>
+        <div id="liveBids" style="margin-top:8px; opacity:.9;"></div>
+      </div>
+
+      <div class="actions" style="margin-top:12px;">
+        <button class="secondary" id="finalBtn">Final Call</button>
+      </div>
+    </div>
+
   </div>
 
   <script src="auctioneer.js"></script>
