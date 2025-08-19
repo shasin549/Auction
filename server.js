@@ -1,6 +1,6 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
@@ -36,7 +36,7 @@ io.on("connection", (socket) => {
 
   // Start Bidding
   socket.on("startBidding", ({ roomName, player }) => {
-    rooms[roomName].bids = []; // reset bids for player
+    rooms[roomName].bids = []; // reset bids for this player
     io.to(roomName).emit("playerData", player);
   });
 
@@ -53,6 +53,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("🚀 Server running at http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
