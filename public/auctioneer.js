@@ -4,74 +4,85 @@ let currentRoom = null;
 // Elements
 const createRoomPanel = document.getElementById("createRoomPanel");
 const auctionPanel = document.getElementById("auctionPanel");
-const auctioneerNameInput = document.getElementById("auctioneerName");
-const maxParticipantsInput = document.getElementById("maxParticipants");
-const bidIncrementInput = document.getElementById("bidIncrement");
 const createRoomBtn = document.getElementById("createRoomBtn");
+const roomNameInput = document.getElementById("roomName");
+const participantsInput = document.getElementById("participants");
+const incrementInput = document.getElementById("increment");
 const inviteLink = document.getElementById("inviteLink");
 
-const roomCodeDisplay = document.getElementById("roomCode");
-const participantCount = document.getElementById("participantCount");
-const maxCount = document.getElementById("maxCount");
-
-const playerNameInput = document.getElementById("playerName");
-const playerClubInput = document.getElementById("playerClub");
-const playerPositionInput = document.getElementById("playerPosition");
-const playerStyleInput = document.getElementById("playerStyle");
-const playerValueInput = document.getElementById("playerValue");
-const startBiddingBtn = document.getElementById("startBiddingBtn");
-
+const roomDisplay = document.getElementById("roomDisplay");
 const playerPreview = document.getElementById("playerPreview");
+const startBiddingBtn = document.getElementById("startBiddingBtn");
 const finalCallBtn = document.getElementById("finalCallBtn");
 const nextPlayerBtn = document.getElementById("nextPlayerBtn");
+const auctionBids = document.getElementById("auctionBids");
 
-// --- Create Room ---
+// Create Room
 createRoomBtn.addEventListener("click", () => {
-  const name = auctioneerNameInput.value.trim();
-  const maxParticipants = parseInt(maxParticipantsInput.value, 10);
-  const increment = parseInt(bidIncrementInput.value, 10);
+  const room = roomNameInput.value.trim();
+  const participants = parseInt(participantsInput.value, 10);
+  const increment = parseInt(incrementInput.value, 10);
 
-  if (!name || !maxParticipants || !increment) {
-    alert("Please fill all details!");
+  if (!room || !participants || !increment) {
+    alert("Please enter room name, participants, and increment!");
     return;
   }
 
-  socket.emit("createRoom", { name, maxParticipants, increment });
-});
-
-socket.on("roomCreated", ({ room, maxParticipants, increment }) => {
   currentRoom = room;
+  socket.emit("createRoom", { room, participants, increment });
 
-  createRoomPanel.style.display = "none";
-  auctionPanel.style.display = "block";
+  // Show invite link
+  const link = `${window.location.origin}/bidder.html?room=${room}`;
+  inviteLink.textContent = `Invite Link: ${link}`;
+  inviteLink.style.cursor = "pointer";
+  inviteLink.onclick = () => navigator.clipboard.writeText(link);
 
-  roomCodeDisplay.textContent = currentRoom;
-  maxCount.textContent = maxParticipants;
+  // Switch panels
+  createRoomPanel.classList.add("hidden");
+  auctionPanel.classList.remove("hidden");
 
-  inviteLink.innerHTML = `
-    Share this link: 
-    <a href="${window.location.origin}/bidder.html?room=${currentRoom}">
-      ${window.location.origin}/bidder.html?room=${currentRoom}
-    </a>
+  roomDisplay.textContent = room;
+});
+
+// Show player details
+socket.on("playerDetails", (player) => {
+  playerPreview.innerHTML = `
+    <strong>${player.name} (${player.club})</strong><br>
+    Position: ${player.position}<br>
+    Style: ${player.style}<br>
+    Start Value: ${player.value}
   `;
-
-  socket.emit("setIncrement", { room: currentRoom, increment });
 });
 
-// --- Update participant count ---
-socket.on("updateParticipants", (count) => {
-  participantCount.textContent = count;
+// New bid
+socket.on("newBid", (data) => {
+  const li = document.createElement("li");
+  li.textContent = `${data.name}: ${data.amount}`;
+  li.dataset.amount = data.amount;
+
+  const items = Array.from(auctionBids.children);
+  const insertIndex = items.findIndex(item => parseInt(item.dataset.amount, 10) < data.amount);
+
+  if (insertIndex === -1) {
+    auctionBids.appendChild(li);
+  } else {
+    auctionBids.insertBefore(li, items[insertIndex]);
+  }
 });
 
-// --- Start bidding for a player ---
+// Bidding controls
 startBiddingBtn.addEventListener("click", () => {
-  const player = {
-    name: playerNameInput.value.trim(),
-    club: playerClubInput.value.trim(),
-    position: playerPositionInput.value.trim(),
-    style: playerStyleInput.value.trim(),
-    value: parseInt(playerValueInput.value, 10) || 0,
-  };
+  socket.emit("startBidding", { room: currentRoom });
+});
 
-  if (!player.name || !player.club || !player.position) {
-    alert("Please
+finalCallBtn.addEventListener("click", () => {
+  socket.emit("finalCall", { room: currentRoom });
+  nextPlayerBtn.classList.remove("hidden");
+});
+
+nextPlayerBtn.addEventListener("click", () => {
+  socket.emit("nextPlayer", { room: currentRoom });
+  playerPreview.innerHTML = "";
+  auctionBids.innerHTML = "";
+  nextPlayerBtn.classList.add("hidden");
+});
