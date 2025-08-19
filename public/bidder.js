@@ -1,48 +1,71 @@
 const socket = io();
-let roomCode = null;
-let bidderName = null;
-let bidIncrement = 0;
 
-document.getElementById("joinRoomBtn").addEventListener("click", () => {
-  roomCode = document.getElementById("roomCode").value;
-  bidderName = document.getElementById("bidderName").value;
-  socket.emit("joinRoom", { roomCode, bidderName });
-});
+let roomCode = "";
+let participantName = "";
+let currentIncrement = 0;
 
-socket.on("roomJoined", ({ success, roomCode: joinedRoom }) => {
-  if (success) {
-    document.getElementById("auctionSection").style.display = "block";
-  } else {
-    alert("Room not found!");
+// autofill room from invite link
+const params = new URLSearchParams(window.location.search);
+if (params.has("room")) {
+  document.getElementById("roomCode").value = params.get("room");
+}
+
+document.getElementById("joinBtn").addEventListener("click", () => {
+  participantName = document.getElementById("participantName").value.trim();
+  roomCode = document.getElementById("roomCode").value.trim();
+  if (!participantName || !roomCode) {
+    alert("Enter your name and room code.");
+    return;
   }
+  socket.emit("joinRoom", { roomCode, participantName });
 });
 
-socket.on("biddingStarted", (player) => {
-  document.getElementById("currentPlayer").innerText = 
-    `${player.name} - ${player.club} - ${player.position} - ${player.style} - Value: ${player.value}`;
+socket.on("roomJoined", ({ roomCode: joined, roomName, increment }) => {
+  // show live card
+  document.getElementById("liveCard").style.display = "block";
+  // store increment
+  currentIncrement = increment || 0;
 });
 
-document.getElementById("placeBidBtn").addEventListener("click", () => {
-  let manualBid = document.getElementById("manualBid").value;
-  let bidAmount = manualBid ? parseInt(manualBid) : null;
+// If bidding started, show preview and current bid
+socket.on("biddingStarted", ({ player, currentBid, increment }) => {
+  document.getElementById("playerTitle").innerHTML = `<strong>${player.name}</strong> <div class="small">${player.club} · ${player.position} · ${player.style}</div>`;
+  document.getElementById("currentBid").textContent = currentBid;
+  // clean list
+  document.getElementById("bidList").innerHTML = "";
+  currentIncrement = increment || 0;
+});
 
-  if (!bidAmount) {
-    // fallback to increment-based bidding
-    const highest = document.querySelector("#bidList li:first-child");
-    let highestBid = highest ? parseInt(highest.dataset.amount) : 0;
-    bidAmount = highestBid + parseInt(bidIncrement || 1);
+// Place bid by increment
+document.getElementById("placeIncrementBtn").addEventListener("click", () => {
+  // signal server to use increment (server will compute)
+  socket.emit("placeBid", { roomCode, bidderName: participantName, bidAmount: null, useIncrement: true });
+});
+
+// Place manual
+document.getElementById("placeManualBtn").addEventListener("click", () => {
+  const val = document.getElementById("manualBid").value;
+  if (!val) {
+    alert("Enter a bid value or use Increment.");
+    return;
   }
-
-  socket.emit("placeBid", { roomCode, bidderName, bidAmount });
+  socket.emit("placeBid", { roomCode, bidderName: participantName, bidAmount: parseInt(val, 10), useIncrement: false });
 });
 
-socket.on("bidPlaced", (bids) => {
-  const bidList = document.getElementById("bidList");
-  bidList.innerHTML = "";
-  bids.forEach((bid) => {
+// Update bids list
+socket.on("bidsUpdated", ({ bids, currentBid }) => {
+  const ul = document.getElementById("bidList");
+  ul.innerHTML = "";
+  bids.forEach((b, idx) => {
     const li = document.createElement("li");
-    li.innerText = `${bid.bidderName}: ${bid.bidAmount}`;
-    li.dataset.amount = bid.bidAmount;
-    bidList.appendChild(li);
+    li.className = idx === 0 ? "top" : "";
+    li.innerHTML = `<span>${b.bidderName}</span><span>${b.bidAmount}</span>`;
+    ul.appendChild(li);
   });
+  document.getElementById("currentBid").textContent = currentBid;
+});
+
+// Final result
+socket.on("finalResult", ({ winner, player, finalBid }) => {
+  document.getElementById("playerTitle").innerHTML = `<strong>${player ? player.name : "—"}</strong> — Sold for ${finalBid} to ${winner ? winner.bidderName : "No one"}`;
 });
