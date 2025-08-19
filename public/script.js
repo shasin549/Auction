@@ -1,138 +1,107 @@
 const socket = io();
 
-const joinRoomSection = document.getElementById("join-room-section");
-const biddingSection = document.getElementById("bidding-section");
+// ---- UI Navigation ----
+function showSection(id) {
+  document.getElementById("landing").style.display = "none";
+  document.getElementById("auctioneer").style.display = "none";
+  document.getElementById("bidder").style.display = "none";
+  document.getElementById(id).style.display = "block";
+}
 
-const participantNameInput = document.getElementById("participantName");
-const roomCodeInput = document.getElementById("roomCodeInput");
+// ---- Auctioneer Logic ----
+const createRoomBtn = document.getElementById("createRoomBtn");
+const startBiddingBtn = document.getElementById("startBiddingBtn");
+const finalCallBtn = document.getElementById("finalCallBtn");
+
+let roomCode, callStage = 0;
+
+if (createRoomBtn) {
+  createRoomBtn.onclick = () => {
+    const roomName = document.getElementById("roomName").value;
+    const participants = document.getElementById("participants").value;
+    const bidIncrement = document.getElementById("bidIncrement").value;
+
+    socket.emit("createRoom", { roomName, participants, bidIncrement }, (code) => {
+      roomCode = code;
+      document.getElementById("roomDisplay").innerText = roomName;
+      document.getElementById("inviteLink").innerText = window.location.origin + "/index.html?room=" + code;
+      document.getElementById("room-setup").style.display = "none";
+      document.getElementById("auction-controls").style.display = "block";
+    });
+  };
+
+  startBiddingBtn.onclick = () => {
+    const player = {
+      name: document.getElementById("playerName").value,
+      club: document.getElementById("playerClub").value,
+      position: document.getElementById("playerPosition").value,
+      style: document.getElementById("playerStyle").value,
+      value: parseInt(document.getElementById("playerValue").value)
+    };
+    callStage = 0;
+    socket.emit("startBidding", { roomCode, player });
+  };
+
+  finalCallBtn.onclick = () => {
+    callStage++;
+    if (callStage === 1) {
+      document.getElementById("callStatus").innerText = "First Call!";
+    } else if (callStage === 2) {
+      document.getElementById("callStatus").innerText = "Second Call!";
+    } else {
+      socket.emit("finalizeSale", roomCode);
+      document.getElementById("callStatus").innerText = "Player Sold!";
+      callStage = 0;
+    }
+  };
+
+  socket.on("participantsUpdate", (list) => {
+    const ul = document.getElementById("participantsList");
+    ul.innerHTML = "";
+    list.forEach(p => {
+      const li = document.createElement("li");
+      li.innerText = p.name;
+      ul.appendChild(li);
+    });
+  });
+}
+
+// ---- Bidder Logic ----
 const joinRoomBtn = document.getElementById("joinRoomBtn");
-
-const roomNameDisplay = document.getElementById("roomNameDisplay");
-const playersListDiv = document.getElementById("playersList");
-
-const bidAmountInput = document.getElementById("bidAmount");
 const placeBidBtn = document.getElementById("placeBidBtn");
 
-const winningPlayersList = document.getElementById("winningPlayersList");
-const toast = document.getElementById("toast");
+let myName;
 
-let participantName = "";
-let roomCode = "";
-let bidIncrement = 1;
-let players = [];
-let winningPlayers = [];
+if (joinRoomBtn) {
+  joinRoomBtn.onclick = () => {
+    myName = document.getElementById("name").value;
+    roomCode = document.getElementById("roomCode").value;
+    socket.emit("joinRoom", { name: myName, roomCode }, (success) => {
+      if (success) {
+        document.getElementById("auction-area").style.display = "block";
+      } else {
+        alert("Room not found!");
+      }
+    });
+  };
 
-function showToast(message, isError = false) {
-  toast.textContent = message;
-  toast.style.backgroundColor = isError ? "var(--color-danger)" : "var(--color-success)";
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 3000);
-}
+  placeBidBtn.onclick = () => {
+    socket.emit("placeBid", { roomCode, name: myName });
+  };
 
-joinRoomBtn.addEventListener("click", () => {
-  participantName = participantNameInput.value.trim();
-  roomCode = roomCodeInput.value.trim().toUpperCase();
-
-  if (!participantName) return showToast("Enter your name", true);
-  if (!roomCode || roomCode.length !== 6) return showToast("Enter a valid 6-character room code", true);
-
-  socket.emit("join-room", { participantName, roomCode });
-});
-
-socket.on("room-joined", ({ roomName, bidIncrement: inc, players: currentPlayers }) => {
-  roomNameDisplay.textContent = roomName;
-  bidIncrement = inc;
-  players = currentPlayers;
-
-  joinRoomSection.style.display = "none";
-  biddingSection.style.display = "block";
-
-  updatePlayersList();
-  updateWinningPlayersList();
-
-  showToast(`Joined room: ${roomName}`);
-});
-
-socket.on("room-join-error", (message) => {
-  showToast(message, true);
-});
-
-socket.on("update-players", ({ players: updatedPlayers }) => {
-  players = updatedPlayers;
-  updatePlayersList();
-});
-
-socket.on("player-sold", ({ player, highestBidder }) => {
-  if (highestBidder === participantName) {
-    winningPlayers.push(player);
-    updateWinningPlayersList();
-    showToast(`You won player ${player.name} for ${player.currentBid}!`);
-  } else {
-    showToast(`Player ${player.name} sold to ${highestBidder} for ${player.currentBid}`);
-  }
-});
-
-function updatePlayersList() {
-  if (players.length === 0) {
-    playersListDiv.innerHTML = "<p>No players available yet.</p>";
-    return;
-  }
-
-  playersListDiv.innerHTML = "";
-  players.forEach((p) => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <strong>${p.name}</strong> (${p.club})<br/>
-      Position: ${p.position} | Style: ${p.style}<br/>
-      Current Bid: ${p.currentBid} | Sold: ${p.sold ? "Yes" : "No"}
-    `;
-    playersListDiv.appendChild(div);
-  });
-}
-
-placeBidBtn.addEventListener("click", () => {
-  const amount = parseInt(bidAmountInput.value);
-  if (isNaN(amount)) return showToast("Enter a valid bid amount", true);
-
-  const currentPlayer = players.find((p) => !p.sold);
-  if (!currentPlayer) return showToast("No active player to bid on", true);
-
-  if (amount < currentPlayer.currentBid + bidIncrement) {
-    return showToast(`Bid must be at least ${currentPlayer.currentBid + bidIncrement}`, true);
-  }
-
-  socket.emit("place-bid", {
-    roomCode,
-    bidderName: participantName,
-    amount,
+  socket.on("newPlayer", (player) => {
+    document.getElementById("playerDetails").innerText =
+      `${player.name} (${player.club}) - ${player.position}, ${player.style}, Value: ${player.value}`;
+    document.getElementById("highestBid").innerText = player.value;
   });
 
-  bidAmountInput.value = "";
-  showToast(`Bid placed: ${amount}`);
-});
+  socket.on("updateBid", (bid) => {
+    document.getElementById("highestBid").innerText = bid;
+  });
 
-function updateWinningPlayersList() {
-  if (winningPlayers.length === 0) {
-    winningPlayersList.innerHTML = "<p>You have no winning players yet.</p>";
-    return;
-  }
-
-  winningPlayersList.innerHTML = "";
-  winningPlayers.forEach((player) => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <strong>${player.name}</strong> (${player.club}) - ${player.position} - ${player.style}<br/>
-      Sold for: ${player.currentBid}
-    `;
-    winningPlayersList.appendChild(div);
+  socket.on("playerWon", (player) => {
+    const li = document.createElement("li");
+    li.innerText = `${player.name} (${player.club}) - ${player.value}`;
+    document.getElementById("myPlayers").appendChild(li);
   });
 }
-
-// Notify server participant left on window unload
-window.addEventListener("beforeunload", () => {
-  if (participantName && roomCode) {
-    socket.emit("leave-room", { participantName, roomCode });
-  }
-});
