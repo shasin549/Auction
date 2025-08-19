@@ -1,7 +1,13 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
+// server.js (ESM compatible for Node 22+)
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Fix __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -9,58 +15,86 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-let rooms = {}; // store auction data
+let rooms = {}; // Store auction data
 
 io.on("connection", (socket) => {
-  console.log("New client connected");
+  console.log("A user connected:", socket.id);
 
   // Auctioneer creates room
   socket.on("createRoom", ({ roomName, participants, increment }) => {
     rooms[roomName] = {
-      participants,
-      increment,
-      players: [],
-      bidders: []
+      participants: [],
+      increment: increment,
+      currentBid: 0,
+      currentPlayer: null,
+      auctioneer: socket.id,
     };
     socket.join(roomName);
-    socket.emit("roomCreated", { roomName });
+    io.to(socket.id).emit("roomCreated", { roomName });
+    console.log(`Room created: ${roomName}`);
   });
 
   // Bidder joins room
-  socket.on("joinRoom", ({ roomName, bidderName }) => {
+  socket.on("joinRoom", ({ roomName, participantName }) => {
     if (rooms[roomName]) {
-      rooms[roomName].bidders.push(bidderName);
+      rooms[roomName].participants.push({
+        id: socket.id,
+        name: participantName,
+      });
       socket.join(roomName);
-      socket.emit("roomJoined", { roomName });
+      io.to(roomName).emit("participantJoined", {
+        name: participantName,
+        participants: rooms[roomName].participants,
+      });
+      console.log(`${participantName} joined ${roomName}`);
     } else {
-      socket.emit("errorMsg", "Room not found");
+      io.to(socket.id).emit("error", { message: "Room not found" });
     }
   });
 
-  // Auctioneer adds player
-  socket.on("addPlayer", (data) => {
-    const { roomName, player } = data;
+  // Auctioneer sets player details
+  socket.on("setPlayer", ({ roomName, player }) => {
     if (rooms[roomName]) {
-      rooms[roomName].players.push(player);
-      io.to(roomName).emit("newPlayer", player);
+      rooms[roomName].currentPlayer = player;
+      rooms[roomName].currentBid = player.value;
+      io.to(roomName).emit("playerUpdate", player);
     }
   });
 
-  // Start bidding
-  socket.on("startBidding", ({ roomName }) => {
-    io.to(roomName).emit("biddingStarted");
+  // Bidding
+  socket.on("placeBid", ({ roomName, bidValue, bidder }) => {
+    if (rooms[roomName]) {
+      if (bidValue > rooms[roomName].currentBid) {
+        rooms[roomName].currentBid = bidValue;
+        io.to(roomName).emit("newBid", {
+          bidder,
+          bid: bidValue,
+        });
+      }
+    }
   });
 
-  // Bid submitted
-  socket.on("placeBid", ({ roomName, bidder, bid }) => {
-    io.to(roomName).emit("newBid", { bidder, bid });
-  });
-
-  // Final call
+  // Auctioneer final call
   socket.on("finalCall", ({ roomName }) => {
-    io.to(roomName).emit("finalCall");
+    if (rooms[roomName]) {
+      io.to(roomName).emit("finalCallMade", {
+        winner: rooms[roomName].currentBid,
+      });
+    }
+  });
+
+  // Disconnect
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+    for (let room in rooms) {
+      rooms[room].participants = rooms[room].participants.filter(
+        (p) => p.id !== socket.id
+      );
+    }
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
