@@ -8,18 +8,27 @@
 <body>
   <div class="container">
     <h2>Join Auction Room</h2>
-    <input type="text" placeholder="Participant Name">
-    <input type="text" placeholder="Room Code">
-    <button>Join Room</button>
+    <input type="text" id="participantName" placeholder="Participant Name">
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <button onclick="joinRoom()">Join Room</button>
 
     <hr style="margin:20px 0; border:0; border-top:1px solid rgba(255,255,255,0.3);">
 
-    <h2>Live Auction</h2>
-    <p><strong>Player:</strong> Waiting...</p>
-    <p><strong>Current Bid:</strong> None</p>
+    <div id="auction-screen" style="display:none;">
+      <h2>Live Auction</h2>
+      <p><strong>Player:</strong> <span id="livePlayerName">Waiting...</span></p>
+      <p><strong>Club:</strong> <span id="livePlayerClub">---</span></p>
+      <p><strong>Position:</strong> <span id="livePlayerPosition">---</span></p>
+      <p><strong>Style:</strong> <span id="livePlayerStyle">---</span></p>
+      <p><strong>Value:</strong> $<span id="livePlayerValue">---</span></p>
 
-    <input type="number" placeholder="Enter Bid Value">
-    <button>Place Bid</button>
+      <h3>Current Highest Bid: $<span id="highestBid">0</span></h3>
+
+      <input type="number" id="customBid" placeholder="Enter Bid Value">
+      <button onclick="placeBid()">Place Bid</button>
+    </div>
   </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="bidder.js"></script>
 </body>
 </html>
