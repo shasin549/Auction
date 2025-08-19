@@ -1,57 +1,93 @@
+/* --- Global --- */
 body {
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
   margin: 0;
-  padding: 20px;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+/* --- Glass effect --- */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.4);
   text-align: center;
+  width: 90%;
+  max-width: 500px;
 }
 
-.landing {
-  margin-top: 100px;
+/* Landing */
+.landing h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
 }
-
-h1 {
+.subtitle {
+  opacity: 0.8;
   margin-bottom: 20px;
 }
 
+/* Buttons */
 .btn {
   display: inline-block;
+  margin: 8px;
   padding: 12px 20px;
-  margin: 10px;
-  background: #007bff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00c6ff, #0072ff);
   color: white;
   text-decoration: none;
-  border-radius: 8px;
-  transition: 0.2s;
-}
-
-.btn:hover {
-  background: #0056b3;
-}
-
-input, button {
-  padding: 10px;
-  margin: 5px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-button {
-  background: #28a745;
-  color: white;
+  font-weight: bold;
+  border: none;
   cursor: pointer;
+  transition: 0.3s;
+}
+.btn:hover {
+  opacity: 0.85;
+}
+.btn.warn {
+  background: linear-gradient(135deg, #ff512f, #dd2476);
+}
+.btn.ghost {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
-button:hover {
-  background: #218838;
+/* Inputs */
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
 }
 
-#bidderBids {
+/* Preview */
+.preview-card {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.4);
+  text-align: left;
+}
+
+/* Bid list */
+.bid-list {
   list-style: none;
   padding: 0;
+  margin: 20px 0;
 }
-
-#bidderBids li {
-  padding: 6px;
-  border-bottom: 1px solid #ccc;
+.bid-list li {
+  background: rgba(255,255,255,0.1);
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 8px;
 }
