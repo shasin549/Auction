@@ -6,29 +6,32 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="createPanel" class="panel">
+  <div class="center-panel" id="createPanel">
     <h2>Create Room</h2>
     <input type="text" id="roomCode" placeholder="Room Code">
     <input type="number" id="increment" placeholder="Bid Increment">
+    <input type="number" id="numParticipants" placeholder="Number of Participants">
     <button id="createBtn" class="btn">Create Room</button>
   </div>
 
-  <div id="auctionPanel" class="panel" style="display:none;">
-    <h2>Auctioneer Panel</h2>
-    <p><strong>Invite Bidders:</strong> <span id="inviteLink"></span></p>
+  <div class="center-panel hidden" id="auctionPanel">
+    <h2>Auction Panel</h2>
+    <p><strong>Invite Link:</strong> <span id="inviteLink"></span></p>
 
     <h3>Add Player</h3>
-    <input type="text" id="playerName" placeholder="Player Name">
-    <input type="text" id="playerClub" placeholder="Club/Nationality">
-    <input type="text" id="playerPosition" placeholder="Position">
-    <input type="text" id="playerStyle" placeholder="Playing Style">
-    <input type="number" id="playerValue" placeholder="Base Value">
-    <button id="addPlayerBtn" class="btn">Add Player</button>
+    <div class="grid-2">
+      <input type="text" id="playerName" placeholder="Player Name">
+      <input type="text" id="playerClub" placeholder="Club/Nationality">
+      <input type="text" id="playerPosition" placeholder="Position">
+      <input type="text" id="playerStyle" placeholder="Playing Style">
+      <input type="number" id="playerValue" placeholder="Base Value">
+    </div>
+    <button id="addPlayerBtn" class="btn alt">Add Player</button>
 
-    <button id="startAuctionBtn" class="btn">Start Auction</button>
+    <button id="startAuctionBtn" class="btn warn">Start Auction</button>
 
     <h3>Current Player</h3>
-    <div id="currentPlayer"></div>
+    <div class="preview" id="currentPlayer"></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
