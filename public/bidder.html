@@ -6,23 +6,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="joinPanel" class="panel">
+  <div class="center-panel" id="joinPanel">
     <h2>Join Auction</h2>
     <input type="text" id="roomCode" placeholder="Room Code">
     <input type="text" id="bidderName" placeholder="Your Name">
     <button id="joinBtn" class="btn">Join Room</button>
   </div>
 
-  <div id="bidderPanel" class="panel" style="display:none;">
+  <div class="center-panel hidden" id="bidderPanel">
     <h2>Bidder Panel</h2>
-    <div id="currentPlayer"></div>
+    <div class="preview" id="currentPlayer"></div>
 
     <h3>Place Your Bid</h3>
     <input type="number" id="manualBid" placeholder="Enter Bid">
-    <button id="placeBidBtn" class="btn">Place Bid</button>
+    <button id="placeBidBtn" class="btn alt">Place Bid</button>
 
     <h3>All Bids</h3>
-    <ul id="bidderBids"></ul>
+    <ul class="list" id="bidderBids"></ul>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
