@@ -5,88 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bidder</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div class="glass-card">
-    <h2>Bidder Panel</h2>
+  <div class="card">
+    <h2>Join Auction Room</h2>
+    <input type="text" id="roomCode" placeholder="Enter Room Code">
+    <input type="text" id="participantName" placeholder="Enter Your Name">
+    <button onclick="joinRoom()">Join Room</button>
+    
+    <div id="bidderPanel" style="display:none;">
+      <h2>Live Auction</h2>
+      <div id="playerPreview">
+        <p><b>Player:</b> <span id="livePlayerName"></span></p>
+        <p><b>Club:</b> <span id="livePlayerClub"></span></p>
+        <p><b>Position:</b> <span id="livePlayerPosition"></span></p>
+        <p><b>Style:</b> <span id="livePlayerStyle"></span></p>
+        <p><b>Value:</b> <span id="livePlayerValue"></span></p>
+      </div>
 
-    <!-- Join form -->
-    <div id="joinRoom">
-      <input type="text" id="participantName" placeholder="Your Name">
-      <input type="text" id="roomCode" placeholder="Room Code">
-      <button id="joinBtn">Join Room</button>
-    </div>
-
-    <!-- Auction view -->
-    <div id="auctionView" style="display:none;">
-      <h3>Current Player</h3>
-      <div id="playerDetails"></div>
-
-      <h3>Current Bid</h3>
-      <div id="currentBid">No bids yet</div>
-
-      <input type="number" id="bidValue" placeholder="Enter Bid Value">
-      <button id="placeBid">Place Bid</button>
+      <h3>Current Bid: <span id="currentBid">0</span></h3>
+      <input type="number" id="bidValue" placeholder="Enter your bid">
+      <button onclick="placeBid()">Place Bid</button>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let currentRoom = null;
-    let participantName = null;
-
-    // Auto-fill room code if joined via invite link
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("room")) {
-      document.getElementById("roomCode").value = urlParams.get("room");
-    }
-
-    // Join room
-    document.getElementById("joinBtn").addEventListener("click", () => {
-      participantName = document.getElementById("participantName").value;
-      currentRoom = document.getElementById("roomCode").value;
-      if (participantName && currentRoom) {
-        socket.emit("joinRoom", { roomName: currentRoom, participantName });
-        document.getElementById("joinRoom").style.display = "none";
-        document.getElementById("auctionView").style.display = "block";
-      }
-    });
-
-    // Update player details
-    socket.on("playerUpdate", (player) => {
-      document.getElementById("playerDetails").innerHTML = `
-        <h4>${player.name}</h4>
-        <p>Club: ${player.club}</p>
-        <p>Position: ${player.position}</p>
-        <p>Style: ${player.style}</p>
-        <p>Value: ${player.value}</p>
-      `;
-      document.getElementById("currentBid").innerText = player.value;
-    });
-
-    // New bid received
-    socket.on("newBid", ({ bidder, bid }) => {
-      document.getElementById("currentBid").innerText =
-        `${bidder} bid: ${bid}`;
-    });
-
-    // Place bid
-    document.getElementById("placeBid").addEventListener("click", () => {
-      const bidValue = parseInt(document.getElementById("bidValue").value);
-      if (bidValue && currentRoom) {
-        socket.emit("placeBid", {
-          roomName: currentRoom,
-          bidValue,
-          bidder: participantName,
-        });
-      }
-    });
-
-    // Final call
-    socket.on("finalCallMade", ({ winner }) => {
-      alert("Auction finished. Winning Bid: " + winner);
-    });
-  </script>
+  <script src="bidder.js"></script>
 </body>
 </html>
