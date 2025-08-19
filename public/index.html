@@ -2,30 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>eFootball Auction</title>
+  <title>Auction App</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>⚽ eFootball Card Auction</h1>
-    <button onclick="showAuctioneer()">I'm an Auctioneer</button>
-    <button onclick="showBidder()">I'm a Bidder</button>
-
-    <div id="auctioneerInfo" class="info hidden">
-      <h2>Auctioneer Info</h2>
-      <p>Room Name: <span id="roomNameDisplay"></span></p>
-      <p>Participants Joined: <span id="participantsDisplay">0</span></p>
-      <p>Bid Increment: <span id="bidIncrementDisplay"></span></p>
-    </div>
-
-    <div id="bidderInfo" class="info hidden">
-      <h2>Bidder Info</h2>
-      <p>Participant Name: <span id="participantNameDisplay"></span></p>
-      <p>Room/Invite Code: <span id="roomCodeDisplay"></span></p>
-    </div>
+    <h1>Auction App</h1>
+    <button onclick="location.href='auctioneer.html'">Auctioneer</button>
+    <button onclick="location.href='bidder.html'">Bidder</button>
   </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
 </body>
 </html>
