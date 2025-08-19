@@ -1,40 +1,126 @@
 const socket = io();
+let currentRoom = null;
+let bidderName = null;
+let increment = 0;
+
+// Elements
+const joinPanel = document.getElementById("joinPanel");
+const bidderPanel = document.getElementById("bidderPanel");
+
+const joinBtn = document.getElementById("joinBtn");
+const roomCodeInput = document.getElementById("roomCode");
+const bidderNameInput = document.getElementById("bidderName");
+
+const currentPlayer = document.getElementById("currentPlayer");
+const manualBidInput = document.getElementById("manualBid");
+const placeBidBtn = document.getElementById("placeBidBtn");
+const bidsList = document.getElementById("bidderBids");
+
+// --- Handle URL Params (Invite Link Auto-Join) ---
 const urlParams = new URLSearchParams(window.location.search);
-const room = urlParams.get("room");
-document.getElementById("roomCode").textContent = room;
+if (urlParams.has("room")) {
+  roomCodeInput.value = urlParams.get("room");
+}
+if (urlParams.has("room") && urlParams.has("name")) {
+  // Auto-join if both room & name provided
+  bidderName = urlParams.get("name").trim();
+  currentRoom = urlParams.get("room").trim();
 
-let bidderName = "";
+  socket.emit("joinRoom", { room: currentRoom, name: bidderName });
 
-// Join room
-socket.emit("joinRoom", room);
+  joinPanel.style.display = "none";
+  bidderPanel.style.display = "block";
+}
 
-// Start Bidding Event
-socket.on("playerDetails", (details) => {
-  document.getElementById("playerPreview").innerText =
-    `${details.name} (${details.club})\n` +
-    `Position: ${details.position}\nStyle: ${details.style}\nStart: ${details.value}`;
+// --- Join Room ---
+joinBtn.addEventListener("click", () => {
+  bidderName = bidderNameInput.value.trim();
+  const room = roomCodeInput.value.trim();
+
+  if (!bidderName || !room) {
+    alert("Please enter your name and room code!");
+    return;
+  }
+
+  currentRoom = room;
+  socket.emit("joinRoom", { room, name: bidderName });
+
+  joinPanel.style.display = "none";
+  bidderPanel.style.display = "block";
 });
 
-// Place bid
-document.getElementById("placeBid").onclick = () => {
-  bidderName = document.getElementById("bidderName").value.trim();
-  const bid = parseInt(document.getElementById("bidValue").value);
+// --- Receive Player Details ---
+socket.on("playerDetails", (player) => {
+  currentPlayer.innerHTML = `
+    <strong>${player.name} (${player.club})</strong><br>
+    Position: ${player.position}<br>
+    Style: ${player.style}<br>
+    Start: ${player.value}
+  `;
 
-  if (!bidderName) return alert("Enter your name!");
-  if (!bid || bid <= 0) return alert("Enter valid bid!");
+  // Reset bids list when new player comes
+  bidsList.innerHTML = "";
+});
 
-  socket.emit("placeBid", { room, name: bidderName, amount: bid });
-};
+// --- Place Bid ---
+placeBidBtn.addEventListener("click", () => {
+  let bidAmount;
 
-// Update live bids
-socket.on("updateBids", (bids) => {
-  const bidList = document.getElementById("bidList");
-  bidList.innerHTML = "";
-  bids
-    .sort((a, b) => b.amount - a.amount)
-    .forEach(b => {
-      const li = document.createElement("li");
-      li.textContent = `${b.name} - ${b.amount}`;
-      bidList.appendChild(li);
-    });
+  if (manualBidInput.value.trim() !== "") {
+    bidAmount = parseInt(manualBidInput.value, 10);
+  } else {
+    const topBid = bidsList.firstChild
+      ? parseInt(bidsList.firstChild.dataset.amount, 10)
+      : 0;
+    bidAmount = topBid + (increment || 1);
+  }
+
+  if (!bidAmount || bidAmount <= 0) {
+    alert("Invalid bid amount!");
+    return;
+  }
+
+  const topBid = bidsList.firstChild
+    ? parseInt(bidsList.firstChild.dataset.amount, 10)
+    : 0;
+
+  if (bidAmount <= topBid) {
+    alert("Your bid must be higher than the current top bid!");
+    return;
+  }
+
+  socket.emit("placeBid", { room: currentRoom, name: bidderName, amount: bidAmount });
+  manualBidInput.value = "";
+});
+
+// --- Listen for New Bids ---
+socket.on("newBid", (data) => {
+  // Remove old bids from the same bidder
+  const items = Array.from(bidsList.children);
+  items.forEach(item => {
+    if (item.textContent.startsWith(`${data.name}:`)) {
+      bidsList.removeChild(item);
+    }
+  });
+
+  // Create new bid entry
+  const li = document.createElement("li");
+  li.textContent = `${data.name}: ${data.amount}`;
+  li.dataset.amount = data.amount;
+
+  // Insert in descending order (highest bid on top)
+  const insertIndex = items.findIndex(
+    item => parseInt(item.dataset.amount, 10) < data.amount
+  );
+
+  if (insertIndex === -1) {
+    bidsList.appendChild(li);
+  } else {
+    bidsList.insertBefore(li, bidsList.children[insertIndex]);
+  }
+});
+
+// --- Receive Increment Info from Auctioneer ---
+socket.on("setIncrement", (value) => {
+  increment = value;
 });
