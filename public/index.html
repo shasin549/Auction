@@ -1,34 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>eFootball Card Auction</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>eFootball Auction</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <h1 class="title">eFootball Card Auction</h1>
-    <p class="subtitle">Choose your role to get started</p>
+  <div id="landing" class="container">
+    <h1>⚽ eFootball Card Auction</h1>
+    <button onclick="showSection('auctioneer')">I'm an Auctioneer</button>
+    <button onclick="showSection('bidder')">I'm a Bidder</button>
+  </div>
 
-    <div class="buttons">
-      <button id="auctioneerBtn" class="btn btn-primary">
-        I'm an Auctioneer
-      </button>
-      <button id="bidderBtn" class="btn btn-secondary">
-        I'm a Bidder
-      </button>
+  <!-- Auctioneer Section -->
+  <div id="auctioneer" class="hidden">
+    <h1>Auctioneer Panel</h1>
+    <div id="room-setup">
+      <input type="text" id="roomName" placeholder="Auction Room Name">
+      <input type="number" id="participants" placeholder="Number of Participants">
+      <input type="number" id="bidIncrement" placeholder="Bid Increment">
+      <button id="createRoomBtn">Create Room</button>
     </div>
-  </main>
 
-  <script>
-    document.getElementById("auctioneerBtn").addEventListener("click", () => {
-      window.location.href = "auctioneer.html";
-    });
+    <div id="auction-controls" style="display:none;">
+      <h2>Room: <span id="roomDisplay"></span></h2>
+      <p>Invite Link: <span id="inviteLink"></span></p>
+      <button onclick="copyInvite()">Share Invite</button>
 
-    document.getElementById("bidderBtn").addEventListener("click", () => {
-      window.location.href = "bidder.html";
-    });
-  </script>
+      <h3>Player Details</h3>
+      <input type="text" id="playerName" placeholder="Player Name">
+      <input type="text" id="playerClub" placeholder="Club/Nationality">
+      <input type="text" id="playerPosition" placeholder="Position">
+      <input type="text" id="playerStyle" placeholder="Playing Style">
+      <input type="number" id="playerValue" placeholder="Value">
+      <button id="startBiddingBtn">Start Bidding</button>
+
+      <div id="callSection">
+        <button id="finalCallBtn">Final Call</button>
+        <p id="callStatus"></p>
+      </div>
+
+      <h3>Participants</h3>
+      <ul id="participantsList"></ul>
+    </div>
+  </div>
+
+  <!-- Bidder Section -->
+  <div id="bidder" class="hidden">
+    <h1>Bidder Panel</h1>
+    <input type="text" id="name" placeholder="Your Name">
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <button id="joinRoomBtn">Join Room</button>
+
+    <div id="auction-area" style="display:none;">
+      <h2>Current Player</h2>
+      <p id="playerDetails"></p>
+      <button id="placeBidBtn">Place Bid</button>
+      <p>Highest Bid: <span id="highestBid">0</span></p>
+
+      <h3>Your Winning Players</h3>
+      <ul id="myPlayers"></ul>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
