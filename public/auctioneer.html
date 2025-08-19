@@ -1,66 +1,37 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
   <title>Auctioneer Panel</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="center-panel glass wide">
-    <!-- Step 1: Create Room -->
-    <section id="createRoomPanel">
-      <h2>Create Room</h2>
-      <input id="roomName" placeholder="Room Code (eg. AU123)" />
-      <input id="maxParticipants" type="number" placeholder="Max participants" min="1" />
-      <input id="bidIncrement" type="number" placeholder="Bid increment" min="1" />
-      <div class="row">
-        <button id="createRoomBtn" class="btn">Create Room</button>
-        <button id="resetLocalBtn" class="ghost">Reset local data</button>
-      </div>
-      <p id="inviteArea" class="muted"></p>
-    </section>
+  <div id="createPanel" class="panel">
+    <h2>Create Room</h2>
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <input type="number" id="increment" placeholder="Bid Increment">
+    <button id="createBtn" class="btn">Create Room</button>
+  </div>
 
-    <!-- Step 2: Player Entry -->
-    <section id="playerEntryPanel" class="hidden">
-      <h2>Player Entry</h2>
-      <div class="grid-2">
-        <input id="playerName" placeholder="Player name" />
-        <input id="playerClub" placeholder="Club / Nationality" />
-        <input id="playerPosition" placeholder="Position" />
-        <input id="playerStyle" placeholder="Playing style" />
-        <input id="playerValue" type="number" placeholder="Base value" min="0" />
-      </div>
-      <div class="row">
-        <button id="addPlayerBtn" class="btn">Add Player to List</button>
-        <button id="startAuctionBtn" class="btn alt">Start Auction</button>
-      </div>
-      <h3>Player List</h3>
-      <ul id="playerList" class="list"></ul>
-    </section>
+  <div id="auctionPanel" class="panel" style="display:none;">
+    <h2>Auctioneer Panel</h2>
+    <p><strong>Invite Bidders:</strong> <span id="inviteLink"></span></p>
 
-    <!-- Step 3: Auction Panel -->
-    <section id="auctionPanel" class="hidden">
-      <h2>Room: <span id="roomDisplay"></span></h2>
-      <div class="meta-row">
-        <div>Participants: <span id="participantCount">0</span> / <span id="maxCount">0</span></div>
-        <div>Increment: <span id="currentIncrement">1</span></div>
-      </div>
+    <h3>Add Player</h3>
+    <input type="text" id="playerName" placeholder="Player Name">
+    <input type="text" id="playerClub" placeholder="Club/Nationality">
+    <input type="text" id="playerPosition" placeholder="Position">
+    <input type="text" id="playerStyle" placeholder="Playing Style">
+    <input type="number" id="playerValue" placeholder="Base Value">
+    <button id="addPlayerBtn" class="btn">Add Player</button>
 
-      <div id="currentPlayerCard" class="preview"></div>
+    <button id="startAuctionBtn" class="btn">Start Auction</button>
 
-      <div class="row">
-        <button id="startBiddingBtn" class="btn">Start Bidding</button>
-        <button id="finalCallBtn" class="btn warn">Final Call</button>
-        <button id="nextPlayerBtn" class="btn ghost hidden">Next Player</button>
-      </div>
+    <h3>Current Player</h3>
+    <div id="currentPlayer"></div>
+  </div>
 
-      <h3>Live Bids</h3>
-      <ul id="auctionBids" class="list"></ul>
-      <div class="muted">Open bidder tabs and place bids — they sync via localStorage.</div>
-    </section>
-  </main>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script src="auctioneer.js"></script>
 </body>
 </html>
