@@ -1,48 +1,60 @@
 const socket = io();
-let roomCode = "";
+let roomName = "";
 let participantName = "";
 
-function joinRoom() {
-  roomCode = document.getElementById("roomCode").value.trim();
+// Pre-fill room from invite link
+const params = new URLSearchParams(window.location.search);
+if (params.get("room")) {
+  document.getElementById("roomCode").value = params.get("room");
+}
+
+document.getElementById("joinBtn").addEventListener("click", () => {
   participantName = document.getElementById("participantName").value.trim();
-
-  if (!roomCode || !participantName) {
-    alert("Please enter room code and your name");
+  roomName = document.getElementById("roomCode").value.trim();
+  if (!participantName || !roomName) {
+    alert("Enter your name and room code.");
     return;
   }
-
-  socket.emit("joinRoom", { roomCode, participantName });
-
-  // Hide join UI
-  document.querySelector("h2").style.display = "none";
-  document.getElementById("roomCode").style.display = "none";
-  document.getElementById("participantName").style.display = "none";
-  document.querySelector("button").style.display = "none";
-
-  // Show bidder panel
-  document.getElementById("bidderPanel").style.display = "block";
-}
-
-function placeBid() {
-  const bidValue = document.getElementById("bidValue").value;
-  if (!bidValue) {
-    alert("Enter your bid value");
-    return;
-  }
-
-  socket.emit("placeBid", { roomCode, participantName, bidValue });
-}
-
-// --- LISTENERS ---
-
-socket.on("playerPreview", (player) => {
-  document.getElementById("livePlayerName").textContent = player.name;
-  document.getElementById("livePlayerClub").textContent = player.club;
-  document.getElementById("livePlayerPosition").textContent = player.position;
-  document.getElementById("livePlayerStyle").textContent = player.style;
-  document.getElementById("livePlayerValue").textContent = player.value;
+  socket.emit("joinRoom", { roomName, participantName });
+  document.getElementById("liveCard").style.display = "block";
 });
 
-socket.on("updateBid", (bid) => {
-  document.getElementById("currentBid").textContent = bid;
+socket.on("roomNotFound", () => {
+  alert("Room not found.");
+});
+
+// When auctioneer starts bidding (also acts as preview)
+socket.on("biddingStarted", ({ player, currentBid }) => {
+  document.getElementById("playerDetails").innerHTML =
+    `<strong>${player.name}</strong> (${player.club})<br/>` +
+    `Position: ${player.position} · Style: ${player.style}<br/>` +
+    `Starting Value: ${currentBid}`;
+  document.getElementById("currentBid").textContent = `Current Bid: ${currentBid}`;
+});
+
+// Place a bid
+document.getElementById("bidBtn").addEventListener("click", () => {
+  const bidAmount = parseInt(document.getElementById("bidAmount").value, 10);
+  if (isNaN(bidAmount)) {
+    alert("Enter a valid number.");
+    return;
+  }
+  socket.emit("placeBid", { roomName, bidderName: participantName, bidAmount });
+});
+
+// Bid accepted → update live
+socket.on("newBid", ({ bidderName, bidAmount }) => {
+  document.getElementById("currentBid").innerHTML =
+    `<strong>${bidderName}</strong> bids 💰 ${bidAmount}`;
+});
+
+// Bid rejected (wrong increment / too low)
+socket.on("bidRejected", ({ message }) => {
+  alert(message);
+});
+
+// Final result
+socket.on("finalResult", ({ highestBidder, finalBid }) => {
+  document.getElementById("currentBid").innerHTML =
+    `🏆 Winner: <strong>${highestBidder || "—"}</strong> with ${finalBid}`;
 });
