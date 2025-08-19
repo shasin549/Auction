@@ -1,62 +1,73 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+app.use(express.static("public"));
 
-let rooms = {}; // { roomCode: { auctioneer: socketId, bidders: [], currentBid: 0, currentWinner: '' } }
+let rooms = {}; // roomCode -> { increment, participants, players: [], currentPlayerIndex, bids: [] }
 
-function generateRoomCode(length = 6) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
+// Helper to log debug info
+function debugLog(msg, data) {
+  console.log("[DEBUG]", msg, data || "");
 }
 
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+io.on("connection", (socket) => {
+  debugLog("User connected", socket.id);
 
-  socket.on('create-room', () => {
-    const roomCode = generateRoomCode();
-    rooms[roomCode] = { auctioneer: socket.id, bidders: [], currentBid: 0, currentWinner: '' };
-    socket.join(roomCode);
-    socket.emit('room-created', roomCode);
+  // Create Room
+  socket.on("createRoom", ({ room, increment, participants }) => {
+    if (!room || rooms[room]) return socket.emit("errorMsg", "Room invalid or exists");
+    rooms[room] = { increment, participants, players: [], currentPlayerIndex: 0, bids: [] };
+    socket.join(room);
+    const inviteLink = `${socket.handshake.headers.origin}/bidder.html?room=${room}`;
+    debugLog("Room created", { room, inviteLink });
+    socket.emit("roomCreated", { room, inviteLink });
   });
 
-  socket.on('join-room', (roomCode, bidderName) => {
-    if (!rooms[roomCode]) return socket.emit('room-error', 'Room not found');
-    rooms[roomCode].bidders.push({ id: socket.id, name: bidderName });
-    socket.join(roomCode);
-    io.to(roomCode).emit('update-bidders', rooms[roomCode].bidders);
-    io.to(socket.id).emit('current-bid', rooms[roomCode].currentBid, rooms[roomCode].currentWinner);
+  // Add Player
+  socket.on("addPlayer", ({ room, player }) => {
+    if (!rooms[room]) return socket.emit("errorMsg", "Room not found");
+    rooms[room].players.push(player);
+    debugLog("Player added", player);
   });
 
-  socket.on('place-bid', (roomCode, bidValue, bidderName) => {
-    if (!rooms[roomCode]) return;
-    if (bidValue > rooms[roomCode].currentBid) {
-      rooms[roomCode].currentBid = bidValue;
-      rooms[roomCode].currentWinner = bidderName;
-      io.to(roomCode).emit('current-bid', bidValue, bidderName);
-    }
+  // Start Auction
+  socket.on("startAuction", ({ room }) => {
+    const roomObj = rooms[room];
+    if (!roomObj || !roomObj.players.length) return socket.emit("errorMsg", "No players to auction");
+    roomObj.currentPlayerIndex = 0;
+    const player = roomObj.players[roomObj.currentPlayerIndex];
+    roomObj.bids = [];
+    io.to(room).emit("playerDetails", player);
+    debugLog("Auction started", player);
   });
 
-  socket.on('disconnect', () => {
-    for (const roomCode in rooms) {
-      rooms[roomCode].bidders = rooms[roomCode].bidders.filter(b => b.id !== socket.id);
-      if (rooms[roomCode].auctioneer === socket.id) {
-        io.to(roomCode).emit('room-closed');
-        delete rooms[roomCode];
-      } else {
-        io.to(roomCode).emit('update-bidders', rooms[roomCode]?.bidders || []);
-      }
-    }
-    console.log('User disconnected:', socket.id);
+  // Bidder joins
+  socket.on("joinRoom", ({ room, name }) => {
+    const roomObj = rooms[room];
+    if (!roomObj) return socket.emit("errorMsg", "Room not found");
+    socket.join(room);
+    socket.emit("playerDetails", roomObj.players[roomObj.currentPlayerIndex]);
+    debugLog("Bidder joined", { room, name });
+  });
+
+  // Place Bid
+  socket.on("placeBid", ({ room, name, amount }) => {
+    const roomObj = rooms[room];
+    if (!roomObj) return socket.emit("errorMsg", "Room not found");
+    if (amount <= 0) return socket.emit("errorMsg", "Invalid bid amount");
+    roomObj.bids.push({ name, amount });
+    io.to(room).emit("newBid", { name, amount });
+    debugLog("Bid placed", { name, amount });
+  });
+
+  socket.on("disconnect", () => {
+    debugLog("User disconnected", socket.id);
   });
 });
 
-server.listen(3000, () => console.log('Server running at http://localhost:3000'));
+server.listen(3000, () => console.log("Server running at http://localhost:3000"));
