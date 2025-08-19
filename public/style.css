@@ -1,93 +1,67 @@
-/* --- Global --- */
 body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+  color: #f8fafc;
   margin: 0;
-  font-family: "Segoe UI", Roboto, sans-serif;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-  color: #fff;
+  padding: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
-  background-size: cover;
-  background-attachment: fixed;
 }
 
-/* --- Glass effect --- */
-.glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
+.panel {
+  background: rgba(255, 255, 255, 0.05);
   padding: 30px;
-  box-shadow: 0 0 30px rgba(0,0,0,0.4);
-  text-align: center;
-  width: 90%;
-  max-width: 500px;
-}
-
-/* Landing */
-.landing h1 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-}
-.subtitle {
-  opacity: 0.8;
-  margin-bottom: 20px;
-}
-
-/* Buttons */
-.btn {
-  display: inline-block;
-  margin: 8px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #00c6ff, #0072ff);
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.btn:hover {
-  opacity: 0.85;
-}
-.btn.warn {
-  background: linear-gradient(135deg, #ff512f, #dd2476);
-}
-.btn.ghost {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-/* Inputs */
-input {
+  margin: 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  max-width: 600px;
   width: 100%;
-  padding: 12px;
-  margin: 6px 0;
+  backdrop-filter: blur(20px);
+}
+
+.hidden {
+  display: none;
+}
+
+input, button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 14px;
+  font-size: 16px;
   border-radius: 10px;
   border: none;
   outline: none;
-  font-size: 1rem;
 }
 
-/* Preview */
-.preview-card {
-  margin-top: 15px;
-  padding: 15px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.4);
-  text-align: left;
+input {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
 }
 
-/* Bid list */
-.bid-list {
+button {
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+ul {
   list-style: none;
   padding: 0;
-  margin: 20px 0;
+  margin-top: 20px;
 }
-.bid-list li {
-  background: rgba(255,255,255,0.1);
-  margin: 6px 0;
-  padding: 10px;
-  border-radius: 8px;
+
+li {
+  padding: 12px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
 }
