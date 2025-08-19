@@ -1,75 +1,88 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public"));
 
-let rooms = {};
+let rooms = {}; // Store room data
 
 io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
+  console.log("User connected:", socket.id);
 
-  socket.on("createRoom", ({ roomName, participants, increment }) => {
-    rooms[roomName] = {
-      participants,
-      increment,
-      currentBid: 0,
-      currentBidder: null,
-      players: [],
-    };
-    socket.join(roomName);
-    io.to(socket.id).emit("roomCreated", { roomName });
-    console.log(`Room created: ${roomName}`);
+  // Create room
+  socket.on("createRoom", (roomName) => {
+    if (!rooms[roomName]) {
+      rooms[roomName] = {
+        players: [],
+        currentPlayer: null,
+        highestBid: null,
+        highestBidder: null,
+      };
+      socket.join(roomName);
+      socket.emit("roomCreated", roomName);
+    } else {
+      socket.emit("errorMsg", "Room already exists!");
+    }
   });
 
+  // Join room
   socket.on("joinRoom", ({ roomName, participantName }) => {
     if (rooms[roomName]) {
       socket.join(roomName);
-      io.to(roomName).emit("message", `${participantName} joined the room`);
+      rooms[roomName].players.push({ id: socket.id, name: participantName });
+      io.to(roomName).emit("updatePlayers", rooms[roomName].players);
+      socket.emit("roomJoined", roomName);
     } else {
-      io.to(socket.id).emit("error", "Room not found");
+      socket.emit("errorMsg", "Room not found!");
     }
   });
 
-  socket.on("startPlayer", ({ roomName, player }) => {
+  // Start player auction
+  socket.on("startAuction", ({ roomName, player }) => {
     if (rooms[roomName]) {
-      rooms[roomName].currentBid = player.value;
-      rooms[roomName].currentBidder = null;
-      io.to(roomName).emit("newPlayer", player);
+      rooms[roomName].currentPlayer = player;
+      rooms[roomName].highestBid = player.value;
+      rooms[roomName].highestBidder = null;
+      io.to(roomName).emit("auctionStarted", player);
     }
   });
 
-  socket.on("placeBid", ({ roomName, bidder, bidValue }) => {
-    if (rooms[roomName] && bidValue > rooms[roomName].currentBid) {
-      rooms[roomName].currentBid = bidValue;
-      rooms[roomName].currentBidder = bidder;
-      io.to(roomName).emit("bidUpdate", {
+  // Handle bid
+  socket.on("placeBid", ({ roomName, bid, bidder }) => {
+    if (rooms[roomName] && bid > rooms[roomName].highestBid) {
+      rooms[roomName].highestBid = bid;
+      rooms[roomName].highestBidder = bidder;
+      io.to(roomName).emit("newBid", {
+        bid,
         bidder,
-        bidValue,
       });
     }
   });
 
-  socket.on("finalCall", ({ roomName }) => {
+  // Finalize auction
+  socket.on("finalCall", (roomName) => {
     if (rooms[roomName]) {
-      io.to(roomName).emit("finalResult", {
-        winner: rooms[roomName].currentBidder,
-        amount: rooms[roomName].currentBid,
+      io.to(roomName).emit("auctionFinalized", {
+        winner: rooms[roomName].highestBidder,
+        bid: rooms[roomName].highestBid,
+        player: rooms[roomName].currentPlayer,
       });
     }
   });
 
+  // Disconnect
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+    console.log("User disconnected:", socket.id);
+    for (let room in rooms) {
+      rooms[room].players = rooms[room].players.filter(
+        (p) => p.id !== socket.id
+      );
+      io.to(room).emit("updatePlayers", rooms[room].players);
+    }
   });
 });
 
