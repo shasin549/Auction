@@ -1,140 +1,110 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer);
+const server = createServer(app);
+const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
+app.use(cors());
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use(express.static("public"));
+let rooms = {}; // { roomCode: { name, increment, players: [], participants: {} } }
 
-const rooms = new Map(); 
-/*
-rooms = {
-  roomCode: {
-    roomName,
-    maxParticipants,
-    bidIncrement,
-    participants: Set(),
-    players: [],
-    callStage: 0,
-    highestBidder: null,
-  }
+function generateRoomCode() {
+  return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
-*/
 
+// Create Room
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("New client connected:", socket.id);
 
-  socket.on("create-room", ({ roomName, maxParticipants, bidIncrement, roomCode }) => {
-    if (rooms.has(roomCode)) {
-      socket.emit("room-create-error", "Room code already exists.");
-      return;
-    }
-    rooms.set(roomCode, {
-      roomName,
-      maxParticipants,
-      bidIncrement,
-      participants: new Set(),
-      players: [],
-      callStage: 0,
-      highestBidder: null,
-    });
+  socket.on("createRoom", ({ roomName, increment }, callback) => {
+    const roomCode = generateRoomCode();
+    rooms[roomCode] = {
+      name: roomName,
+      increment,
+      participants: {},
+      currentPlayer: null,
+      calls: 0,
+    };
     socket.join(roomCode);
-    socket.emit("room-created", { roomCode });
-    console.log(`Room created: ${roomCode} by ${socket.id}`);
+    callback({ roomCode });
   });
 
-  socket.on("join-room", ({ participantName, roomCode }) => {
-    const room = rooms.get(roomCode);
-    if (!room) {
-      socket.emit("room-join-error", "Room not found.");
-      return;
+  // Join Room
+  socket.on("joinRoom", ({ roomCode, participantName }, callback) => {
+    if (!rooms[roomCode]) {
+      return callback({ success: false, message: "Room not found" });
     }
-    if (room.participants.size >= room.maxParticipants) {
-      socket.emit("room-join-error", "Room is full.");
-      return;
-    }
-    room.participants.add(participantName);
+    rooms[roomCode].participants[socket.id] = {
+      name: participantName,
+      wonPlayers: [],
+    };
     socket.join(roomCode);
-
-    io.to(roomCode).emit("new-participant", { roomCode, participantName });
-
-    // Send room details and current players to new participant
-    socket.emit("room-joined", {
-      roomName: room.roomName,
-      bidIncrement: room.bidIncrement,
-      players: room.players,
-    });
-
-    console.log(`${participantName} joined room ${roomCode}`);
+    io.to(roomCode).emit("participantsUpdate", rooms[roomCode].participants);
+    callback({ success: true });
   });
 
-  socket.on("update-players", ({ roomCode, players }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-    room.players = players;
-    io.to(roomCode).emit("update-players", { players });
+  // Start Player Auction
+  socket.on("startPlayer", ({ roomCode, player }, callback) => {
+    if (!rooms[roomCode]) return;
+    rooms[roomCode].currentPlayer = { ...player, highestBid: player.value, highestBidder: null };
+    rooms[roomCode].calls = 0;
+    io.to(roomCode).emit("newPlayer", rooms[roomCode].currentPlayer);
+    callback({ success: true });
   });
 
-  socket.on("start-bidding", ({ roomCode }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-    room.callStage = 0;
-    room.highestBidder = null;
-    io.to(roomCode).emit("bidding-started");
-    console.log(`Bidding started in room ${roomCode}`);
-  });
-
-  socket.on("final-call", ({ roomCode, stage }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-    room.callStage = stage === "first" ? 1 : stage === "second" ? 2 : 0;
-    io.to(roomCode).emit("final-call-update", { stage });
-  });
-
-  socket.on("place-bid", ({ roomCode, bidderName, amount }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-
-    const player = room.players.find((p) => !p.sold);
-    if (!player) return;
-
-    if (amount >= player.currentBid + room.bidIncrement) {
-      player.currentBid = amount;
-      player.highestBidder = bidderName;
-      room.highestBidder = bidderName;
-      io.to(roomCode).emit("new-bid", { roomCode, bidderName, amount, players: room.players });
-      io.to(roomCode).emit("update-players", { players: room.players });
+  // Place Bid
+  socket.on("placeBid", ({ roomCode, bidAmount }, callback) => {
+    const room = rooms[roomCode];
+    if (!room || !room.currentPlayer) return;
+    if (bidAmount >= room.currentPlayer.highestBid + room.increment) {
+      room.currentPlayer.highestBid = bidAmount;
+      room.currentPlayer.highestBidder = socket.id;
+      room.calls = 0; // reset calls
+      io.to(roomCode).emit("bidUpdate", room.currentPlayer);
+      callback({ success: true });
+    } else {
+      callback({ success: false, message: "Bid too low" });
     }
   });
 
-  socket.on("player-sold", ({ roomCode, player, highestBidder }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-
-    const idx = room.players.findIndex((p) => p.id === player.id);
-    if (idx !== -1) {
-      room.players[idx] = player;
-      io.to(roomCode).emit("player-sold", { player, highestBidder });
-      io.to(roomCode).emit("update-players", { players: room.players });
+  // Handle Final Call
+  socket.on("finalCall", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room || !room.currentPlayer) return;
+    room.calls++;
+    if (room.calls < 3) {
+      io.to(roomCode).emit("callUpdate", `${["First", "Second"][room.calls - 1]} Call`);
+    } else {
+      // Sell player
+      const winnerId = room.currentPlayer.highestBidder;
+      if (winnerId) {
+        room.participants[winnerId].wonPlayers.push(room.currentPlayer);
+      }
+      io.to(roomCode).emit("playerSold", room.currentPlayer);
+      room.currentPlayer = null;
     }
   });
 
-  socket.on("leave-room", ({ participantName, roomCode }) => {
-    const room = rooms.get(roomCode);
-    if (!room) return;
-    room.participants.delete(participantName);
-    io.to(roomCode).emit("participant-left", { participantName });
-  });
-
+  // Disconnect
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    for (let roomCode in rooms) {
+      if (rooms[roomCode].participants[socket.id]) {
+        delete rooms[roomCode].participants[socket.id];
+        io.to(roomCode).emit("participantsUpdate", rooms[roomCode].participants);
+      }
+    }
+    console.log("Client disconnected:", socket.id);
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
