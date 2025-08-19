@@ -1,48 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bidder - eFootball Auction</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Bidder Panel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
+  <div class="container">
     <h1>Bidder Panel</h1>
+    <div id="join-room">
+      <input type="text" id="participantName" placeholder="Your Name">
+      <input type="text" id="roomCodeInput" placeholder="Room Code">
+      <button id="joinRoomBtn">Join Room</button>
+    </div>
 
-    <section id="join-room-section" class="card">
-      <h2>Join Auction Room</h2>
-
-      <label for="participantName">Your Name</label>
-      <input type="text" id="participantName" placeholder="Enter your name" />
-
-      <label for="roomCodeInput">Room Code</label>
-      <input type="text" id="roomCodeInput" placeholder="Enter room code" maxlength="6" />
-
-      <button id="joinRoomBtn" class="btn btn-primary">Join Room</button>
-    </section>
-
-    <section id="bidding-section" class="card" style="display:none;">
-      <h2>Room: <span id="roomNameDisplay"></span></h2>
-
-      <div id="playersList" class="scrollable card" style="max-height: 350px;"></div>
-
-      <div id="bidSection" style="margin-top: 1rem;">
-        <label for="bidAmount">Place Your Bid</label>
-        <input type="number" id="bidAmount" min="0" />
-        <button id="placeBidBtn" class="btn btn-success">Place Bid</button>
-      </div>
-
-      <section style="margin-top: 1.5rem;">
-        <h3>Your Winning Players</h3>
-        <div id="winningPlayersList" class="scrollable card"></div>
-      </section>
-    </section>
-  </main>
-
-  <div id="toast" class="toast"></div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="bidder.js"></script>
-</body>
-</html>
+    <div id="bidding-area" style="display:none;">
+      <h2>Current Player</h2>
+      <div id="playerInfo"></div>
+      <input
