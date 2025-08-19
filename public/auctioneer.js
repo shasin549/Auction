@@ -1,81 +1,70 @@
 const socket = io();
-
 let currentRoom = null;
-let currentIncrement = 0;
 
-document.getElementById("createBtn").addEventListener("click", () => {
-  const roomName = document.getElementById("roomName").value.trim();
-  const increment = parseInt(document.getElementById("increment").value, 10) || 0;
-  socket.emit("createRoom", { roomName, participants: 0, increment });
-});
+// Create Room
+document.getElementById("createRoomBtn").onclick = () => {
+  const room = document.getElementById("roomName").value.trim();
+  const participants = document.getElementById("participants").value;
+  const increment = document.getElementById("bidIncrement").value;
 
-socket.on("roomCreated", ({ roomCode, roomName, increment }) => {
-  currentRoom = roomCode;
-  currentIncrement = increment || 0;
-  // show invite
-  document.getElementById("inviteInput").value = `${window.location.origin}/bidder.html?room=${encodeURIComponent(roomCode)}`;
-  document.getElementById("inviteWrap").style.display = "block";
-  // show panel
-  document.getElementById("panel").style.display = "block";
-  // scroll to panel on small screens (helps visibility)
-  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  if (!room) return alert("Enter room name!");
 
-  document.getElementById("copyInvite").onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(document.getElementById("inviteInput").value);
-      document.getElementById("copyInvite").textContent = "Copied";
-      setTimeout(() => (document.getElementById("copyInvite").textContent = "Copy"), 1000);
-    } catch (e) {
-      alert("Copy failed — please copy manually.");
+  socket.emit("createRoom", { room, participants, increment }, (success) => {
+    if (success) {
+      currentRoom = room;
+
+      // Show invite link
+      const inviteLink = `${window.location.origin}/bidder.html?room=${room}`;
+      document.getElementById("inviteLink").value = inviteLink;
+      document.getElementById("inviteBox").classList.remove("hidden");
+
+      // Hide Create Room, show Auction Panel
+      document.getElementById("createRoomSection").classList.add("hidden");
+      document.getElementById("auctionPanel").classList.remove("hidden");
+    } else {
+      alert("Room already exists!");
     }
-  };
-});
-
-// start bidding -> broadcast preview & reset bids
-document.getElementById("startBtn").addEventListener("click", () => {
-  if (!currentRoom) { alert("Create a room first."); return; }
-  const player = {
-    name: document.getElementById("playerName").value.trim(),
-    club: document.getElementById("playerClub").value.trim(),
-    position: document.getElementById("playerPosition").value.trim(),
-    style: document.getElementById("playerStyle").value.trim(),
-    value: parseInt(document.getElementById("playerValue").value, 10) || 0
-  };
-  if (!player.name) { alert("Enter player name."); return; }
-  socket.emit("startBidding", { roomCode: currentRoom, player });
-});
-
-socket.on("biddingStarted", ({ player, currentBid, increment }) => {
-  const preview = `<strong>${player.name}</strong> (${player.club})<div class="small">Position: ${player.position} · Style: ${player.style}</div><div class="small">Start: ${currentBid}</div>`;
-  document.getElementById("preview").innerHTML = preview;
-  // clear current bids list
-  document.getElementById("bids").innerHTML = "";
-  // store increment
-  currentIncrement = increment || 0;
-});
-
-socket.on("bidsUpdated", ({ bids, currentBid }) => {
-  const ul = document.getElementById("bids");
-  ul.innerHTML = "";
-  bids.forEach((b, idx) => {
-    const li = document.createElement("li");
-    li.className = idx === 0 ? "top" : "";
-    li.innerHTML = `<span>${b.bidderName}</span><span>${b.bidAmount}</span>`;
-    ul.appendChild(li);
   });
-});
+};
 
-socket.on("finalResult", ({ winner, player, finalBid }) => {
-  document.getElementById("preview").innerHTML = `<strong>${player ? player.name : "—"}</strong> — Sold for ${finalBid} to ${winner ? winner.bidderName : "No one"}`;
-  // you may clear bids but keep them for history
-  // document.getElementById("bids").innerHTML = "";
-});
+// Copy invite link
+document.getElementById("copyLink").onclick = () => {
+  const link = document.getElementById("inviteLink");
+  link.select();
+  document.execCommand("copy");
+};
 
-socket.on("roomNotFound", () => {
-  alert("Room not found.");
-});
+// Start Bidding
+document.getElementById("startBidding").onclick = () => {
+  const details = {
+    name: document.getElementById("playerName").value,
+    club: document.getElementById("playerClub").value,
+    position: document.getElementById("playerPosition").value,
+    style: document.getElementById("playerStyle").value,
+    value: document.getElementById("playerValue").value
+  };
 
-socket.on("bidRejected", ({ message }) => {
-  // show non-blocking rejection (no popup requirement)
-  console.warn("Bid rejected:", message);
+  socket.emit("startBidding", { room: currentRoom, details });
+
+  // Preview locally
+  updatePreview(details);
+};
+
+function updatePreview(details) {
+  document.getElementById("previewBox").innerText =
+    `${details.name} (${details.club})\n` +
+    `Position: ${details.position}\nStyle: ${details.style}\nStart: ${details.value}`;
+}
+
+// Live bids update
+socket.on("updateBids", (bids) => {
+  const bidList = document.getElementById("bidList");
+  bidList.innerHTML = "";
+  bids
+    .sort((a, b) => b.amount - a.amount)
+    .forEach(b => {
+      const li = document.createElement("li");
+      li.textContent = `${b.name} - ${b.amount}`;
+      bidList.appendChild(li);
+    });
 });
