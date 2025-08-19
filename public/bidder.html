@@ -1,33 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bidder</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div class="card">
-    <h2>Join Auction Room</h2>
-    <input type="text" id="roomCode" placeholder="Enter Room Code">
-    <input type="text" id="participantName" placeholder="Enter Your Name">
-    <button onclick="joinRoom()">Join Room</button>
-    
-    <div id="bidderPanel" style="display:none;">
-      <h2>Live Auction</h2>
-      <div id="playerPreview">
-        <p><b>Player:</b> <span id="livePlayerName"></span></p>
-        <p><b>Club:</b> <span id="livePlayerClub"></span></p>
-        <p><b>Position:</b> <span id="livePlayerPosition"></span></p>
-        <p><b>Style:</b> <span id="livePlayerStyle"></span></p>
-        <p><b>Value:</b> <span id="livePlayerValue"></span></p>
-      </div>
+  <div class="container">
 
-      <h3>Current Bid: <span id="currentBid">0</span></h3>
-      <input type="number" id="bidValue" placeholder="Enter your bid">
-      <button onclick="placeBid()">Place Bid</button>
+    <div class="card" id="joinCard">
+      <h2>Join Auction</h2>
+      <div class="row">
+        <input class="input" id="participantName" placeholder="Your name" />
+        <input class="input" id="roomCode" placeholder="Room code" />
+      </div>
+      <div class="actions">
+        <button id="joinBtn">Join Room</button>
+      </div>
     </div>
+
+    <div class="card" id="liveCard" style="display:none;">
+      <h2>Live Auction</h2>
+      <div class="list">
+        <div id="playerDetails">Waiting for player…</div>
+        <div id="currentBid" style="margin-top:8px; opacity:.9;"></div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <input class="input" id="bidAmount" type="number" placeholder="Enter your bid" />
+        <button id="bidBtn">Place Bid</button>
+      </div>
+    </div>
+
   </div>
 
   <script src="bidder.js"></script>
