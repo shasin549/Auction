@@ -4,27 +4,79 @@
   <meta charset="UTF-8">
   <title>Auctioneer Panel</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h2>Create Auction Room</h2>
-    <input type="text" id="roomName" placeholder="Room Name">
-    <input type="number" id="participants" placeholder="No. of Participants">
-    <input type="number" id="increment" placeholder="Bid Increment">
-    <button onclick="createRoom()">Create Room</button>
+  <div class="glass-container">
+    <h2>Auctioneer</h2>
 
-    <hr style="margin:20px 0; border:0; border-top:1px solid rgba(255,255,255,0.3);">
+    <div id="setup">
+      <input type="text" id="roomName" placeholder="Room Name">
+      <input type="number" id="participants" placeholder="No. of Participants">
+      <input type="number" id="increment" placeholder="Bid Increment">
+      <button id="createRoomBtn">Create Room</button>
+    </div>
 
-    <h2>Player Auction</h2>
-    <input type="text" id="playerName" placeholder="Player Name">
-    <input type="text" id="playerClub" placeholder="Club / Nationality">
-    <input type="text" id="playerPosition" placeholder="Position">
-    <input type="text" id="playerStyle" placeholder="Playing Style">
-    <input type="number" id="playerValue" placeholder="Player Value">
-    <button onclick="startBidding()">Start Bidding</button>
-    <button onclick="finalCall()">Final Call</button>
+    <div id="auction" style="display:none;">
+      <p><b>Invite Link:</b> <span id="inviteLink"></span></p>
+
+      <input type="text" id="playerName" placeholder="Player Name">
+      <input type="text" id="playerClub" placeholder="Club/Nationality">
+      <input type="text" id="playerPosition" placeholder="Position">
+      <input type="text" id="playerStyle" placeholder="Playing Style">
+      <input type="number" id="playerValue" placeholder="Base Value">
+      <button id="startBidding">Start Bidding</button>
+      <button id="finalCall">Final Call</button>
+
+      <div id="status"></div>
+    </div>
   </div>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="auctioneer.js"></script>
+
+  <script>
+    const socket = io();
+
+    const setupDiv = document.getElementById("setup");
+    const auctionDiv = document.getElementById("auction");
+    const inviteLinkSpan = document.getElementById("inviteLink");
+
+    document.getElementById("createRoomBtn").onclick = () => {
+      const roomName = document.getElementById("roomName").value;
+      const participants = document.getElementById("participants").value;
+      const increment = document.getElementById("increment").value;
+
+      socket.emit("createRoom", { roomName, participants, increment });
+    };
+
+    socket.on("roomCreated", ({ roomName }) => {
+      setupDiv.style.display = "none";
+      auctionDiv.style.display = "block";
+
+      const url = `${window.location.origin}/bidder.html?room=${roomName}`;
+      inviteLinkSpan.innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+    });
+
+    document.getElementById("startBidding").onclick = () => {
+      const player = {
+        name: document.getElementById("playerName").value,
+        club: document.getElementById("playerClub").value,
+        position: document.getElementById("playerPosition").value,
+        style: document.getElementById("playerStyle").value,
+        value: parseInt(document.getElementById("playerValue").value),
+      };
+
+      const roomName = document.getElementById("roomName").value;
+      socket.emit("startPlayer", { roomName, player });
+    };
+
+    document.getElementById("finalCall").onclick = () => {
+      const roomName = document.getElementById("roomName").value;
+      socket.emit("finalCall", { roomName });
+    };
+
+    socket.on("finalResult", ({ winner, amount }) => {
+      document.getElementById("status").innerHTML =
+        `<b>Sold to ${winner} for ${amount}!</b>`;
+    });
+  </script>
 </body>
 </html>
