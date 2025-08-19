@@ -1,40 +1,48 @@
 const socket = io();
+let roomCode = "";
+let participantName = "";
 
 function joinRoom() {
-  const participant = document.getElementById("participantName").value;
-  const roomName = document.getElementById("roomCode").value;
-  socket.emit("joinRoom", { roomName, participant });
+  roomCode = document.getElementById("roomCode").value.trim();
+  participantName = document.getElementById("participantName").value.trim();
+
+  if (!roomCode || !participantName) {
+    alert("Please enter room code and your name");
+    return;
+  }
+
+  socket.emit("joinRoom", { roomCode, participantName });
+
+  // Hide join UI
+  document.querySelector("h2").style.display = "none";
+  document.getElementById("roomCode").style.display = "none";
+  document.getElementById("participantName").style.display = "none";
+  document.querySelector("button").style.display = "none";
+
+  // Show bidder panel
+  document.getElementById("bidderPanel").style.display = "block";
 }
 
-socket.on("joinedRoom", (roomName) => {
-  alert(`✅ Joined room '${roomName}'`);
-  document.getElementById("auction-screen").style.display = "block";
-});
+function placeBid() {
+  const bidValue = document.getElementById("bidValue").value;
+  if (!bidValue) {
+    alert("Enter your bid value");
+    return;
+  }
 
-socket.on("errorMsg", (msg) => {
-  alert(msg);
-});
+  socket.emit("placeBid", { roomCode, participantName, bidValue });
+}
 
-socket.on("playerData", (player) => {
+// --- LISTENERS ---
+
+socket.on("playerPreview", (player) => {
   document.getElementById("livePlayerName").textContent = player.name;
   document.getElementById("livePlayerClub").textContent = player.club;
   document.getElementById("livePlayerPosition").textContent = player.position;
   document.getElementById("livePlayerStyle").textContent = player.style;
   document.getElementById("livePlayerValue").textContent = player.value;
-  document.getElementById("highestBid").textContent = player.value;
 });
 
-function placeBid() {
-  const roomName = document.getElementById("roomCode").value;
-  const bidder = document.getElementById("participantName").value;
-  const amount = document.getElementById("customBid").value;
-  socket.emit("placeBid", { roomName, amount, bidder });
-}
-
-socket.on("newBid", ({ bidder, amount }) => {
-  document.getElementById("highestBid").textContent = amount;
-});
-
-socket.on("auctionResult", (lastBid) => {
-  alert(`🏆 Winner: ${lastBid.bidder} with $${lastBid.amount}`);
+socket.on("updateBid", (bid) => {
+  document.getElementById("currentBid").textContent = bid;
 });
