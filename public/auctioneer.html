@@ -1,23 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Auctioneer</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Auctioneer Panel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-  <h1>Auctioneer Panel</h1>
-  <button id="createRoomBtn">Create Room</button>
-  <p>Room Code: <span id="roomCodeDisplay">-</span></p>
-  <p>Invite Link: <span id="inviteLinkDisplay">-</span></p>
-  <h3>Current Bid: <span id="currentBidDisplay">0</span></h3>
-  <h3>Winner: <span id="currentWinnerDisplay">-</span></h3>
-  <h4>Bidders:</h4>
-  <ul id="bidderList"></ul>
-</div>
-<script src="/socket.io/socket.io.js"></script>
-<script src="auctioneer.js"></script>
+  <div class="center-panel" id="createPanel">
+    <h2>Create Room</h2>
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <input type="number" id="increment" placeholder="Bid Increment">
+    <input type="number" id="numParticipants" placeholder="Number of Participants">
+    <button id="createBtn" class="btn">Create Room</button>
+  </div>
+
+  <div class="center-panel hidden" id="auctionPanel">
+    <h2>Auction Panel</h2>
+    <p><strong>Invite Link:</strong> <span id="inviteLink"></span></p>
+
+    <h3>Add Player</h3>
+    <div class="grid-2">
+      <input type="text" id="playerName" placeholder="Player Name">
+      <input type="text" id="playerClub" placeholder="Club/Nationality">
+      <input type="text" id="playerPosition" placeholder="Position">
+      <input type="text" id="playerStyle" placeholder="Playing Style">
+      <input type="number" id="playerValue" placeholder="Base Value">
+    </div>
+    <button id="addPlayerBtn" class="btn alt">Add Player</button>
+    <button id="startAuctionBtn" class="btn warn">Start Auction</button>
+
+    <h3>Current Player</h3>
+    <div class="preview" id="currentPlayer"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
