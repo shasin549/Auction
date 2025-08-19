@@ -2,44 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auctioneer Panel</title>
   <link rel="stylesheet" href="style.css">
   <script src="/socket.io/socket.io.js"></script>
+  <script defer src="auctioneer.js"></script>
 </head>
 <body>
-  <div class="container">
-    <!-- Create Room Section -->
-    <div id="createRoomSection" class="panel">
-      <h2>Create Room</h2>
-      <input type="text" id="roomName" placeholder="Room Name">
-      <input type="number" id="participants" placeholder="No. of Participants">
-      <input type="number" id="bidIncrement" placeholder="Bid Increment">
-      <button id="createRoomBtn">Create Room</button>
-      <div id="inviteBox" class="hidden">
-        <p>Invite Link:</p>
-        <input type="text" id="inviteLink" readonly>
-        <button id="copyLink">Copy</button>
-      </div>
-    </div>
+  <div id="createRoomPanel">
+    <h2>Create Auction Room</h2>
+    <input type="text" id="auctioneerName" placeholder="Your Name">
+    <button id="createRoomBtn">Create Room</button>
+    <p id="inviteLink"></p>
+  </div>
 
-    <!-- Auction Panel Section -->
-    <div id="auctionPanel" class="panel hidden">
-      <h2>Auction Panel</h2>
+  <div id="auctionPanel" style="display:none;">
+    <h2>Auction Room: <span id="roomCode"></span></h2>
+    <h3>Participants: <span id="participantCount">0</span></h3>
+
+    <div id="playerForm">
       <input type="text" id="playerName" placeholder="Player Name">
-      <input type="text" id="playerClub" placeholder="Club / Nationality">
+      <input type="text" id="playerClub" placeholder="Club/Nationality">
       <input type="text" id="playerPosition" placeholder="Position">
       <input type="text" id="playerStyle" placeholder="Playing Style">
-      <input type="number" id="playerValue" placeholder="Start Value">
-      <button id="startBidding">Start Bidding</button>
-      <button id="finalCall">Final Call</button>
-
-      <h3>Live Preview</h3>
-      <div id="previewBox"></div>
-
-      <h3>Live Bids</h3>
-      <ul id="bidList"></ul>
+      <input type="number" id="playerValue" placeholder="Base Value">
+      <button id="startBiddingBtn">Start Bidding</button>
     </div>
+
+    <div id="playerPreview"></div>
+
+    <button id="finalCallBtn">Final Call</button>
+    <button id="nextPlayerBtn" style="display:none;">Next Player</button>
   </div>
-  <script src="auctioneer.js"></script>
 </body>
 </html>
