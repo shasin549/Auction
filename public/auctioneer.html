@@ -1,66 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
   <title>Auctioneer</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-
-    <!-- Setup -->
-    <div class="card" id="setupCard">
-      <h2>Create Auction Room</h2>
-      <div class="row">
-        <input class="input" id="roomName" placeholder="Room name" />
-        <input class="input" id="participants" type="number" placeholder="No. of participants" />
-      </div>
-      <div class="row">
-        <input class="input" id="increment" type="number" placeholder="Bid increment" />
-        <button id="createRoomBtn">Create Room</button>
-      </div>
-
-      <div id="inviteWrap" style="display:none; margin-top:14px;">
-        <div class="badge">Room created · share invite</div>
-        <div class="invite" style="margin-top:10px;">
-          <input id="inviteLink" readonly />
-          <button class="copy" id="copyBtn">Copy</button>
-        </div>
-      </div>
+  <div class="glass-card">
+    <h2>Create Auction Room</h2>
+    <input type="text" id="roomName" placeholder="Room Name">
+    <input type="number" id="participants" placeholder="Number of Participants">
+    <input type="number" id="bidIncrement" placeholder="Bid Increment">
+    <button id="createRoomBtn">Create Room</button>
+    <div id="inviteSection" style="display:none;">
+      <p>Invite Link: 
+        <span id="inviteLink"></span>
+        <button id="copyLinkBtn">Copy</button>
+      </p>
     </div>
-
-    <!-- Auction panel -->
-    <div class="card" id="panelCard" style="display:none;">
-      <h2>Auctioneer Panel</h2>
-
-      <div class="row">
-        <input class="input" id="playerName" placeholder="Player name" />
-        <input class="input" id="playerClub" placeholder="Club / Nationality" />
-      </div>
-      <div class="row">
-        <input class="input" id="playerPosition" placeholder="Position" />
-        <input class="input" id="playerStyle" placeholder="Playing style" />
-      </div>
-      <div class="row">
-        <input class="input" id="playerValue" type="number" placeholder="Starting value" />
-        <button id="startBtn">Start Bidding</button>
-      </div>
-
-      <div class="list">
-        <h3 style="margin:0 0 8px 0;">Live Preview</h3>
-        <div id="preview">Waiting for player...</div>
-        <div id="liveBids" style="margin-top:8px; opacity:.9;"></div>
-      </div>
-
-      <div class="actions" style="margin-top:12px;">
-        <button class="secondary" id="finalBtn">Final Call</button>
-      </div>
-    </div>
-
   </div>
 
+  <div class="glass-card" id="playerSection" style="display:none;">
+    <h2>Add Player</h2>
+    <input type="text" id="playerName" placeholder="Player Name">
+    <input type="text" id="playerClub" placeholder="Club/Nationality">
+    <input type="text" id="playerPosition" placeholder="Position">
+    <input type="text" id="playerStyle" placeholder="Playing Style">
+    <input type="number" id="playerValue" placeholder="Value">
+    <button id="startBiddingBtn">Start Bidding</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script src="auctioneer.js"></script>
 </body>
 </html>
