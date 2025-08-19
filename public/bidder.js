@@ -15,6 +15,7 @@ const currentPlayer = document.getElementById("currentPlayer");
 const manualBidInput = document.getElementById("manualBid");
 const placeBidBtn = document.getElementById("placeBidBtn");
 const bidsList = document.getElementById("bidderBids");
+const roomDisplay = document.getElementById("roomDisplay");
 
 // --- Handle URL Params (Invite Link Auto-Join) ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -22,7 +23,6 @@ if (urlParams.has("room")) {
   roomCodeInput.value = urlParams.get("room");
 }
 if (urlParams.has("room") && urlParams.has("name")) {
-  // Auto-join if both room & name provided
   bidderName = urlParams.get("name").trim();
   currentRoom = urlParams.get("room").trim();
 
@@ -30,6 +30,7 @@ if (urlParams.has("room") && urlParams.has("name")) {
 
   joinPanel.style.display = "none";
   bidderPanel.style.display = "block";
+  roomDisplay.textContent = currentRoom;
 }
 
 // --- Join Room ---
@@ -47,6 +48,7 @@ joinBtn.addEventListener("click", () => {
 
   joinPanel.style.display = "none";
   bidderPanel.style.display = "block";
+  roomDisplay.textContent = currentRoom;
 });
 
 // --- Receive Player Details ---
@@ -57,9 +59,7 @@ socket.on("playerDetails", (player) => {
     Style: ${player.style}<br>
     Start: ${player.value}
   `;
-
-  // Reset bids list when new player comes
-  bidsList.innerHTML = "";
+  bidsList.innerHTML = ""; // reset for new player
 });
 
 // --- Place Bid ---
@@ -95,9 +95,8 @@ placeBidBtn.addEventListener("click", () => {
 
 // --- Listen for New Bids ---
 socket.on("newBid", (data) => {
-  // Remove old bids from the same bidder
-  const items = Array.from(bidsList.children);
-  items.forEach(item => {
+  // Remove old bids from same bidder
+  Array.from(bidsList.children).forEach(item => {
     if (item.textContent.startsWith(`${data.name}:`)) {
       bidsList.removeChild(item);
     }
@@ -108,7 +107,7 @@ socket.on("newBid", (data) => {
   li.textContent = `${data.name}: ${data.amount}`;
   li.dataset.amount = data.amount;
 
-  // Insert in descending order (highest bid on top)
+  const items = Array.from(bidsList.children);
   const insertIndex = items.findIndex(
     item => parseInt(item.dataset.amount, 10) < data.amount
   );
