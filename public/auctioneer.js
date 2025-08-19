@@ -1,37 +1,69 @@
 const socket = io();
 
-const createRoomBtn = document.getElementById('createRoomBtn');
-const roomCodeDisplay = document.getElementById('roomCodeDisplay');
-const inviteLinkDisplay = document.getElementById('inviteLinkDisplay');
-const currentBidDisplay = document.getElementById('currentBidDisplay');
-const currentWinnerDisplay = document.getElementById('currentWinnerDisplay');
+const createPanel = document.getElementById("createPanel");
+const auctionPanel = document.getElementById("auctionPanel");
+const createBtn = document.getElementById("createBtn");
 
-createRoomBtn.addEventListener('click', () => {
-  socket.emit('create-room');
+const roomCodeInput = document.getElementById("roomCode");
+const incrementInput = document.getElementById("increment");
+const numParticipants = document.getElementById("numParticipants");
+const inviteLinkEl = document.getElementById("inviteLink");
+
+const playerName = document.getElementById("playerName");
+const playerClub = document.getElementById("playerClub");
+const playerPosition = document.getElementById("playerPosition");
+const playerStyle = document.getElementById("playerStyle");
+const playerValue = document.getElementById("playerValue");
+
+const addPlayerBtn = document.getElementById("addPlayerBtn");
+const startAuctionBtn = document.getElementById("startAuctionBtn");
+const currentPlayer = document.getElementById("currentPlayer");
+
+let currentRoom = null;
+
+// Create Room
+createBtn.addEventListener("click", () => {
+  const room = roomCodeInput.value.trim();
+  const increment = parseInt(incrementInput.value, 10);
+  const participants = parseInt(numParticipants.value, 10);
+  if (!room || !increment || !participants) return alert("Enter all fields!");
+  currentRoom = room;
+  socket.emit("createRoom", { room, increment, participants });
 });
 
-socket.on('room-created', (roomCode) => {
-  roomCodeDisplay.innerText = roomCode;
-  const inviteLink = `${window.location.origin.replace('auctioneer.html','bidder.html')}?room=${roomCode}`;
-  inviteLinkDisplay.innerHTML = `<a href="${inviteLink}" target="_blank">${inviteLink}</a>`;
+// Room created
+socket.on("roomCreated", ({ room, inviteLink }) => {
+  createPanel.classList.add("hidden");
+  auctionPanel.classList.remove("hidden");
+  inviteLinkEl.innerHTML = `<a href="${inviteLink}" target="_blank">${inviteLink}</a>`;
 });
 
-socket.on('current-bid', (bidValue, bidderName) => {
-  currentBidDisplay.innerText = bidValue;
-  currentWinnerDisplay.innerText = bidderName;
+// Add Player
+addPlayerBtn.addEventListener("click", () => {
+  const player = {
+    name: playerName.value,
+    club: playerClub.value,
+    position: playerPosition.value,
+    style: playerStyle.value,
+    value: parseInt(playerValue.value, 10)
+  };
+  if (!player.name || !player.club || !player.position || !player.style || !player.value) return alert("Fill all player details!");
+  socket.emit("addPlayer", { room: currentRoom, player });
+  playerName.value = playerClub.value = playerPosition.value = playerStyle.value = playerValue.value = "";
 });
 
-socket.on('update-bidders', (bidders) => {
-  const bidderList = document.getElementById('bidderList');
-  bidderList.innerHTML = '';
-  bidders.forEach(b => {
-    const li = document.createElement('li');
-    li.innerText = b.name;
-    bidderList.appendChild(li);
-  });
+// Start Auction
+startAuctionBtn.addEventListener("click", () => socket.emit("startAuction", { room: currentRoom }));
+
+// Show player details
+socket.on("playerDetails", (player) => {
+  currentPlayer.innerHTML = `
+    <strong>${player.name} (${player.club})</strong><br>
+    Position: ${player.position}<br>
+    Style: ${player.style}<br>
+    Base Value: ${player.value}
+  `;
 });
 
-socket.on('room-closed', () => {
-  alert('The auctioneer has closed the room.');
-  window.location.reload();
-});
+// Debug errors
+socket.on("errorMsg", (msg) => console.error("Server Error:", msg));
