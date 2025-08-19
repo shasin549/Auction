@@ -1,87 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Auctioneer - eFootball Auction</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Auctioneer Panel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <h1>Auctioneer Dashboard</h1>
+  <div class="container">
+    <h1>Auctioneer Panel</h1>
+    <div id="create-room">
+      <input type="text" id="roomName" placeholder="Auction Room Name">
+      <input type="number" id="increment" placeholder="Bid Increment">
+      <button id="createRoomBtn">Create Room</button>
+    </div>
+    <div id="auction-area" style="display:none;">
+      <p>Room Code: <span id="roomCode"></span></p>
+      <h2>Upload Player</h2>
+      <input type="text" id="playerName" placeholder="Player Name">
+      <input type="text" id="playerClub" placeholder="Club/Nationality">
+      <input type="text" id="playerPosition" placeholder="Position">
+      <input type="text" id="playerStyle" placeholder="Playing Style">
+      <input type="number" id="playerValue" placeholder="Value">
+      <button id="startPlayerBtn">Start Auction</button>
 
-    <section id="room-setup-section" class="card">
-      <h2>Create Auction Room</h2>
-      <label for="roomName">Room Name</label>
-      <input type="text" id="roomName" placeholder="Enter room name" />
+      <h3>Calls</h3>
+      <button id="finalCallBtn">Final Call</button>
 
-      <label for="numParticipants">Number of Participants</label>
-      <input type="number" id="numParticipants" min="1" max="50" placeholder="Max participants" />
-
-      <label for="bidIncrement">Bid Increment</label>
-      <input type="number" id="bidIncrement" min="1" placeholder="Bid increment amount" />
-
-      <button id="createRoomBtn" class="btn btn-primary">Create Room</button>
-    </section>
-
-    <section id="auction-section" class="card" style="display:none;">
-      <h2>Room: <span id="roomNameDisplay"></span></h2>
-
-      <div class="flex-row" style="gap: 1rem; flex-wrap: wrap;">
-        <div class="flex-grow" style="min-width: 280px;">
-          <h3>Add Player</h3>
-          <label for="playerName">Player Name</label>
-          <input type="text" id="playerName" placeholder="Name" />
-
-          <label for="playerClub">Player Club/Nationality</label>
-          <input type="text" id="playerClub" placeholder="Club or Nationality" />
-
-          <label for="playerPosition">Position</label>
-          <input type="text" id="playerPosition" placeholder="Position" />
-
-          <label for="playerStyle">Playing Style</label>
-          <input type="text" id="playerStyle" placeholder="Playing Style" />
-
-          <label for="playerValue">Player Value</label>
-          <input type="number" id="playerValue" min="0" placeholder="Player base value" />
-
-          <button id="addPlayerBtn" class="btn btn-success">Add Player</button>
-        </div>
-
-        <div class="flex-grow" style="min-width: 280px;">
-          <h3>Players List</h3>
-          <div id="playersList" class="scrollable card"></div>
-        </div>
-      </div>
-
-      <div style="margin-top: 1rem;">
-        <label>Invite Link:</label>
-        <input type="text" id="inviteLink" readonly style="width: 100%; user-select: all;" />
-        <button id="copyInviteBtn" class="btn btn-secondary" style="margin-top: 0.5rem;">Copy Invite Link</button>
-      </div>
-
-      <div style="margin-top: 1rem;">
-        <button id="startBiddingBtn" class="btn btn-primary" disabled>Start Bidding</button>
-        <button id="finalCallBtn" class="btn btn-warning" disabled>Final Call</button>
-      </div>
-
-      <div id="callStatus" class="call-status"></div>
-
-      <section style="margin-top: 1.5rem;">
-        <h3>Participants</h3>
-        <div id="participantsList" class="scrollable card"></div>
-      </section>
-
-      <section style="margin-top: 1.5rem;">
-        <h3>Winning Players of Selected Participant</h3>
-        <div id="participantWins" class="scrollable card"></div>
-      </section>
-    </section>
-
-  </main>
-
-  <div id="toast" class="toast"></div>
-
+      <h3>Participants</h3>
+      <ul id="participants"></ul>
+    </div>
+  </div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="auctioneer.js"></script>
 </body>
