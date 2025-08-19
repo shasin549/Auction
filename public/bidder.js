@@ -1,143 +1,91 @@
-/* Bidder-side localStorage sync
-   - Join room: adds bidder name to participants array in room object
-   - Place bids: append to room.bids array (with timestamp)
-   - Listen to storage events to update UI live
-*/
-(function(){
-  const id = s => document.getElementById(s);
+const socket = io();
+let currentRoom = null;
+let bidderName = null;
+let increment = 0;
 
-  const joinPanel = id('joinPanel');
-  const livePanel = id('livePanel');
-  const joinBtn = id('joinBtn');
-  const bidderNameInput = id('bidderName');
-  const roomCodeInput = id('roomCode');
+// Elements
+const joinPanel = document.getElementById("joinPanel");
+const bidderPanel = document.getElementById("bidderPanel");
 
-  const roomDisplay = id('roomDisplay');
-  const participantCount = id('participantCount');
-  const maxCount = id('maxCount');
-  const currentIncrement = id('currentIncrement');
+const joinBtn = document.getElementById("joinBtn");
+const roomCodeInput = document.getElementById("roomCode");
+const bidderNameInput = document.getElementById("bidderName");
 
-  const currentPlayer = id('currentPlayer');
-  const manualBidInput = id('manualBid');
-  const placeBidBtn = id('placeBidBtn');
-  const bidList = id('bidList');
-  const status = id('status');
+const currentPlayer = document.getElementById("currentPlayer");
+const manualBidInput = document.getElementById("manualBid");
+const placeBidBtn = document.getElementById("placeBidBtn");
+const bidsList = document.getElementById("bidderBids");
 
-  let ROOM = null;
-  let ME = null;
+// Auto join from invite link
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has("room")) {
+  roomCodeInput.value = urlParams.get("room");
+}
 
-  function roomKey(r){ return `auction_room_${r}`; }
-  function readRoom(){ return JSON.parse(localStorage.getItem(roomKey(ROOM)) || 'null'); }
-  function writeRoom(obj){ localStorage.setItem(roomKey(ROOM), JSON.stringify({...obj, _ts:Date.now()})); }
+// Join Room
+joinBtn.addEventListener("click", () => {
+  bidderName = bidderNameInput.value.trim();
+  const room = roomCodeInput.value.trim();
 
-  function showLive(){
-    joinPanel.classList.add('hidden');
-    livePanel.classList.remove('hidden');
-  }
-  function showJoin(){
-    joinPanel.classList.remove('hidden');
-    livePanel.classList.add('hidden');
+  if (!bidderName || !room) {
+    alert("Please enter your name and room code!");
+    return;
   }
 
-  // auto-fill room from ?room=...
-  const url = new URL(location.href);
-  if(url.searchParams.has('room')) roomCodeInput.value = url.searchParams.get('room');
+  currentRoom = room;
+  socket.emit("joinRoom", { room, name: bidderName });
 
-  joinBtn.addEventListener('click', ()=>{
-    const room = roomCodeInput.value.trim();
-    const name = bidderNameInput.value.trim();
-    if(!room || !name){ alert('Enter name and room'); return; }
-    ROOM = room; ME = name;
+  joinPanel.style.display = "none";
+  bidderPanel.style.display = "block";
+});
 
-    // join: add to participants if not present
-    let r = readRoom();
-    if(!r){ alert('Room not found or not created yet'); return; }
-    if(!r.participants) r.participants = [];
-    if(!r.participants.includes(name)){
-      r.participants.push(name);
-      writeRoom(r);
-    }
-    status.textContent = 'Joined as ' + name;
-    roomDisplay.textContent = ROOM;
-    participantCount.textContent = r.participants.length;
-    maxCount.textContent = r.maxParticipants;
-    currentIncrement.textContent = r.increment;
-    renderCurrentPlayer();
-    showLive();
-  });
+// Receive Player Details
+socket.on("playerDetails", (player) => {
+  currentPlayer.innerHTML = `
+    <strong>${player.name} (${player.club})</strong><br>
+    Position: ${player.position}<br>
+    Style: ${player.style}<br>
+    Base Value: ${player.value}
+  `;
+});
 
-  function renderCurrentPlayer(){
-    const r = readRoom();
-    if(!r){ currentPlayer.innerHTML = '<div class="muted">Waiting for room</div>'; return; }
-    participantCount.textContent = r.participants.length;
-    maxCount.textContent = r.maxParticipants;
-    currentIncrement.textContent = r.increment;
-    if(typeof r.currentIndex === 'number' && r.currentIndex >= 0){
-      const pl = r.players[r.currentIndex];
-      if(pl){
-        currentPlayer.innerHTML = `<h3>${pl.name} <small class="muted">(${pl.club})</small></h3>
-          <div>Position: ${pl.position}</div>
-          <div>Style: ${pl.style}</div>
-          <div>Base: ${pl.value}</div>`;
-      } else {
-        currentPlayer.innerHTML = '<div class="muted">No player</div>';
-      }
-      renderBids();
-    } else {
-      currentPlayer.innerHTML = '<div class="muted">Auction not started</div>';
-      bidList.innerHTML = '';
-    }
+// Place Bid
+placeBidBtn.addEventListener("click", () => {
+  let bidAmount;
+
+  if (manualBidInput.value.trim() !== "") {
+    bidAmount = parseInt(manualBidInput.value, 10);
+  } else {
+    const topBid = bidsList.firstChild ? parseInt(bidsList.firstChild.dataset.amount, 10) : 0;
+    bidAmount = topBid + (increment || 1);
   }
 
-  function renderBids(){
-    const r = readRoom();
-    bidList.innerHTML = '';
-    if(!r || !r.bids) return;
-    const sorted = r.bids.slice().sort((a,b)=>b.amount - a.amount);
-    sorted.forEach(b=>{
-      const li = document.createElement('li');
-      li.textContent = `${b.name} — ${b.amount}`;
-      bidList.appendChild(li);
-    });
+  if (!bidAmount || bidAmount <= 0) {
+    alert("Invalid bid amount!");
+    return;
   }
 
-  placeBidBtn.addEventListener('click', ()=>{
-    const r = readRoom();
-    if(!r){ alert('Room not available'); return; }
-    if(typeof r.currentIndex !== 'number' || r.currentIndex < 0){ alert('No active player'); return; }
-    let amount;
-    if(manualBidInput.value.trim() !== ''){
-      amount = parseInt(manualBidInput.value, 10);
-    } else {
-      const top = r.bids && r.bids.length ? Math.max(...r.bids.map(b=>b.amount)) : r.players[r.currentIndex].value || 0;
-      amount = top + (r.increment || 1);
-    }
-    if(!amount || amount <= 0){ alert('Invalid bid'); return; }
+  socket.emit("placeBid", { room: currentRoom, name: bidderName, amount: bidAmount });
+  manualBidInput.value = "";
+});
 
-    const bid = { name: ME, amount, ts: Date.now() };
-    r.bids = r.bids || [];
-    // remove previous bids by same user to keep only latest (optional)
-    r.bids = r.bids.filter(b=>b.name !== ME);
-    r.bids.push(bid);
-    writeRoom(r);
-    manualBidInput.value = '';
-    renderBids();
-  });
+// Listen for bids
+socket.on("newBid", (data) => {
+  const li = document.createElement("li");
+  li.textContent = `${data.name}: ${data.amount}`;
+  li.dataset.amount = data.amount;
 
-  // storage listener to update UI when auctioneer or other bidders update the room
-  window.addEventListener('storage', (ev)=>{
-    if(!ROOM) return;
-    if(ev.key === roomKey(ROOM)){
-      // update UI
-      renderCurrentPlayer();
-    }
-  });
+  const items = Array.from(bidsList.children);
+  const insertIndex = items.findIndex(item => parseInt(item.dataset.amount, 10) < data.amount);
 
-  // if user opens bidder.html with room param and name param, auto-join
-  if(url.searchParams.has('room') && url.searchParams.has('name')){
-    roomCodeInput.value = url.searchParams.get('room');
-    bidderNameInput.value = url.searchParams.get('name');
-    joinBtn.click();
+  if (insertIndex === -1) {
+    bidsList.appendChild(li);
+  } else {
+    bidsList.insertBefore(li, items[insertIndex]);
   }
+});
 
-})();
+// Receive increment info
+socket.on("setIncrement", (value) => {
+  increment = value;
+});
