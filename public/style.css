@@ -1,24 +1,57 @@
+/* style.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  background: #f4f4f9;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1f1c2c, #928dab);
+  color: #fff;
 }
+
 .container {
-  margin-top: 100px;
+  width: 400px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  text-align: center;
 }
+
 button {
-  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  padding: 12px 20px;
   margin: 10px;
   font-size: 16px;
+  border-radius: 12px;
+  color: white;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
-.info {
-  margin-top: 30px;
-  border: 1px solid #ccc;
-  padding: 20px;
-  display: inline-block;
-  background: #fff;
+
+button:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
-.hidden {
-  display: none;
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  outline: none;
+}
+
+h1, h2 {
+  margin-bottom: 20px;
 }
