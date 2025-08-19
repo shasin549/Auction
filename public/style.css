@@ -1,56 +1,46 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
-}
-
 body {
-  min-height: 100vh;
+  margin: 0;
+  height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #1f1c2c, #928dab);
-  color: #fff;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  font-family: Arial, sans-serif;
 }
 
-.container {
-  width: 420px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+.glass-container {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
   padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(12px);
   text-align: center;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  color: white;
+  width: 400px;
+}
+
+input, button {
+  width: 90%;
+  margin: 10px 0;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  outline: none;
+  font-size: 16px;
+}
+
+input {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
 }
 
 button {
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
-  padding: 12px 20px;
-  margin: 10px;
-  font-size: 16px;
-  border-radius: 12px;
+  background: #667eea;
   color: white;
   cursor: pointer;
   transition: 0.3s;
 }
 
 button:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 12px;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  outline: none;
-}
-
-h1, h2 {
-  margin-bottom: 15px;
+  background: #764ba2;
 }
