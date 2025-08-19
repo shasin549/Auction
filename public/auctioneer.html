@@ -9,30 +9,32 @@
   <script defer src="auctioneer.js"></script>
 </head>
 <body>
-  <div id="createRoomPanel">
+  <div class="panel glass" id="createRoomPanel">
     <h2>Create Auction Room</h2>
-    <input type="text" id="auctioneerName" placeholder="Your Name">
-    <button id="createRoomBtn">Create Room</button>
+    <input type="text" id="auctioneerName" placeholder="Auctioneer Name">
+    <input type="number" id="maxParticipants" placeholder="Max Participants">
+    <input type="number" id="bidIncrement" placeholder="Bid Increment">
+    <button id="createRoomBtn" class="btn">Create Room</button>
     <p id="inviteLink"></p>
   </div>
 
-  <div id="auctionPanel" style="display:none;">
+  <div class="panel glass" id="auctionPanel" style="display:none;">
     <h2>Auction Room: <span id="roomCode"></span></h2>
-    <h3>Participants: <span id="participantCount">0</span></h3>
+    <h3>Participants: <span id="participantCount">0</span>/<span id="maxCount"></span></h3>
 
-    <div id="playerForm">
+    <div class="form-grid">
       <input type="text" id="playerName" placeholder="Player Name">
       <input type="text" id="playerClub" placeholder="Club/Nationality">
       <input type="text" id="playerPosition" placeholder="Position">
       <input type="text" id="playerStyle" placeholder="Playing Style">
       <input type="number" id="playerValue" placeholder="Base Value">
-      <button id="startBiddingBtn">Start Bidding</button>
     </div>
+    <button id="startBiddingBtn" class="btn">Start Bidding</button>
 
-    <div id="playerPreview"></div>
+    <div id="playerPreview" class="preview-card"></div>
 
-    <button id="finalCallBtn">Final Call</button>
-    <button id="nextPlayerBtn" style="display:none;">Next Player</button>
+    <button id="finalCallBtn" class="btn warn">Final Call</button>
+    <button id="nextPlayerBtn" class="btn ghost" style="display:none;">Next Player</button>
   </div>
 </body>
 </html>
