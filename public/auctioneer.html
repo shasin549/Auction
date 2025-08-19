@@ -5,36 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auctioneer Panel</title>
   <link rel="stylesheet" href="style.css">
-  <script src="/socket.io/socket.io.js"></script>
-  <script defer src="auctioneer.js"></script>
 </head>
 <body>
-  <div class="panel glass" id="createRoomPanel">
-    <h2>Create Auction Room</h2>
-    <input type="text" id="auctioneerName" placeholder="Auctioneer Name">
-    <input type="number" id="maxParticipants" placeholder="Max Participants">
-    <input type="number" id="bidIncrement" placeholder="Bid Increment">
-    <button id="createRoomBtn" class="btn">Create Room</button>
+  <!-- Create Room Panel -->
+  <div id="createRoomPanel" class="panel">
+    <h1>Create Auction Room</h1>
+    <input type="text" id="roomName" placeholder="Room Name" />
+    <input type="number" id="participants" placeholder="No. of Participants" min="1" />
+    <input type="number" id="increment" placeholder="Bid Increment" min="1" />
+    <button id="createRoomBtn">Create Room</button>
     <p id="inviteLink"></p>
   </div>
 
-  <div class="panel glass" id="auctionPanel" style="display:none;">
-    <h2>Auction Room: <span id="roomCode"></span></h2>
-    <h3>Participants: <span id="participantCount">0</span>/<span id="maxCount"></span></h3>
+  <!-- Auction Panel -->
+  <div id="auctionPanel" class="panel hidden">
+    <h2>Auction Room: <span id="roomDisplay"></span></h2>
+    <div id="playerPreview"></div>
 
-    <div class="form-grid">
-      <input type="text" id="playerName" placeholder="Player Name">
-      <input type="text" id="playerClub" placeholder="Club/Nationality">
-      <input type="text" id="playerPosition" placeholder="Position">
-      <input type="text" id="playerStyle" placeholder="Playing Style">
-      <input type="number" id="playerValue" placeholder="Base Value">
-    </div>
-    <button id="startBiddingBtn" class="btn">Start Bidding</button>
+    <button id="startBiddingBtn">Start Bidding</button>
+    <button id="finalCallBtn">Final Call</button>
+    <button id="nextPlayerBtn" class="hidden">Next Player</button>
 
-    <div id="playerPreview" class="preview-card"></div>
-
-    <button id="finalCallBtn" class="btn warn">Final Call</button>
-    <button id="nextPlayerBtn" class="btn ghost" style="display:none;">Next Player</button>
+    <h3>Bids</h3>
+    <ul id="auctionBids"></ul>
   </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="auctioneer.js"></script>
 </body>
 </html>
