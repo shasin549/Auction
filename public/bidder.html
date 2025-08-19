@@ -9,21 +9,21 @@
   <script defer src="bidder.js"></script>
 </head>
 <body>
-  <div id="joinPanel">
+  <div class="panel glass" id="joinPanel">
     <h2>Join Auction Room</h2>
     <input type="text" id="bidderName" placeholder="Your Name">
     <input type="text" id="roomCode" placeholder="Room Code">
-    <button id="joinBtn">Join Room</button>
+    <button id="joinBtn" class="btn">Join Room</button>
   </div>
 
-  <div id="bidderPanel" style="display:none;">
+  <div class="panel glass" id="bidderPanel" style="display:none;">
     <h2>Room: <span id="roomDisplay"></span></h2>
-    <div id="currentPlayer"></div>
+    <div id="currentPlayer" class="preview-card"></div>
 
-    <ul id="bidderBids"></ul>
+    <ul id="bidderBids" class="bid-list"></ul>
 
     <input type="number" id="manualBid" placeholder="Enter bid manually">
-    <button id="placeBidBtn">Place Bid</button>
+    <button id="placeBidBtn" class="btn">Place Bid</button>
   </div>
 </body>
 </html>
