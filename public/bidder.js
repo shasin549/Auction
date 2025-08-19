@@ -1,7 +1,6 @@
 const socket = io();
 let currentRoom = null;
 let bidderName = null;
-let increment = 0;
 
 const joinPanel = document.getElementById("joinPanel");
 const bidderPanel = document.getElementById("bidderPanel");
@@ -23,11 +22,9 @@ if (urlParams.has("room")) roomCodeInput.value = urlParams.get("room");
 joinBtn.addEventListener("click", () => {
   bidderName = bidderNameInput.value.trim();
   const room = roomCodeInput.value.trim();
-  if (!bidderName || !room) { alert("Enter name and room code!"); return; }
-
+  if (!bidderName || !room) return alert("Enter name and room code!");
   currentRoom = room;
   socket.emit("joinRoom", { room, name: bidderName });
-
   joinPanel.classList.add("hidden");
   bidderPanel.classList.remove("hidden");
 });
@@ -40,13 +37,13 @@ socket.on("playerDetails", (player) => {
     Style: ${player.style}<br>
     Base Value: ${player.value}
   `;
+  bidsList.innerHTML = "";
 });
 
 // Place bid
 placeBidBtn.addEventListener("click", () => {
-  let bidAmount = parseInt(manualBidInput.value, 10);
-  if (!bidAmount || bidAmount <= 0) { alert("Invalid bid!"); return; }
-
+  const bidAmount = parseInt(manualBidInput.value, 10);
+  if (!bidAmount || bidAmount <= 0) return alert("Invalid bid!");
   socket.emit("placeBid", { room: currentRoom, name: bidderName, amount: bidAmount });
   manualBidInput.value = "";
 });
@@ -62,3 +59,6 @@ socket.on("newBid", ({ name, amount }) => {
   if (insertIndex === -1) bidsList.appendChild(li);
   else bidsList.insertBefore(li, items[insertIndex]);
 });
+
+// Debug errors
+socket.on("errorMsg", (msg) => console.error("Server Error:", msg));
