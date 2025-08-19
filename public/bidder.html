@@ -1,40 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
   <title>Bidder</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-
-    <div class="card" id="joinCard">
-      <h2>Join Auction</h2>
-      <div class="row">
-        <input class="input" id="participantName" placeholder="Your name" />
-        <input class="input" id="roomCode" placeholder="Room code" />
-      </div>
-      <div class="actions">
-        <button id="joinBtn">Join Room</button>
-      </div>
-    </div>
-
-    <div class="card" id="liveCard" style="display:none;">
-      <h2>Live Auction</h2>
-      <div class="list">
-        <div id="playerDetails">Waiting for player…</div>
-        <div id="currentBid" style="margin-top:8px; opacity:.9;"></div>
-      </div>
-      <div class="row" style="margin-top:12px;">
-        <input class="input" id="bidAmount" type="number" placeholder="Enter your bid" />
-        <button id="bidBtn">Place Bid</button>
-      </div>
-    </div>
-
+  <div class="glass-card">
+    <h2>Join Auction</h2>
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <input type="text" id="bidderName" placeholder="Your Name">
+    <button id="joinRoomBtn">Join Room</button>
   </div>
 
+  <div id="auctionSection" class="glass-card" style="display:none;">
+    <h2 id="currentPlayer">Waiting for player...</h2>
+    <input type="number" id="manualBid" placeholder="Enter custom bid (optional)">
+    <button id="placeBidBtn">Place Bid</button>
+    <h3>Live Bids</h3>
+    <ul id="bidList"></ul>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script src="bidder.js"></script>
 </body>
 </html>
