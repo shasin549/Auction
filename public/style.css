@@ -1,28 +1,34 @@
+/* Glassmorphism Style */
 body {
   margin: 0;
-  height: 100vh;
+  font-family: 'Poppins', sans-serif;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  font-family: Arial, sans-serif;
+  align-items: center;
+  min-height: 100vh;
+  background: url("https://images.unsplash.com/photo-1506459225024-1428097a7e18") no-repeat center center/cover;
+  backdrop-filter: blur(8px);
 }
 
-.glass-container {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
+.container {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
   padding: 30px;
-  text-align: center;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  color: white;
   width: 400px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(15px);
+  color: white;
+}
+
+h1, h2, h3 {
+  margin-bottom: 15px;
 }
 
 input, button {
-  width: 90%;
-  margin: 10px 0;
+  width: 100%;
   padding: 12px;
+  margin: 10px 0;
   border: none;
   border-radius: 12px;
   outline: none;
@@ -30,17 +36,25 @@ input, button {
 }
 
 input {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
-button {
-  background: #667eea;
+/* White placeholders */
+::placeholder {
   color: white;
+  opacity: 0.8;
+}
+
+button {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
 }
 
 button:hover {
-  background: #764ba2;
+  background: rgba(255, 255, 255, 0.6);
+  color: black;
 }
