@@ -69,4 +69,48 @@ io.on("connection", (socket) => {
 
   // Place bid
   socket.on("placeBid", ({ roomName, bidderName, bidAmount }) => {
-    if (!rooms[room
+    if (!rooms[roomName]) return;
+    const amt = parseInt(bidAmount, 10);
+    const { currentBid, increment } = rooms[roomName];
+    const minBid = increment > 0 ? currentBid + increment : currentBid + 1;
+
+    if (isNaN(amt) || amt < minBid) {
+      socket.emit("bidRejected", {
+        message:
+          increment > 0
+            ? `Bid must be at least ${minBid} (increment ${increment}).`
+            : `Bid must be greater than ${currentBid}.`,
+      });
+      return;
+    }
+
+    rooms[roomName].currentBid = amt;
+    rooms[roomName].highestBidder = bidderName;
+
+    io.to(roomName).emit("newBid", { bidderName, bidAmount: amt });
+    console.log(`${bidderName} bid ${amt} in ${roomName}`);
+  });
+
+  // Final call / close lot
+  socket.on("finalCall", ({ roomName }) => {
+    if (!rooms[roomName]) return;
+    io.to(roomName).emit("finalResult", {
+      highestBidder: rooms[roomName].highestBidder,
+      finalBid: rooms[roomName].currentBid,
+      player: rooms[roomName].currentPlayer,
+    });
+    console.log(
+      `Final in ${roomName} -> ${rooms[roomName].highestBidder} @ ${rooms[roomName].currentBid}`
+    );
+    // (Optionally) reset current lot
+    // rooms[roomName].currentPlayer = null;
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
