@@ -1,70 +1,89 @@
 const socket = io();
 let currentRoom = null;
 
-// Create Room
-document.getElementById("createRoomBtn").onclick = () => {
-  const room = document.getElementById("roomName").value.trim();
-  const participants = document.getElementById("participants").value;
-  const increment = document.getElementById("bidIncrement").value;
+// Elements
+const createRoomPanel = document.getElementById("createRoomPanel");
+const auctionPanel = document.getElementById("auctionPanel");
+const auctioneerNameInput = document.getElementById("auctioneerName");
+const createRoomBtn = document.getElementById("createRoomBtn");
+const inviteLink = document.getElementById("inviteLink");
 
-  if (!room) return alert("Enter room name!");
+const roomCodeDisplay = document.getElementById("roomCode");
+const participantCount = document.getElementById("participantCount");
 
-  socket.emit("createRoom", { room, participants, increment }, (success) => {
-    if (success) {
-      currentRoom = room;
+const playerNameInput = document.getElementById("playerName");
+const playerClubInput = document.getElementById("playerClub");
+const playerPositionInput = document.getElementById("playerPosition");
+const playerStyleInput = document.getElementById("playerStyle");
+const playerValueInput = document.getElementById("playerValue");
+const startBiddingBtn = document.getElementById("startBiddingBtn");
 
-      // Show invite link
-      const inviteLink = `${window.location.origin}/bidder.html?room=${room}`;
-      document.getElementById("inviteLink").value = inviteLink;
-      document.getElementById("inviteBox").classList.remove("hidden");
+const playerPreview = document.getElementById("playerPreview");
+const finalCallBtn = document.getElementById("finalCallBtn");
+const nextPlayerBtn = document.getElementById("nextPlayerBtn");
 
-      // Hide Create Room, show Auction Panel
-      document.getElementById("createRoomSection").classList.add("hidden");
-      document.getElementById("auctionPanel").classList.remove("hidden");
-    } else {
-      alert("Room already exists!");
-    }
-  });
-};
+// --- Create Room ---
+createRoomBtn.addEventListener("click", () => {
+  const name = auctioneerNameInput.value.trim();
+  if (!name) {
+    alert("Please enter your name!");
+    return;
+  }
 
-// Copy invite link
-document.getElementById("copyLink").onclick = () => {
-  const link = document.getElementById("inviteLink");
-  link.select();
-  document.execCommand("copy");
-};
+  socket.emit("createRoom", { name });
+});
 
-// Start Bidding
-document.getElementById("startBidding").onclick = () => {
-  const details = {
-    name: document.getElementById("playerName").value,
-    club: document.getElementById("playerClub").value,
-    position: document.getElementById("playerPosition").value,
-    style: document.getElementById("playerStyle").value,
-    value: document.getElementById("playerValue").value
+socket.on("roomCreated", ({ room }) => {
+  currentRoom = room;
+
+  createRoomPanel.style.display = "none";
+  auctionPanel.style.display = "block";
+
+  roomCodeDisplay.textContent = currentRoom;
+  inviteLink.innerHTML = `
+    Share this link with bidders: 
+    <a href="${window.location.origin}/bidder.html?room=${currentRoom}">${window.location.origin}/bidder.html?room=${currentRoom}</a>
+  `;
+});
+
+// --- Update participant count ---
+socket.on("updateParticipants", (count) => {
+  participantCount.textContent = count;
+});
+
+// --- Start bidding for a player ---
+startBiddingBtn.addEventListener("click", () => {
+  const player = {
+    name: playerNameInput.value.trim(),
+    club: playerClubInput.value.trim(),
+    position: playerPositionInput.value.trim(),
+    style: playerStyleInput.value.trim(),
+    value: parseInt(playerValueInput.value, 10) || 0,
   };
 
-  socket.emit("startBidding", { room: currentRoom, details });
+  if (!player.name || !player.club || !player.position) {
+    alert("Please fill player details!");
+    return;
+  }
 
-  // Preview locally
-  updatePreview(details);
-};
+  playerPreview.innerHTML = `
+    <h3>${player.name} (${player.club})</h3>
+    <p>Position: ${player.position}</p>
+    <p>Style: ${player.style}</p>
+    <p>Base Value: ${player.value}</p>
+  `;
 
-function updatePreview(details) {
-  document.getElementById("previewBox").innerText =
-    `${details.name} (${details.club})\n` +
-    `Position: ${details.position}\nStyle: ${details.style}\nStart: ${details.value}`;
-}
+  socket.emit("playerDetails", { room: currentRoom, player });
+});
 
-// Live bids update
-socket.on("updateBids", (bids) => {
-  const bidList = document.getElementById("bidList");
-  bidList.innerHTML = "";
-  bids
-    .sort((a, b) => b.amount - a.amount)
-    .forEach(b => {
-      const li = document.createElement("li");
-      li.textContent = `${b.name} - ${b.amount}`;
-      bidList.appendChild(li);
-    });
+// --- Final Call ---
+finalCallBtn.addEventListener("click", () => {
+  socket.emit("finalCall", { room: currentRoom });
+  nextPlayerBtn.style.display = "inline-block";
+});
+
+// --- Next Player ---
+nextPlayerBtn.addEventListener("click", () => {
+  playerPreview.innerHTML = "";
+  nextPlayerBtn.style.display = "none";
 });
