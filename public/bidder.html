@@ -1,43 +1,31 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
   <title>Bidder Panel</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="center-panel glass wide">
-    <section id="joinPanel">
-      <h2>Join Auction</h2>
-      <input id="bidderName" placeholder="Your name" />
-      <input id="roomCode" placeholder="Room code or invite param ?room=CODE" />
-      <div class="row">
-        <button id="joinBtn" class="btn">Join</button>
-      </div>
-      <small class="muted">Tip: open this page in a new tab to act as a bidder</small>
-    </section>
+  <div id="joinPanel" class="panel">
+    <h2>Join Auction</h2>
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <input type="text" id="bidderName" placeholder="Your Name">
+    <button id="joinBtn" class="btn">Join Room</button>
+  </div>
 
-    <section id="livePanel" class="hidden">
-      <h2>Room: <span id="roomDisplay"></span></h2>
-      <div class="meta-row">
-        <div>Participants: <span id="participantCount">0</span> / <span id="maxCount">0</span></div>
-        <div>Increment: <span id="currentIncrement">1</span></div>
-      </div>
+  <div id="bidderPanel" class="panel" style="display:none;">
+    <h2>Bidder Panel</h2>
+    <div id="currentPlayer"></div>
 
-      <div id="currentPlayer" class="preview"></div>
+    <h3>Place Your Bid</h3>
+    <input type="number" id="manualBid" placeholder="Enter Bid">
+    <button id="placeBidBtn" class="btn">Place Bid</button>
 
-      <div class="row">
-        <input id="manualBid" type="number" placeholder="Enter bid amount (or leave blank to auto-increment)" />
-        <button id="placeBidBtn" class="btn">Place Bid</button>
-      </div>
+    <h3>All Bids</h3>
+    <ul id="bidderBids"></ul>
+  </div>
 
-      <h3>Live Bids</h3>
-      <ul id="bidList" class="list"></ul>
-      <div id="status" class="muted"></div>
-    </section>
-  </main>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script src="bidder.js"></script>
 </body>
 </html>
