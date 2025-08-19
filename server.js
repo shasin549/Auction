@@ -9,54 +9,75 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-const rooms = {};
+let rooms = {}; // { roomCode: { auctioneer, increment, players: [], bidders: [], currentIndex, bids: [] } }
 
 io.on("connection", (socket) => {
-  console.log("New client connected");
+  console.log("User connected:", socket.id);
 
-  // Create room
-  socket.on("createRoom", ({ name, maxParticipants, increment }) => {
-    const room = Math.floor(1000 + Math.random() * 9000).toString();
-    rooms[room] = { 
-      participants: [], 
-      auctioneer: name, 
-      maxParticipants, 
-      increment 
+  // Auctioneer creates a room
+  socket.on("createRoom", ({ room, increment }) => {
+    if (rooms[room]) {
+      socket.emit("errorMsg", "Room already exists!");
+      return;
+    }
+    rooms[room] = {
+      auctioneer: socket.id,
+      increment,
+      players: [],
+      bidders: [],
+      currentIndex: -1,
+      bids: []
     };
     socket.join(room);
-    socket.emit("roomCreated", { room, maxParticipants, increment });
+    socket.emit("roomCreated", { room });
+    console.log(`Room ${room} created`);
   });
 
-  // Join room
+  // Auctioneer adds player
+  socket.on("addPlayer", ({ room, player }) => {
+    if (rooms[room]) {
+      rooms[room].players.push(player);
+      io.to(room).emit("playerList", rooms[room].players);
+    }
+  });
+
+  // Auctioneer starts next player auction
+  socket.on("nextPlayer", (room) => {
+    const r = rooms[room];
+    if (!r) return;
+    r.currentIndex++;
+    if (r.currentIndex < r.players.length) {
+      const player = r.players[r.currentIndex];
+      r.bids = []; // reset bids
+      io.to(room).emit("playerDetails", player);
+    } else {
+      io.to(room).emit("auctionOver");
+    }
+  });
+
+  // Bidder joins
   socket.on("joinRoom", ({ room, name }) => {
-    if (!rooms[room]) return;
-    if (rooms[room].participants.length >= rooms[room].maxParticipants) return;
-
+    if (!rooms[room]) {
+      socket.emit("errorMsg", "Room not found!");
+      return;
+    }
+    rooms[room].bidders.push({ id: socket.id, name });
     socket.join(room);
-    rooms[room].participants.push(name);
-    io.to(room).emit("updateParticipants", rooms[room].participants.length);
-  });
-
-  // Send player details
-  socket.on("playerDetails", ({ room, player }) => {
-    io.to(room).emit("playerDetails", player);
+    socket.emit("joinedRoom", { room, name, increment: rooms[room].increment });
   });
 
   // Place bid
   socket.on("placeBid", ({ room, name, amount }) => {
+    const r = rooms[room];
+    if (!r) return;
+    r.bids.push({ name, amount });
     io.to(room).emit("newBid", { name, amount });
   });
 
-  // Final call
-  socket.on("finalCall", ({ room }) => {
-    io.to(room).emit("finalCall");
-  });
-
-  // Set increment
-  socket.on("setIncrement", ({ room, increment }) => {
-    io.to(room).emit("setIncrement", increment);
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
