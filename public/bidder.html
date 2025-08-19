@@ -2,26 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bidder Panel</title>
   <link rel="stylesheet" href="style.css">
   <script src="/socket.io/socket.io.js"></script>
+  <script defer src="bidder.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h2>Bidder Panel</h2>
+  <div id="joinPanel">
+    <h2>Join Auction Room</h2>
     <input type="text" id="bidderName" placeholder="Your Name">
-    <p>Room: <span id="roomCode"></span></p>
-
-    <h3>Player Preview</h3>
-    <div id="playerPreview"></div>
-
-    <h3>Place a Bid</h3>
-    <input type="number" id="bidValue" placeholder="Enter bid">
-    <button id="placeBid">Place Bid</button>
-
-    <h3>Live Bids</h3>
-    <ul id="bidList"></ul>
+    <input type="text" id="roomCode" placeholder="Room Code">
+    <button id="joinBtn">Join Room</button>
   </div>
-  <script src="bidder.js"></script>
+
+  <div id="bidderPanel" style="display:none;">
+    <h2>Room: <span id="roomDisplay"></span></h2>
+    <div id="currentPlayer"></div>
+
+    <ul id="bidderBids"></ul>
+
+    <input type="number" id="manualBid" placeholder="Enter bid manually">
+    <button id="placeBidBtn">Place Bid</button>
+  </div>
 </body>
 </html>
