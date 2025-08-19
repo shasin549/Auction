@@ -1,67 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bidder</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="glass" id="joinBox">
-    <h2>Join Auction</h2>
-    <input id="bidderName" placeholder="Your Name">
-    <input id="roomCode" placeholder="Room Code">
-    <button onclick="joinRoom()">Join Room</button>
-    <p id="error"></p>
-  </div>
-
-  <div class="glass" id="bidBox" style="display:none;">
+  <div class="glass-card">
     <h2>Bidder Panel</h2>
-    <div id="playerPreview"></div>
-    <h3 id="currentBid">No bids yet</h3>
-    <input id="bidValue" type="number" placeholder="Enter Bid">
-    <button onclick="placeBid()">Place Bid</button>
+
+    <!-- Join form -->
+    <div id="joinRoom">
+      <input type="text" id="participantName" placeholder="Your Name">
+      <input type="text" id="roomCode" placeholder="Room Code">
+      <button id="joinBtn">Join Room</button>
+    </div>
+
+    <!-- Auction view -->
+    <div id="auctionView" style="display:none;">
+      <h3>Current Player</h3>
+      <div id="playerDetails"></div>
+
+      <h3>Current Bid</h3>
+      <div id="currentBid">No bids yet</div>
+
+      <input type="number" id="bidValue" placeholder="Enter Bid Value">
+      <button id="placeBid">Place Bid</button>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     let currentRoom = null;
-    let bidderName = null;
+    let participantName = null;
 
-    function joinRoom() {
-      bidderName = document.getElementById("bidderName").value;
-      const roomCode = document.getElementById("roomCode").value;
-      socket.emit("joinRoom", { roomName: roomCode, bidderName });
+    // Auto-fill room code if joined via invite link
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("room")) {
+      document.getElementById("roomCode").value = urlParams.get("room");
     }
 
-    socket.on("roomJoined", ({ roomName }) => {
-      currentRoom = roomName;
-      document.getElementById("joinBox").style.display = "none";
-      document.getElementById("bidBox").style.display = "block";
+    // Join room
+    document.getElementById("joinBtn").addEventListener("click", () => {
+      participantName = document.getElementById("participantName").value;
+      currentRoom = document.getElementById("roomCode").value;
+      if (participantName && currentRoom) {
+        socket.emit("joinRoom", { roomName: currentRoom, participantName });
+        document.getElementById("joinRoom").style.display = "none";
+        document.getElementById("auctionView").style.display = "block";
+      }
     });
 
-    socket.on("errorMsg", (msg) => {
-      document.getElementById("error").innerText = msg;
-    });
-
-    socket.on("newPlayer", (player) => {
-      document.getElementById("playerPreview").innerHTML = `
-        <h3>${player.name}</h3>
-        <p>${player.club} - ${player.position} - ${player.style}</p>
+    // Update player details
+    socket.on("playerUpdate", (player) => {
+      document.getElementById("playerDetails").innerHTML = `
+        <h4>${player.name}</h4>
+        <p>Club: ${player.club}</p>
+        <p>Position: ${player.position}</p>
+        <p>Style: ${player.style}</p>
         <p>Value: ${player.value}</p>
       `;
+      document.getElementById("currentBid").innerText = player.value;
     });
 
+    // New bid received
     socket.on("newBid", ({ bidder, bid }) => {
-      document.getElementById("currentBid").innerText = `Highest Bid: ${bid} by ${bidder}`;
+      document.getElementById("currentBid").innerText =
+        `${bidder} bid: ${bid}`;
     });
 
-    function placeBid() {
-      const bid = document.getElementById("bidValue").value;
-      socket.emit("placeBid", { roomName: currentRoom, bidder: bidderName, bid });
-    }
+    // Place bid
+    document.getElementById("placeBid").addEventListener("click", () => {
+      const bidValue = parseInt(document.getElementById("bidValue").value);
+      if (bidValue && currentRoom) {
+        socket.emit("placeBid", {
+          roomName: currentRoom,
+          bidValue,
+          bidder: participantName,
+        });
+      }
+    });
 
-    socket.on("finalCall", () => {
-      alert("Final Call! Auction closed for this player.");
+    // Final call
+    socket.on("finalCallMade", ({ winner }) => {
+      alert("Auction finished. Winning Bid: " + winner);
     });
   </script>
 </body>
