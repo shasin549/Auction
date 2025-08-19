@@ -15,18 +15,23 @@ io.on("connection", (socket) => {
   console.log("New client connected");
 
   // Create room
-  socket.on("createRoom", ({ name }) => {
+  socket.on("createRoom", ({ name, maxParticipants, increment }) => {
     const room = Math.floor(1000 + Math.random() * 9000).toString();
-    rooms[room] = { participants: [], auctioneer: name };
+    rooms[room] = { 
+      participants: [], 
+      auctioneer: name, 
+      maxParticipants, 
+      increment 
+    };
     socket.join(room);
-    socket.emit("roomCreated", { room });
+    socket.emit("roomCreated", { room, maxParticipants, increment });
   });
 
   // Join room
   socket.on("joinRoom", ({ room, name }) => {
-    if (!rooms[room]) {
-      return;
-    }
+    if (!rooms[room]) return;
+    if (rooms[room].participants.length >= rooms[room].maxParticipants) return;
+
     socket.join(room);
     rooms[room].participants.push(name);
     io.to(room).emit("updateParticipants", rooms[room].participants.length);
@@ -45,6 +50,11 @@ io.on("connection", (socket) => {
   // Final call
   socket.on("finalCall", ({ room }) => {
     io.to(room).emit("finalCall");
+  });
+
+  // Set increment
+  socket.on("setIncrement", ({ room, increment }) => {
+    io.to(room).emit("setIncrement", increment);
   });
 });
 
