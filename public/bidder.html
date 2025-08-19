@@ -1,27 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bidder</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <div class="glass-card">
-    <h2>Join Auction</h2>
-    <input type="text" id="roomCode" placeholder="Room Code">
-    <input type="text" id="bidderName" placeholder="Your Name">
-    <button id="joinRoomBtn">Join Room</button>
+  <div class="card">
+    <h3>Join Auction</h3>
+    <input id="participantName" class="input" placeholder="Your name" />
+    <input id="roomCode" class="input" placeholder="Room code" />
+    <button id="joinBtn" class="btn">Join</button>
   </div>
 
-  <div id="auctionSection" class="glass-card" style="display:none;">
-    <h2 id="currentPlayer">Waiting for player...</h2>
-    <input type="number" id="manualBid" placeholder="Enter custom bid (optional)">
-    <button id="placeBidBtn">Place Bid</button>
-    <h3>Live Bids</h3>
-    <ul id="bidList"></ul>
+  <div class="card" id="liveCard" style="display:none;">
+    <h3 id="playerTitle">Waiting for player...</h3>
+    <div style="margin-top:8px;">
+      <div class="small">Current Bid</div>
+      <div id="currentBid" style="font-weight:700; margin-top:6px;">-</div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <input id="manualBid" class="input" type="number" placeholder="Enter bid manually (optional)" />
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="placeIncrementBtn" class="btn" style="flex:1;">Place + Increment</button>
+        <button id="placeManualBtn" class="btn secondary" style="flex:1;">Place Manual</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Live Bids</div>
+      <ul id="bidList" class="bid-list"></ul>
+    </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script src="bidder.js"></script>
 </body>
 </html>
