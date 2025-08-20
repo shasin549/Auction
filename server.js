@@ -15,18 +15,15 @@ app.use(express.static(path.join(__dirname, "public")));
 // ==========================
 // Auction Room Management
 // ==========================
-let rooms = {}; 
-// Structure:
+let rooms = {};
 // rooms = {
 //   ROOMCODE: {
 //     increment: 100,
 //     participants: [],
-//     players: [],
 //     currentBid: null
 //   }
 // };
 
-// Socket.io handling
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
@@ -37,7 +34,6 @@ io.on("connection", (socket) => {
     rooms[roomCode] = {
       increment: Number(increment),
       participants: [],
-      players: [],
       currentBid: null
     };
     socket.join(roomCode);
@@ -57,7 +53,7 @@ io.on("connection", (socket) => {
     socket.join(roomCode);
     console.log(`${bidderName} joined room ${roomCode}`);
 
-    // Update all participants list for auctioneer
+    // Notify auctioneer of participant list
     io.to(roomCode).emit("participantsUpdate", rooms[roomCode].participants);
   });
 
@@ -74,8 +70,8 @@ io.on("connection", (socket) => {
 
     console.log(`Auction started in room ${roomCode} for ${player.name}`);
 
-    // Notify all bidders
-    io.to(roomCode).emit("newPlayer", player);
+    // Notify all bidders with consistent event name
+    io.to(roomCode).emit("playerDetails", player);
   });
 
   // -------------------------
