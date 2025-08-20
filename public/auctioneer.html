@@ -22,7 +22,7 @@
     <!-- Auction Panel -->
     <div id="auctionPanel" class="hidden">
       <div class="meta-row">
-        <span><strong>Room:</strong> <span id="roomDisplay"></span></span>
+        <span><strong>Room Code:</strong> <span id="roomDisplay"></span></span>
         <span><strong>Participants:</strong> <span id="participantsDisplay"></span></span>
         <span><strong>Bid Increment:</strong> <span id="incrementDisplay"></span></span>
       </div>
@@ -31,6 +31,16 @@
         <input type="text" id="inviteLink" readonly>
         <button id="copyLinkBtn" class="btn alt">Copy</button>
       </div>
+
+      <h2>Enter Player Details</h2>
+      <div class="grid-2">
+        <input type="text" id="playerName" placeholder="Player Name">
+        <input type="text" id="playerClub" placeholder="Club / Nationality">
+        <input type="text" id="playerPosition" placeholder="Position">
+        <input type="text" id="playerStyle" placeholder="Playing Style">
+        <input type="number" id="playerValue" placeholder="Value" min="1">
+      </div>
+      <button id="previewBtn" class="btn">Preview Player</button>
 
       <h2>Player Preview</h2>
       <div id="playerPreview" class="preview">No player loaded</div>
