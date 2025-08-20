@@ -1,64 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
   <title>Auctioneer Panel</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- CREATE PANEL -->
-  <div class="center-panel" id="createPanel">
-    <h2>Create Room</h2>
-    <p class="subtitle">Create a room and get a copyable invite link for bidders.</p>
+  <div class="center-panel">
+    <h1>Auctioneer Panel</h1>
 
-    <input type="text" id="roomCode" placeholder="Room Code (unique)" />
-    <div class="row">
-      <input type="number" id="increment" placeholder="Bid Increment" />
-      <input type="number" id="numParticipants" placeholder="Number of Participants" />
+    <!-- Create Room Panel -->
+    <div id="createRoomPanel">
+      <div class="grid-2">
+        <input type="text" id="roomName" placeholder="Room Name">
+        <input type="number" id="numParticipants" placeholder="No. of Participants" min="1">
+      </div>
+      <input type="number" id="bidIncrement" placeholder="Bid Increment Value" min="1">
+      <button id="createRoomBtn" class="btn">Create Room</button>
     </div>
 
-    <div style="margin-top:12px;">
-      <button id="createBtn" class="btn big-btn">Create Room</button>
-    </div>
-  </div>
-
-  <!-- AUCTION PANEL -->
-  <div class="center-panel hidden" id="auctionPanel">
-    <h2>Auction Panel</h2>
-    <p class="muted">Share this link with bidders so they join automatically.</p>
-
-    <!-- Invite link + copy -->
-    <div class="meta-row" style="align-items:center; gap:8px;">
-      <label style="min-width:96px;">Invite Link:</label>
-      <input id="inviteLinkInput" type="text" readonly style="flex:1;" />
-      <button id="copyLinkBtn" class="btn alt" style="margin-left:8px; white-space:nowrap;">Copy</button>
-    </div>
-
-    <div style="margin-top:16px;">
-      <label class="muted">Players to add</label>
-      <div class="grid-2" style="margin-top:8px;">
-        <input type="text" id="playerName" placeholder="Player Name" />
-        <input type="text" id="playerClub" placeholder="Club / Nationality" />
-        <input type="text" id="playerPosition" placeholder="Position" />
-        <input type="text" id="playerStyle" placeholder="Playing Style" />
-        <input type="number" id="playerValue" placeholder="Base Value" />
+    <!-- Auction Panel -->
+    <div id="auctionPanel" class="hidden">
+      <div class="meta-row">
+        <span><strong>Room:</strong> <span id="roomDisplay"></span></span>
+        <span><strong>Participants:</strong> <span id="participantsDisplay"></span></span>
+        <span><strong>Bid Increment:</strong> <span id="incrementDisplay"></span></span>
       </div>
 
-      <div style="margin-top:10px;">
-        <button id="addPlayerBtn" class="btn alt">Add Player</button>
-        <button id="startAuctionBtn" class="btn warn" style="margin-left:8px;">Start Auction</button>
+      <div class="invite-row">
+        <input type="text" id="inviteLink" readonly>
+        <button id="copyLinkBtn" class="btn alt">Copy</button>
       </div>
-    </div>
 
-    <h3 style="margin-top:18px;">Current Player</h3>
-    <div class="preview" id="currentPlayer">
-      <span class="muted">No player selected</span>
-    </div>
+      <h2>Player Preview</h2>
+      <div id="playerPreview" class="preview">No player loaded</div>
 
-    <div style="margin-top:12px;">
-      <label class="muted">Bidders in room (live):</label>
-      <ul id="bidderList" class="list" style="margin-top:8px;"></ul>
+      <div class="row">
+        <button id="startBtn" class="btn">Start Bidding</button>
+        <button id="finalCallBtn" class="btn warn">Final Call</button>
+        <button id="nextPlayerBtn" class="btn hidden">Next Player</button>
+      </div>
     </div>
   </div>
 
