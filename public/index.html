@@ -1,17 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Auction Platform</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Platform - Home</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modal.css">
 </head>
 <body>
-  <div class="center-panel">
-    <h1>Auction Platform</h1>
-    <div class="row">
-      <a href="auctioneer.html" class="big-btn">Auctioneer</a>
-      <a href="bidder.html" class="big-btn">Bidder</a>
+    <div class="container">
+        <div class="glass-card">
+            <div class="header">
+                <h1>Modern Auction Platform</h1>
+                <p>Join as an auctioneer or bidder to participate in live auctions</p>
+            </div>
+            
+            <div class="card-grid">
+                <div class="card">
+                    <div class="player-card">
+                        <i class="fas fa-gavel"></i>
+                        <h2 class="player-name">Auctioneer</h2>
+                        <p class="player-details">Create auction rooms and manage live bidding</p>
+                        <button id="auctioneer-btn" class="btn">Create Auction</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="player-card">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <h2 class="player-name">Bidder</h2>
+                        <p class="player-details">Join auction rooms and bid on players</p>
+                        <button id="bidder-btn" class="btn">Join Auction</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- Auctioneer Modal -->
+    <div id="auctioneer-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create Auction Room</h2>
+            <div class="form-group">
+                <label for="room-name">Room Name</label>
+                <input type="text" id="room-name" class="form-control" placeholder="Enter room name">
+            </div>
+            
+            <div class="form-group">
+                <label for="participants">Number of Participants</label>
+                <input type="number" id="participants" class="form-control" placeholder="Enter number of participants" min="2" max="50">
+            </div>
+            
+            <div class="form-group">
+                <label for="bid-increment">Bid Increment ($)</label>
+                <input type="number" id="bid-increment" class="form-control" placeholder="Enter bid increment" min="1" value="5">
+            </div>
+            
+            <button id="create-room-btn" class="btn">Create Room</button>
+        </div>
+    </div>
+
+    <!-- Bidder Modal -->
+    <div id="bidder-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Join Auction Room</h2>
+            <div class="form-group">
+                <label for="participant-name">Your Name</label>
+                <input type="text" id="participant-name" class="form-control" placeholder="Enter your name">
+            </div>
+            
+            <div class="form-group">
+                <label for="room-code">Room Code</label>
+                <input type="text" id="room-code" class="form-control" placeholder="Enter room code">
+            </div>
+            
+            <button id="join-room-btn" class="btn">Join Room</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        // Get modals and buttons
+        const auctioneerModal = document.getElementById('auctioneer-modal');
+        const bidderModal = document.getElementById('bidder-modal');
+        const auctioneerBtn = document.getElementById('auctioneer-btn');
+        const bidderBtn = document.getElementById('bidder-btn');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const closeButtons = document.querySelectorAll('.close');
+
+        // Open modals
+        auctioneerBtn.addEventListener('click', () => {
+            auctioneerModal.style.display = 'block';
+        });
+
+        bidderBtn.addEventListener('click', () => {
+            bidderModal.style.display = 'block';
+        });
+
+        // Close modals
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                auctioneerModal.style.display = 'none';
+                bidderModal.style.display = 'none';
+            });
+        });
+
+        // Create room
+        createRoomBtn.addEventListener('click', () => {
+            const roomName = document.getElementById('room-name').value || 'Premier League Auction';
+            const participants = document.getElementById('participants').value || 10;
+            const bidIncrement = document.getElementById('bid-increment').value || 5;
+            
+            // Generate a random room code
+            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            // Redirect to auctioneer page with parameters
+            window.location.href = `auctioneer.html?room=${encodeURIComponent(roomName)}&participants=${participants}&increment=${bidIncrement}&code=${roomCode}`;
+        });
+
+        // Join room
+        joinRoomBtn.addEventListener('click', () => {
+            const participantName = document.getElementById('participant-name').value || 'Bidder';
+            const roomCode = document.getElementById('room-code').value;
+            
+            if (!roomCode) {
+                alert('Please enter a room code');
+                return;
+            }
+            
+            // Redirect to bidder page with parameters
+            window.location.href = `bidder.html?name=${encodeURIComponent(participantName)}&code=${roomCode}`;
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === auctioneerModal) {
+                auctioneerModal.style.display = 'none';
+            }
+            if (event.target === bidderModal) {
+                bidderModal.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
