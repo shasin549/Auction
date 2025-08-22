@@ -15,13 +15,57 @@
                 <p>Room Code: <span id="room-code-display">ABCD123</span> | Participants: <span id="participants-count">0</span></p>
             </div>
             
+            <!-- Player Details Form -->
+            <div class="player-form">
+                <div class="form-group">
+                    <label for="player-name">Player Name</label>
+                    <input type="text" id="player-name" class="form-control" placeholder="Enter player name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="player-club">Club/Nationality</label>
+                    <input type="text" id="player-club" class="form-control" placeholder="Enter club or nationality">
+                </div>
+                
+                <div class="form-group">
+                    <label for="player-position">Position</label>
+                    <input type="text" id="player-position" class="form-control" placeholder="Enter player position">
+                </div>
+                
+                <div class="form-group">
+                    <label for="player-style">Playing Style</label>
+                    <input type="text" id="player-style" class="form-control" placeholder="Enter playing style">
+                </div>
+                
+                <div class="form-group">
+                    <label for="player-value">Player Value ($)</label>
+                    <input type="number" id="player-value" class="form-control" placeholder="Enter player value">
+                </div>
+                
+                <div class="form-group">
+                    <label for="starting-bid">Starting Bid ($)</label>
+                    <input type="number" id="starting-bid" class="form-control" placeholder="Enter starting bid">
+                </div>
+            </div>
+            
+            <button id="add-player-btn" class="btn">Add Player</button>
+            
+            <div class="invite-section">
+                <h3>Invite Bidders</h3>
+                <div class="invite-link">
+                    <input type="text" id="invite-link" readonly>
+                    <button id="copy-invite-btn" class="btn btn-small">Copy</button>
+                </div>
+                <p>Share this link with bidders to join your auction room</p>
+            </div>
+            
             <div class="player-card">
                 <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Player" class="player-image">
-                <h2 class="player-name">Cristiano Ronaldo</h2>
-                <p class="player-details">Manchester United / Portugal</p>
-                <p class="player-details">Forward - Winger</p>
-                <p class="player-details">Attacking Playstyle</p>
-                <div class="player-value">Starting Bid: $15,000,000</div>
+                <h2 class="player-name" id="display-player-name">Cristiano Ronaldo</h2>
+                <p class="player-details" id="display-player-club">Manchester United / Portugal</p>
+                <p class="player-details" id="display-player-position">Forward - Winger</p>
+                <p class="player-details" id="display-player-style">Attacking Playstyle</p>
+                <div class="player-value">Starting Bid: $<span id="display-starting-bid">15,000,000</span></div>
                 
                 <div class="current-bid">
                     Current Bid: <span id="current-bid-value">$15,000,000</span>
