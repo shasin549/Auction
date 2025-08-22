@@ -1,64 +1,107 @@
-const socket = io();
-let currentRoom = null;
-let bidderName = null;
-
-const joinPanel = document.getElementById("joinPanel");
-const bidderPanel = document.getElementById("bidderPanel");
-
-const joinBtn = document.getElementById("joinBtn");
-const roomCodeInput = document.getElementById("roomCode");
-const bidderNameInput = document.getElementById("bidderName");
-
-const currentPlayer = document.getElementById("currentPlayer");
-const manualBidInput = document.getElementById("manualBid");
-const placeBidBtn = document.getElementById("placeBidBtn");
-const bidsList = document.getElementById("bidderBids");
-
-// Auto-fill room from invite link
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has("room")) roomCodeInput.value = urlParams.get("room");
-
-// Join Room
-joinBtn.addEventListener("click", () => {
-  bidderName = bidderNameInput.value.trim();
-  const room = roomCodeInput.value.trim();
-  if (!bidderName || !room) return alert("Enter name and room code!");
-  currentRoom = room;
-  socket.emit("joinRoom", { room, name: bidderName });
-  joinPanel.classList.add("hidden");
-  bidderPanel.classList.remove("hidden");
+document.addEventListener('DOMContentLoaded', function() {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantName = urlParams.get('name') || 'Bidder';
+    const roomCode = urlParams.get('code') || 'ABCD123';
+    
+    // Set participant info
+    document.getElementById('bidder-name').textContent = participantName;
+    document.getElementById('bidder-room-code').textContent = roomCode;
+    
+    // Initialize bidding variables
+    let currentBid = 15000000;
+    let biddingActive = false;
+    
+    // Get DOM elements
+    const bidAmountInput = document.getElementById('bid-amount');
+    const placeBidBtn = document.getElementById('place-bid');
+    const leaveRoomBtn = document.getElementById('leave-room');
+    const currentBidValue = document.getElementById('bidder-current-bid');
+    const bidHistoryContainer = document.querySelector('.bid-history');
+    
+    // Simulate connection to auction room
+    simulateAuctionRoom();
+    
+    // Place bid
+    placeBidBtn.addEventListener('click', () => {
+        const bidAmount = parseInt(bidAmountInput.value);
+        
+        if (isNaN(bidAmount) || bidAmount <= currentBid) {
+            alert(`Bid must be higher than current bid of $${currentBid.toLocaleString()}`);
+            return;
+        }
+        
+        currentBid = bidAmount;
+        currentBidValue.textContent = `$${bidAmount.toLocaleString()}`;
+        
+        addBidHistory(`You bid $${bidAmount.toLocaleString()}`, 'own-bid');
+        
+        // Update next minimum bid
+        bidAmountInput.value = bidAmount + 500000;
+        
+        // Visual feedback
+        placeBidBtn.classList.add('pulse');
+        setTimeout(() => {
+            placeBidBtn.classList.remove('pulse');
+        }, 1500);
+    });
+    
+    // Leave room
+    leaveRoomBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+    
+    // Simulate auction room activity
+    function simulateAuctionRoom() {
+        // Simulate bidding starting after a delay
+        setTimeout(() => {
+            biddingActive = true;
+            bidAmountInput.disabled = false;
+            placeBidBtn.disabled = false;
+            bidAmountInput.value = currentBid + 500000;
+            
+            addBidHistory('Bidding started!', 'system');
+            
+            // Simulate other bidders
+            simulateOtherBidders();
+        }, 3000);
+    }
+    
+    // Simulate other bidders
+    function simulateOtherBidders() {
+        if (!biddingActive) return;
+        
+        const bidderNames = ['John', 'Emma', 'Mike', 'Sarah', 'David', 'Lisa'];
+        const randomBidder = bidderNames[Math.floor(Math.random() * bidderNames.length)];
+        const newBid = currentBid + 500000;
+        
+        // Only simulate bid if it's not our bid
+        if (randomBidder !== participantName) {
+            currentBid = newBid;
+            currentBidValue.textContent = `$${newBid.toLocaleString()}`;
+            
+            addBidHistory(`${randomBidder} bid $${newBid.toLocaleString()}`, 'bid');
+            
+            // Update next minimum bid
+            bidAmountInput.value = newBid + 500000;
+        }
+        
+        // Continue simulation if bidding is still active
+        if (biddingActive) {
+            const delay = 3000 + Math.random() * 4000;
+            setTimeout(simulateOtherBidders, delay);
+        }
+    }
+    
+    // Add to bid history
+    function addBidHistory(message, type) {
+        const bidItem = document.createElement('div');
+        bidItem.className = `bid-item ${type}`;
+        bidItem.textContent = message;
+        bidHistoryContainer.appendChild(bidItem);
+        bidHistoryContainer.scrollTop = bidHistoryContainer.scrollHeight;
+    }
+    
+    // Initialize player image
+    document.querySelector('.player-image').src = `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 50)}.jpg`;
 });
-
-// Receive player details
-socket.on("playerDetails", (player) => {
-  currentPlayer.innerHTML = `
-    <strong>${player.name} (${player.club})</strong><br>
-    Position: ${player.position}<br>
-    Style: ${player.style}<br>
-    Base Value: ${player.value}
-  `;
-  bidsList.innerHTML = "";
-});
-
-// Place bid
-placeBidBtn.addEventListener("click", () => {
-  const bidAmount = parseInt(manualBidInput.value, 10);
-  if (!bidAmount || bidAmount <= 0) return alert("Invalid bid!");
-  socket.emit("placeBid", { room: currentRoom, name: bidderName, amount: bidAmount });
-  manualBidInput.value = "";
-});
-
-// Listen for new bids
-socket.on("newBid", ({ name, amount }) => {
-  const li = document.createElement("li");
-  li.textContent = `${name}: ${amount}`;
-  li.dataset.amount = amount;
-
-  const items = Array.from(bidsList.children);
-  const insertIndex = items.findIndex(item => parseInt(item.dataset.amount, 10) < amount);
-  if (insertIndex === -1) bidsList.appendChild(li);
-  else bidsList.insertBefore(li, items[insertIndex]);
-});
-
-// Debug errors
-socket.on("errorMsg", (msg) => console.error("Server Error:", msg));
