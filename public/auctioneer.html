@@ -1,47 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Auctioneer Panel</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auctioneer Room</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modal.css">
 </head>
 <body>
-  <!-- Create Room Panel -->
-  <div class="center-panel" id="createPanel">
-    <h2>Create Auction Room</h2>
-    <input type="number" id="numParticipants" placeholder="Number of Participants">
-    <input type="number" id="increment" placeholder="Bid Increment">
-    <button id="createBtn" class="btn">Create Room</button>
-  </div>
-
-  <!-- Auction Panel -->
-  <div class="center-panel hidden" id="auctionPanel">
-    <h2>Auction Panel</h2>
-    <p><strong>Room Code:</strong> <span id="roomCodeDisplay"></span></p>
-    <p><strong>Invite Link:</strong> 
-      <a id="inviteLink" href="#" target="_blank"></a>
-    </p>
-
-    <h3>Participants</h3>
-    <ul class="list" id="participantsList"></ul>
-
-    <h3>Add Player</h3>
-    <div class="grid-2">
-      <input type="text" id="playerName" placeholder="Player Name">
-      <input type="text" id="playerClub" placeholder="Club/Nationality">
-      <input type="text" id="playerPosition" placeholder="Position">
-      <input type="text" id="playerStyle" placeholder="Playing Style">
-      <input type="number" id="playerValue" placeholder="Base Value">
+    <div class="container">
+        <div class="glass-card">
+            <div class="header">
+                <h1>Auctioneer Room: <span id="room-name-display">Premier League Auction</span></h1>
+                <p>Room Code: <span id="room-code-display">ABCD123</span> | Participants: <span id="participants-count">0</span></p>
+            </div>
+            
+            <div class="player-card">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Player" class="player-image">
+                <h2 class="player-name">Cristiano Ronaldo</h2>
+                <p class="player-details">Manchester United / Portugal</p>
+                <p class="player-details">Forward - Winger</p>
+                <p class="player-details">Attacking Playstyle</p>
+                <div class="player-value">Starting Bid: $15,000,000</div>
+                
+                <div class="current-bid">
+                    Current Bid: <span id="current-bid-value">$15,000,000</span>
+                </div>
+                
+                <div class="bidding-controls">
+                    <button id="start-bidding" class="btn">Start Bidding</button>
+                    <button id="final-call" class="btn btn-secondary" disabled>Final Call</button>
+                    <button id="next-player" class="btn btn-secondary">Next Player</button>
+                </div>
+            </div>
+            
+            <div class="bid-history-container">
+                <h3>Bid History</h3>
+                <div class="bid-history">
+                    <div class="bid-item">Room created - bidding not started</div>
+                </div>
+            </div>
+            
+            <div class="nav">
+                <button id="back-to-lobby" class="btn btn-secondary">Back to Lobby</button>
+            </div>
+        </div>
     </div>
-    <button id="addPlayerBtn" class="btn alt">Add Player</button>
 
-    <button id="startAuctionBtn" class="btn warn">Start Bidding</button>
-
-    <h3>Current Player</h3>
-    <div class="preview" id="currentPlayer"></div>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="auctioneer.js"></script>
+    <script src="auctioneer.js"></script>
 </body>
 </html>
