@@ -1,31 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Bidder Panel</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bidder Room</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="modal.css">
 </head>
 <body>
-  <div class="center-panel" id="joinPanel">
-    <h2>Join Auction</h2>
-    <input type="text" id="roomCode" placeholder="Room Code">
-    <input type="text" id="bidderName" placeholder="Your Name">
-    <button id="joinBtn" class="btn">Join Room</button>
-  </div>
+    <div class="container">
+        <div class="glass-card">
+            <div class="header">
+                <h1>Bidder Room: <span id="bidder-room-name">Premier League Auction</span></h1>
+                <p>Welcome, <span id="bidder-name">Bidder</span> | Room Code: <span id="bidder-room-code">ABCD123</span></p>
+            </div>
+            
+            <div class="player-card">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Player" class="player-image">
+                <h2 class="player-name">Cristiano Ronaldo</h2>
+                <p class="player-details">Manchester United / Portugal</p>
+                <p class="player-details">Forward - Winger</p>
+                <p class="player-details">Attacking Playstyle</p>
+                <div class="player-value">Starting Bid: $15,000,000</div>
+                
+                <div class="current-bid">
+                    Current Bid: <span id="bidder-current-bid">$15,000,000</span>
+                </div>
+                
+                <div class="bidding-area">
+                    <div class="form-group">
+                        <label for="bid-amount">Your Bid Amount ($)</label>
+                        <input type="number" id="bid-amount" class="form-control" placeholder="Enter your bid" disabled>
+                    </div>
+                    <button id="place-bid" class="btn" disabled>Place Bid</button>
+                </div>
+            </div>
+            
+            <div class="bid-history-container">
+                <h3>Bid History</h3>
+                <div class="bid-history">
+                    <div class="bid-item">Room created - bidding not started</div>
+                </div>
+            </div>
+            
+            <div class="nav">
+                <button id="leave-room" class="btn btn-secondary">Leave Room</button>
+            </div>
+        </div>
+    </div>
 
-  <div class="center-panel hidden" id="bidderPanel">
-    <h2>Bidder Panel</h2>
-    <div class="preview" id="currentPlayer"></div>
-
-    <h3>Place Your Bid</h3>
-    <input type="number" id="manualBid" placeholder="Enter Bid">
-    <button id="placeBidBtn" class="btn alt">Place Bid</button>
-
-    <h3>All Bids</h3>
-    <ul class="list" id="bidderBids"></ul>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="bidder.js"></script>
+    <script src="bidder.js"></script>
 </body>
 </html>
