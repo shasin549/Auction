@@ -1,125 +1,163 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketIo(server);
 
-const PORT = process.env.PORT || 3000;
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
+// Store active rooms and bids
+const rooms = new Map();
+const bids = new Map();
 
-// ==========================
-// Auction Room Management
-// ==========================
-let rooms = {};
-// rooms = {
-//   ROOMCODE: {
-//     increment: 100,
-//     participants: [],
-//     currentBid: null
-//   }
-// };
-
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
-
-  // -------------------------
-  // Create Auction Room
-  // -------------------------
-  socket.on("createRoom", ({ roomCode, numParticipants, increment }) => {
-    rooms[roomCode] = {
-      increment: Number(increment),
-      participants: [],
-      currentBid: null
-    };
-    socket.join(roomCode);
-    console.log(`Room ${roomCode} created with increment ${increment}`);
-  });
-
-  // -------------------------
-  // Bidder joins room
-  // -------------------------
-  socket.on("joinRoom", ({ roomCode, bidderName }) => {
-    if (!rooms[roomCode]) {
-      socket.emit("errorMsg", "Room not found!");
-      return;
-    }
-
-    rooms[roomCode].participants.push(bidderName);
-    socket.join(roomCode);
-    console.log(`${bidderName} joined room ${roomCode}`);
-
-    // Notify auctioneer of participant list
-    io.to(roomCode).emit("participantsUpdate", rooms[roomCode].participants);
-  });
-
-  // -------------------------
-  // Auctioneer starts bidding for a player
-  // -------------------------
-  socket.on("startBidding", ({ roomCode, player }) => {
-    if (!rooms[roomCode]) return;
-    rooms[roomCode].currentBid = {
-      player,
-      highestBid: player.value,
-      highestBidder: null
-    };
-
-    console.log(`Auction started in room ${roomCode} for ${player.name}`);
-
-    // Notify all bidders with consistent event name
-    io.to(roomCode).emit("playerDetails", player);
-  });
-
-  // -------------------------
-  // Bidder places a bid
-  // -------------------------
-  socket.on("placeBid", ({ roomCode, bidderName, bidAmount }) => {
-    const room = rooms[roomCode];
-    if (!room || !room.currentBid) return;
-
-    if (bidAmount > room.currentBid.highestBid) {
-      room.currentBid.highestBid = bidAmount;
-      room.currentBid.highestBidder = bidderName;
-
-      console.log(`${bidderName} bid ${bidAmount} in room ${roomCode}`);
-
-      // Broadcast highest bid to everyone
-      io.to(roomCode).emit("bidUpdate", room.currentBid);
-    } else {
-      socket.emit("errorMsg", "Bid must be higher than current highest bid!");
-    }
-  });
-
-  // -------------------------
-  // Finalize auction for current player
-  // -------------------------
-  socket.on("finalCall", ({ roomCode }) => {
-    const room = rooms[roomCode];
-    if (!room || !room.currentBid) return;
-
-    console.log(
-      `Final call in ${roomCode}: ${room.currentBid.player.name} sold to ${room.currentBid.highestBidder} for ${room.currentBid.highestBid}`
-    );
-
-    io.to(roomCode).emit("finalResult", room.currentBid);
-    room.currentBid = null; // reset for next player
-  });
-
-  // -------------------------
-  // Disconnect
-  // -------------------------
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
+// Socket.io connection handling
+io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+    
+    // Join room
+    socket.on('join-room', (data) => {
+        const { roomCode, userName, isAuctioneer } = data;
+        
+        socket.join(roomCode);
+        
+        if (!rooms.has(roomCode)) {
+            rooms.set(roomCode, {
+                participants: new Map(),
+                auctioneer: isAuctioneer ? socket.id : null,
+                status: 'waiting'
+            });
+        }
+        
+        const room = rooms.get(roomCode);
+        room.participants.set(socket.id, userName);
+        
+        // Notify room about new participant
+        socket.to(roomCode).emit('participant-joined', {
+            userName,
+            participants: Array.from(room.participants.values())
+        });
+        
+        // Send current room status to the new participant
+        socket.emit('room-status', {
+            participants: Array.from(room.participants.values()),
+            auctioneer: room.auctioneer ? true : false,
+            status: room.status
+        });
+        
+        console.log(`${userName} joined room ${roomCode}`);
+    });
+    
+    // Start bidding
+    socket.on('start-bidding', (data) => {
+        const { roomCode, player } = data;
+        const room = rooms.get(roomCode);
+        
+        if (room && socket.id === room.auctioneer) {
+            room.status = 'bidding';
+            room.currentPlayer = player;
+            room.currentBid = player.value;
+            
+            io.to(roomCode).emit('bidding-started', {
+                player,
+                currentBid: player.value
+            });
+            
+            console.log(`Bidding started in room ${roomCode} for player ${player.name}`);
+        }
+    });
+    
+    // Place bid
+    socket.on('place-bid', (data) => {
+        const { roomCode, amount, userName } = data;
+        const room = rooms.get(roomCode);
+        
+        if (room && room.status === 'bidding' && amount > room.currentBid) {
+            room.currentBid = amount;
+            room.lastBidder = userName;
+            
+            // Store bid history
+            if (!bids.has(roomCode)) {
+                bids.set(roomCode, []);
+            }
+            bids.get(roomCode).push({ userName, amount, timestamp: Date.now() });
+            
+            io.to(roomCode).emit('new-bid', {
+                userName,
+                amount,
+                currentBid: room.currentBid
+            });
+            
+            console.log(`New bid in room ${roomCode}: ${userName} bid ${amount}`);
+        }
+    });
+    
+    // Final call
+    socket.on('final-call', (data) => {
+        const { roomCode } = data;
+        const room = rooms.get(roomCode);
+        
+        if (room && socket.id === room.auctioneer) {
+            io.to(roomCode).emit('final-call', {
+                message: 'Final call! Going once, going twice...'
+            });
+            
+            console.log(`Final call in room ${roomCode}`);
+        }
+    });
+    
+    // Sold
+    socket.on('sold', (data) => {
+        const { roomCode, player, amount, winner } = data;
+        const room = rooms.get(roomCode);
+        
+        if (room && socket.id === room.auctioneer) {
+            room.status = 'waiting';
+            
+            io.to(roomCode).emit('sold', {
+                player,
+                amount,
+                winner
+            });
+            
+            console.log(`Sold in room ${roomCode}: ${player.name} to ${winner} for ${amount}`);
+        }
+    });
+    
+    // Disconnect
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+        
+        // Remove user from rooms
+        for (const [roomCode, room] of rooms.entries()) {
+            if (room.participants.has(socket.id)) {
+                const userName = room.participants.get(socket.id);
+                room.participants.delete(socket.id);
+                
+                // Notify room about participant leaving
+                socket.to(roomCode).emit('participant-left', {
+                    userName,
+                    participants: Array.from(room.participants.values())
+                });
+                
+                // If auctioneer leaves, disband room
+                if (room.auctioneer === socket.id) {
+                    io.to(roomCode).emit('room-closed', {
+                        message: 'Auctioneer left the room'
+                    });
+                    rooms.delete(roomCode);
+                }
+                
+                console.log(`${userName} left room ${roomCode}`);
+            }
+        }
+    });
 });
 
-// ==========================
-// Start server
-// ==========================
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
