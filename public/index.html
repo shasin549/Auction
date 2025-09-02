@@ -11,7 +11,7 @@
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
+        
         body {
             background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
             min-height: 100vh;
@@ -21,7 +21,7 @@
             padding: 20px;
             color: white;
         }
-
+        
         .container {
             width: 100%;
             max-width: 500px;
@@ -31,7 +31,7 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
         }
-
+        
         h1 {
             text-align: center;
             margin-bottom: 10px;
@@ -39,30 +39,30 @@
             font-size: 2.5rem;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
-
+        
         .subtitle {
             text-align: center;
             margin-bottom: 30px;
             color: #ddd;
         }
-
+        
         .card {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
         }
-
+        
         .form-group {
             margin-bottom: 20px;
         }
-
+        
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
         }
-
+        
         input, select, textarea {
             width: 100%;
             padding: 12px 15px;
@@ -71,7 +71,7 @@
             background: rgba(255, 255, 255, 0.9);
             font-size: 16px;
         }
-
+        
         button {
             width: 100%;
             padding: 14px;
@@ -85,39 +85,39 @@
             transition: all 0.3s ease;
             margin-top: 10px;
         }
-
+        
         button:hover {
             background: #ffd633;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
-
+        
         button:active {
             transform: translateY(0);
         }
-
+        
         .divider {
             display: flex;
             align-items: center;
             margin: 20px 0;
         }
-
+        
         .divider::before, .divider::after {
             content: "";
             flex: 1;
             height: 1px;
             background: rgba(255, 255, 255, 0.3);
         }
-
+        
         .divider span {
             padding: 0 15px;
             color: #ddd;
         }
-
+        
         .hidden {
             display: none;
         }
-
+        
         .timer {
             text-align: center;
             font-size: 24px;
@@ -125,7 +125,7 @@
             margin: 20px 0;
             color: #ffcc00;
         }
-
+        
         .word-display {
             text-align: center;
             font-size: 32px;
@@ -134,7 +134,7 @@
             color: #ffcc00;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
-
+        
         .imposter-alert {
             text-align: center;
             background: rgba(255, 0, 0, 0.2);
@@ -143,11 +143,11 @@
             border: 2px solid #ff0000;
             margin: 20px 0;
         }
-
+        
         .player-list {
             margin-top: 20px;
         }
-
+        
         .player {
             background: rgba(255, 255, 255, 0.1);
             padding: 10px 15px;
@@ -156,16 +156,16 @@
             display: flex;
             justify-content: space-between;
         }
-
+        
         .player-name {
             font-weight: 500;
         }
-
+        
         .player-role {
             color: #ffcc00;
             font-weight: bold;
         }
-
+        
         .success {
             background: rgba(0, 255, 0, 0.2);
             border: 2px solid #00ff00;
@@ -174,7 +174,7 @@
             text-align: center;
             margin: 20px 0;
         }
-
+        
         .error {
             background: rgba(255, 0, 0, 0.2);
             border: 2px solid #ff0000;
@@ -183,19 +183,19 @@
             text-align: center;
             margin: 20px 0;
         }
-
+        
         .logo {
             text-align: center;
             margin-bottom: 20px;
         }
-
+        
         .logo span {
             font-size: 3rem;
             display: inline-block;
             transform: rotate(10deg);
             text-shadow: 3px 3px 0 #b21f1f;
         }
-
+        
         .room-code-display {
             text-align: center;
             font-size: 2rem;
@@ -208,25 +208,25 @@
             margin: 20px 0;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
-
+        
         .copy-btn {
             background: #4CAF50;
             margin-top: 5px;
             font-size: 14px;
             padding: 8px;
         }
-
+        
         .copy-btn:hover {
             background: #45a049;
         }
-
+        
         .status-message {
             text-align: center;
             font-style: italic;
             color: #ffcc00;
             margin: 10px 0;
         }
-
+        
         #votingPage .player-list button {
             background: #4CAF50;
             margin-bottom: 10px;
@@ -234,7 +234,7 @@
         #votingPage .player-list button:hover {
             background: #45a049;
         }
-
+        
     </style>
 </head>
 <body>
@@ -244,38 +244,28 @@
         </div>
         <h1>Word Imposter</h1>
         <p class="subtitle">A social deduction game where you need to find the imposter!</p>
-
+        
         <div id="landingPage">
             <div class="card">
-                <div class="form-group">
-                    <label for="playerName">Your Name</label>
-                    <input type="text" id="playerName" placeholder="Enter your name">
-                </div>
-
-                <button id="createRoomBtn">Create Room</button>
-
+                <button id="showCreateRoomBtn">Create Room</button>
+                
                 <div class="divider">
                     <span>Or</span>
                 </div>
-
-                <div class="form-group">
-                    <label for="roomCode">Room Code</label>
-                    <input type="text" id="roomCode" placeholder="Enter room code">
-                </div>
-
-                <button id="joinRoomBtn">Join Room</button>
+                
+                <button id="showJoinRoomBtn">Join Room</button>
             </div>
         </div>
-
+        
         <div id="createRoomPage" class="hidden">
             <div class="card">
                 <h2>Create Room</h2>
-
+                
                 <div class="form-group">
                     <label for="hostName">Your Name</label>
                     <input type="text" id="hostName" placeholder="Enter your name">
                 </div>
-
+                
                 <div class="form-group">
                     <label for="playerCount">Number of Players</label>
                     <select id="playerCount">
@@ -286,7 +276,7 @@
                         <option value="8">8 Players</option>
                     </select>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="imposterCount">Number of Imposters</label>
                     <select id="imposterCount">
@@ -294,63 +284,63 @@
                         <option value="2">2 Imposters</option>
                     </select>
                 </div>
-
+                
                 <button id="createRoomSubmit">Create Room</button>
                 <button id="backToLanding">Back</button>
             </div>
         </div>
-
+        
         <div id="joinRoomPage" class="hidden">
             <div class="card">
                 <h2>Join Room</h2>
-
+                
                 <div class="form-group">
                     <label for="joinPlayerName">Your Name</label>
                     <input type="text" id="joinPlayerName" placeholder="Enter your name">
                 </div>
-
+                
                 <div class="form-group">
                     <label for="joinRoomCode">Room Code</label>
                     <input type="text" id="joinRoomCode" placeholder="Enter room code">
                 </div>
-
+                
                 <button id="joinRoomSubmit">Join Room</button>
                 <button id="backToLanding2">Back</button>
             </div>
         </div>
-
+        
         <div id="lobbyPage" class="hidden">
             <div class="card">
                 <h2>Room Lobby</h2>
-
+                
                 <div class="room-code-display" id="roomCodeDisplay"></div>
                 <button class="copy-btn" id="copyRoomCode">Copy Code</button>
                 <p class="status-message">Share this code with other players to join</p>
-
+                
                 <div class="form-group">
                     <label>Players in Room:</label>
                     <div id="playersList" class="player-list">
                         </div>
                 </div>
-
+                
                 <div id="lobbyStatus" class="status-message"></div>
-
+                
                 <button id="startGameBtn" class="hidden">Start Game</button>
                 <button id="leaveLobbyBtn">Leave Lobby</button>
             </div>
         </div>
-
+        
         <div id="wordInputPage" class="hidden">
             <div class="card">
                 <h2>Enter a Word</h2>
                 <p>You have <span id="timeLeft">30</span> seconds to submit your word</p>
-
+                
                 <div class="form-group">
                     <textarea id="wordInput" placeholder="Enter your word here..." rows="3"></textarea>
                 </div>
-
+                
                 <button id="submitWordBtn">Submit Word</button>
-
+                
                 <div class="player-list">
                     <h3>Players in Room:</h3>
                     <div id="wordInputPlayers">
@@ -358,39 +348,39 @@
                 </div>
             </div>
         </div>
-
+        
         <div id="gamePage" class="hidden">
             <div class="card">
                 <h2>Word Imposter</h2>
-
+                
                 <div id="imposterView" class="imposter-alert hidden">
                     <h3>You are the Imposter!</h3>
                     <p>Try to blend in and guess the word without revealing yourself.</p>
                 </div>
-
+                
                 <div id="crewView" class="hidden">
                     <p>The secret word is:</p>
                     <div class="word-display" id="secretWordDisplay"></div>
                     <p>Discuss this word without saying it directly!</p>
                 </div>
-
+                
                 <div class="timer" id="gameTimer"></div>
-
+                
                 <div class="player-list">
                     <h3>Players:</h3>
                     <div id="gamePlayers">
                         </div>
                 </div>
-
+                
                 <button id="startVotingBtn">Proceed to Voting</button>
             </div>
         </div>
-
+        
         <div id="votingPage" class="hidden">
             <div class="card">
                 <h2>Voting</h2>
                 <p>Who do you think is the imposter?</p>
-
+                
                 <div class="player-list" id="votingButtons">
                     </div>
             </div>
@@ -420,7 +410,7 @@
         const gamePage = document.getElementById('gamePage');
         const votingPage = document.getElementById('votingPage');
         const resultPage = document.getElementById('resultPage');
-
+        
         const playerNameInput = document.getElementById('playerName');
         const roomCodeInput = document.getElementById('roomCode');
         const hostNameInput = document.getElementById('hostName');
@@ -439,10 +429,10 @@
         const votingButtonsDiv = document.getElementById('votingButtons');
         const resultMessageDiv = document.getElementById('resultMessage');
         const finalRolesDiv = document.getElementById('finalRoles');
-
+        
         // Buttons
-        const createRoomBtn = document.getElementById('createRoomBtn');
-        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const showCreateRoomBtn = document.getElementById('showCreateRoomBtn');
+        const showJoinRoomBtn = document.getElementById('showJoinRoomBtn');
         const createRoomSubmit = document.getElementById('createRoomSubmit');
         const joinRoomSubmit = document.getElementById('joinRoomSubmit');
         const backToLanding = document.getElementById('backToLanding');
@@ -452,13 +442,13 @@
         const leaveLobbyBtn = document.getElementById('leaveLobbyBtn');
         const copyRoomCode = document.getElementById('copyRoomCode');
         const playAgainBtn = document.getElementById('playAgainBtn');
-
+        
         // Game state
         const socket = io();
         let wordSubmitTimer;
         let gameDiscussionTimer;
         let localPlayerId;
-
+        
         const allPages = [
             landingPage,
             createRoomPage,
@@ -469,17 +459,17 @@
             votingPage,
             resultPage
         ];
-
+        
         function showPage(pageToShow) {
             allPages.forEach(page => page.classList.add('hidden'));
             pageToShow.classList.remove('hidden');
         }
-
+        
         function updatePlayersList(players) {
             playersList.innerHTML = '';
             wordInputPlayers.innerHTML = '';
             gamePlayers.innerHTML = '';
-
+            
             players.forEach(player => {
                 const li = document.createElement('div');
                 li.className = 'player';
@@ -492,37 +482,19 @@
                 gamePlayers.appendChild(li.cloneNode(true));
             });
         }
-
+        
         // --- Event Listeners ---
-        createRoomBtn.addEventListener('click', () => {
-            const name = playerNameInput.value.trim();
-            if (!name) {
-                alert('Please enter your name');
-                return;
-            }
-            hostNameInput.value = name;
+        showCreateRoomBtn.addEventListener('click', () => {
             showPage(createRoomPage);
         });
-
-        joinRoomBtn.addEventListener('click', () => {
-            const name = playerNameInput.value.trim();
-            const code = roomCodeInput.value.trim();
-            if (!name) {
-                alert('Please enter your name');
-                return;
-            }
-            if (!code) {
-                alert('Please enter a room code');
-                return;
-            }
-            joinPlayerNameInput.value = name;
-            joinRoomCodeInput.value = code;
+        
+        showJoinRoomBtn.addEventListener('click', () => {
             showPage(joinRoomPage);
         });
-
+        
         backToLanding.addEventListener('click', () => showPage(landingPage));
         backToLanding2.addEventListener('click', () => showPage(landingPage));
-
+        
         createRoomSubmit.addEventListener('click', () => {
             const playerName = hostNameInput.value.trim();
             const playerCount = parseInt(document.getElementById('playerCount').value);
@@ -531,7 +503,7 @@
                 socket.emit('createRoom', { playerName, playerCount, imposterCount });
             }
         });
-
+        
         joinRoomSubmit.addEventListener('click', () => {
             const playerName = joinPlayerNameInput.value.trim();
             const roomCode = joinRoomCodeInput.value.trim().toUpperCase();
@@ -539,7 +511,7 @@
                 socket.emit('joinRoom', { roomCode, playerName });
             }
         });
-
+        
         copyRoomCode.addEventListener('click', () => {
             const code = roomCodeDisplay.textContent;
             navigator.clipboard.writeText(code)
@@ -554,11 +526,11 @@
                     console.error('Could not copy text: ', err);
                 });
         });
-
+        
         startGameBtn.addEventListener('click', () => {
             socket.emit('startGame');
         });
-
+        
         submitWordBtn.addEventListener('click', () => {
             const word = wordInput.value.trim();
             if (word) {
@@ -573,10 +545,127 @@
             socket.emit('vote', { votedPlayerId: null }); // Signal to the server to start voting
             showPage(votingPage);
         });
-
+        
         leaveLobbyBtn.addEventListener('click', () => {
             socket.disconnect();
             location.reload();
         });
 
-        playAgainBtn.addEventListener('
+        playAgainBtn.addEventListener('click', () => {
+            location.reload();
+        });
+
+        // --- Socket.IO Event Handlers ---
+        socket.on('connect', () => {
+            localPlayerId = socket.id;
+        });
+
+        socket.on('roomCreated', (roomCode) => {
+            roomCodeDisplay.textContent = roomCode;
+            showPage(lobbyPage);
+        });
+
+        socket.on('playerListUpdate', (players) => {
+            updatePlayersList(players);
+            const localPlayer = players.find(p => p.id === localPlayerId);
+            const isHost = localPlayer ? localPlayer.isHost : false;
+            
+            if (isHost && players.length >= 3) {
+                startGameBtn.classList.remove('hidden');
+                lobbyStatus.textContent = `Players: ${players.length}/${players.length}. Ready to start!`;
+            } else {
+                startGameBtn.classList.add('hidden');
+                lobbyStatus.textContent = `Waiting for players (${players.length}/${players.length}). Waiting for host to start...`;
+            }
+
+            if(isHost && players.length === players.length) {
+                // This logic is for when all players have joined
+                // For a simple demo, we just update the status message
+            }
+        });
+
+        socket.on('startWordInputPhase', () => {
+            showPage(wordInputPage);
+            let timeLeft = 30;
+            timeLeftDisplay.textContent = timeLeft;
+            wordInput.value = '';
+            submitWordBtn.disabled = false;
+            
+            wordSubmitTimer = setInterval(() => {
+                timeLeft--;
+                timeLeftDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(wordSubmitTimer);
+                    submitWordBtn.click();
+                }
+            }, 1000);
+        });
+
+        socket.on('wordSubmitted', (count) => {
+            lobbyStatus.textContent = `Words submitted: ${count}`;
+        });
+
+        socket.on('startDiscussionPhase', (data) => {
+            showPage(gamePage);
+            if (data.isImposter) {
+                document.getElementById('imposterView').classList.remove('hidden');
+                document.getElementById('crewView').classList.add('hidden');
+            } else {
+                document.getElementById('imposterView').classList.add('hidden');
+                document.getElementById('crewView').classList.remove('hidden');
+                secretWordDisplay.textContent = data.word;
+            }
+
+            let gameTime = 120; // 2 minutes
+            gameTimerDisplay.textContent = '02:00';
+            gameDiscussionTimer = setInterval(() => {
+                gameTime--;
+                const minutes = Math.floor(gameTime / 60);
+                const seconds = gameTime % 60;
+                gameTimerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (gameTime <= 0) {
+                    clearInterval(gameDiscussionTimer);
+                    startVotingBtn.click();
+                }
+            }, 1000);
+            
+            // Populate voting buttons
+            votingButtonsDiv.innerHTML = '';
+            data.players.forEach(player => {
+                if (player.id !== socket.id) {
+                    const button = document.createElement('button');
+                    button.textContent = `Vote for ${player.name}`;
+                    button.addEventListener('click', () => {
+                        socket.emit('vote', { votedPlayerId: player.id });
+                        votingButtonsDiv.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                    });
+                    votingButtonsDiv.appendChild(button);
+                }
+            });
+        });
+
+        socket.on('gameOver', (result) => {
+            showPage(resultPage);
+            resultMessageDiv.textContent = result.message;
+            resultMessageDiv.className = result.crewmatesWin ? 'success' : 'error';
+            
+            finalRolesDiv.innerHTML = '';
+            result.roles.forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player';
+                const role = player.isImposter ? 'Imposter' : 'Crewmate';
+                div.innerHTML = `<span class="player-name">${player.name}</span><span class="player-role">${role}</span>`;
+                finalRolesDiv.appendChild(div);
+            });
+        });
+
+        socket.on('error', (message) => {
+            alert(message);
+        });
+        
+        // Initial page load
+        showPage(landingPage);
+    </script>
+</body>
+</html>
